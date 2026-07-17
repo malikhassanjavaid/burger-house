@@ -67,8 +67,9 @@ String friendlyAuthError(Object error) {
     switch (error.code) {
       case 'invalid-credential':
       case 'wrong-password':
-      case 'user-not-found':
         return 'Incorrect email or password.';
+      case 'user-not-found':
+        return 'No account exists for this email. Please create an account first.';
       case 'email-already-in-use':
         return 'An account already exists for this email.';
       case 'invalid-email':
@@ -94,4 +95,17 @@ String friendlyAuthError(Object error) {
   }
 
   return 'Something went wrong. Please try again.';
+}
+
+bool isSignInCredentialError(Object error) {
+  return error is FirebaseAuthException &&
+      const {
+        'invalid-credential',
+        'wrong-password',
+        'user-not-found',
+      }.contains(error.code);
+}
+
+bool isDefinitelyMissingAccount(Object error) {
+  return error is FirebaseAuthException && error.code == 'user-not-found';
 }
