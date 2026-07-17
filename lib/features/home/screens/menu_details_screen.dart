@@ -22,14 +22,48 @@ class MenuDetailsScreen extends StatefulWidget {
 class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
   final _instructionsController = TextEditingController();
   final Set<String> _selectedAddOns = {};
-  String _selectedSize = 'Regular';
+  late String _selectedSize;
   int _quantity = 1;
 
-  static const _sizes = {'Regular': 0.0, 'Large': 1.50};
-  static const _addOns = {
-    'Extra cheese': 1.00,
-    'Jalapenos': .60,
-    'House sauce': .80,
+  Map<String, double> get _sizes => switch (widget.item.category) {
+    'Pizzas' => const {'Regular 10"': 0.0, 'Large 14"': 4.00},
+    'Drinks' => const {'Regular': 0.0, 'Large': 1.00},
+    'Deals' => const {'Standard bundle': 0.0},
+    'Desserts' => const {'Single serving': 0.0},
+    _ => const {'Regular': 0.0, 'Large': 1.50},
+  };
+
+  Map<String, double> get _addOns => switch (widget.item.category) {
+    'Burgers' || 'Wraps' => const {
+      'Extra cheese': 1.00,
+      'Jalapenos': .60,
+      'House sauce': .80,
+    },
+    'Pizzas' => const {
+      'Extra mozzarella': 1.50,
+      'Jalapenos': .75,
+      'Extra chicken': 2.00,
+    },
+    'Chicken' => const {
+      'Garlic dip': .75,
+      'Cheese sauce': 1.00,
+      'Spicy glaze': .75,
+    },
+    'Sides' => const {
+      'Cheese sauce': 1.00,
+      'Jalapenos': .60,
+      'House sauce': .80,
+    },
+    'Drinks' => const {
+      'Whipped cream': .60,
+      'Chocolate drizzle': .50,
+    },
+    'Desserts' => const {
+      'Vanilla ice cream': 1.25,
+      'Chocolate sauce': .60,
+      'Fresh strawberries': 1.00,
+    },
+    _ => const <String, double>{},
   };
 
   double get _unitPrice =>
@@ -39,6 +73,12 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
         0,
         (total, addOn) => total + (_addOns[addOn] ?? 0),
       );
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSize = _sizes.keys.first;
+  }
 
   @override
   void dispose() {
@@ -104,25 +144,27 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
                                 setState(() => _selectedSize = size.key),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        const _OptionHeading(
-                          title: 'Make it yours',
-                          label: 'Optional',
-                        ),
-                        const SizedBox(height: 12),
-                        ..._addOns.entries.map(
-                          (addOn) => _ChoiceTile(
-                            title: addOn.key,
-                            price: '+ ${formatUsd(addOn.value)}',
-                            selected: _selectedAddOns.contains(addOn.key),
-                            checkbox: true,
-                            onTap: () => setState(() {
-                              if (!_selectedAddOns.add(addOn.key)) {
-                                _selectedAddOns.remove(addOn.key);
-                              }
-                            }),
+                        if (_addOns.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          const _OptionHeading(
+                            title: 'Make it yours',
+                            label: 'Optional',
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          ..._addOns.entries.map(
+                            (addOn) => _ChoiceTile(
+                              title: addOn.key,
+                              price: '+ ${formatUsd(addOn.value)}',
+                              selected: _selectedAddOns.contains(addOn.key),
+                              checkbox: true,
+                              onTap: () => setState(() {
+                                if (!_selectedAddOns.add(addOn.key)) {
+                                  _selectedAddOns.remove(addOn.key);
+                                }
+                              }),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         const _OptionHeading(
                           title: 'Special instructions',
@@ -189,8 +231,24 @@ class _FoodPreview extends StatelessWidget {
               ),
             ),
           ),
-          Center(
-            child: Text(item.emoji, style: const TextStyle(fontSize: 115)),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Hero(
+                tag: 'menu-art-${item.id}',
+                child: Image.asset(
+                  item.displayAssetPath,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (_, _, _) => Center(
+                    child: Text(
+                      item.emoji,
+                      style: const TextStyle(fontSize: 115),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
           if (item.oldPrice != null)
             Positioned(
