@@ -167,7 +167,7 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final options = [cartItem.size, ...cartItem.addOns].join(' • ');
+    final options = [cartItem.size, ...cartItem.addOns].join(' / ');
 
     return Container(
       padding: const EdgeInsets.all(13),
@@ -186,10 +186,17 @@ class _CartItemCard extends StatelessWidget {
               color: const Color(0xFFFFE9D5),
               borderRadius: BorderRadius.circular(17),
             ),
-            alignment: Alignment.center,
-            child: Text(
-              cartItem.menuItem.emoji,
-              style: const TextStyle(fontSize: 39),
+            padding: const EdgeInsets.all(6),
+            child: Image.asset(
+              cartItem.menuItem.displayAssetPath,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, _, _) => Center(
+                child: Text(
+                  cartItem.menuItem.emoji,
+                  style: const TextStyle(fontSize: 39),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
