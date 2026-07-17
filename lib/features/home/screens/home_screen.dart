@@ -12,7 +12,14 @@ import 'cart_screen.dart';
 import 'menu_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    this.showNewAccountWelcome = false,
+    this.welcomeName,
+    super.key,
+  });
+
+  final bool showNewAccountWelcome;
+  final String? welcomeName;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -25,9 +32,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<CartItem> _cartItems = [];
   String _searchText = '';
-  String _selectedCategory = 'All';
+  String _selectedCategory = 'Burgers';
   final String _address = 'House 24, Main Boulevard';
   int _selectedTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.showNewAccountWelcome) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final firstName = (widget.welcomeName ?? '').trim().split(' ').first;
+        showGeneralDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          barrierLabel: 'Welcome to BurgerHouse',
+          barrierColor: Colors.black.withValues(alpha: .58),
+          transitionDuration: const Duration(milliseconds: 380),
+          pageBuilder: (_, _, _) => _NewCustomerWelcomeDialog(
+            firstName: firstName,
+          ),
+          transitionBuilder: (_, animation, _, child) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutBack,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(scale: curved, child: child),
+            );
+          },
+        );
+      });
+    }
+  }
 
   int get _cartCount =>
       _cartItems.fold(0, (totalCount, item) => totalCount + item.quantity);
@@ -128,11 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
       0: _HomeTab(
         selectedCategory: _selectedCategory,
         items: homeItems,
-        favourites: _favourites,
         onCategorySelected: (category) =>
             setState(() => _selectedCategory = category),
         onOpenItem: _openDetails,
-        onFavourite: _toggleFavourite,
         onAdd: _addQuickItem,
       ),
       2: _SearchTab(
@@ -181,29 +218,158 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _NewCustomerWelcomeDialog extends StatelessWidget {
+  const _NewCustomerWelcomeDialog({required this.firstName});
+
+  final String firstName;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 340,
+            margin: const EdgeInsets.symmetric(horizontal: 22),
+            padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x4D000000),
+                  blurRadius: 42,
+                  offset: Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 104,
+                      height: 104,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFE8D5),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Container(
+                      width: 78,
+                      height: 78,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFFF9A43), AppColors.orange],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x4DFF6B00),
+                            blurRadius: 20,
+                            offset: Offset(0, 9),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.celebration_rounded,
+                        color: Colors.white,
+                        size: 39,
+                      ),
+                    ),
+                    const Positioned(
+                      right: -7,
+                      top: -5,
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Color(0xFFFFB000),
+                        size: 26,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  firstName.isEmpty
+                      ? 'Welcome to BurgerHouse!'
+                      : 'Welcome, $firstName!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.dark,
+                    fontSize: 25,
+                    height: 1.08,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Your account is ready. Fresh burgers, exclusive deals and easy ordering are waiting for you.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 14,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.orange,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(54),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(17),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: const Text(
+                      'Start ordering',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HomeTab extends StatelessWidget {
   const _HomeTab({
     required this.selectedCategory,
     required this.items,
-    required this.favourites,
     required this.onCategorySelected,
     required this.onOpenItem,
-    required this.onFavourite,
     required this.onAdd,
   });
 
   final String selectedCategory;
   final List<MenuItem> items;
-  final Set<String> favourites;
   final ValueChanged<String> onCategorySelected;
   final ValueChanged<MenuItem> onOpenItem;
-  final ValueChanged<MenuItem> onFavourite;
   final ValueChanged<MenuItem> onAdd;
 
   static const _categories = [
-    'All',
     'Burgers',
+    'Pizzas',
+    'Chicken',
     'Sides',
+    'Wraps',
     'Drinks',
     'Desserts',
     'Deals',
@@ -211,10 +377,15 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bestSellers = sampleMenu
-        .where((item) => item.isPopular)
-        .take(3)
-        .toList();
+    final featuredPizza = sampleMenu.firstWhere(
+      (item) => item.id == 'cheese-pizza',
+    );
+    final bestSellers = [
+      featuredPizza,
+      ...sampleMenu.where(
+        (item) => item.isPopular && item.id != featuredPizza.id,
+      ),
+    ].take(3).toList();
 
     return CustomScrollView(
       slivers: [
@@ -270,14 +441,14 @@ class _HomeTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 SizedBox(
-                  height: 250,
+                  height: 222,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     clipBehavior: Clip.none,
                     itemCount: bestSellers.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
+                    separatorBuilder: (_, _) => const SizedBox(width: 54),
                     itemBuilder: (_, index) {
                       final item = bestSellers[index];
                       return _BestSellerCard(
@@ -289,26 +460,26 @@ class _HomeTab extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
               ],
             ),
           ),
         ),
         SliverToBoxAdapter(
           child: SizedBox(
-            height: 66,
+            height: 96,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 9),
+              separatorBuilder: (_, _) => const SizedBox(width: 13),
               itemBuilder: (_, index) {
                 final category = _categories[index];
                 final selected = category == selectedCategory;
                 return _HomeCategory(
                   label: category,
                   selected: selected,
-                  icon: _categoryIcon(category),
+                  assetPath: _categoryAsset(category),
                   onTap: () => onCategorySelected(category),
                 );
               },
@@ -317,7 +488,7 @@ class _HomeTab extends StatelessWidget {
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 22, 18, 14),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
             child: Row(
               children: [
                 const Expanded(
@@ -332,9 +503,13 @@ class _HomeTab extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () => onCategorySelected('All'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.muted,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
                   child: const Text(
                     'See All',
-                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -353,15 +528,13 @@ class _HomeTab extends StatelessWidget {
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 14,
-                    childAspectRatio: .66,
+                    childAspectRatio: .78,
                   ),
                   delegate: SliverChildBuilderDelegate((_, index) {
                     final item = items[index];
                     return _SuggestedFoodCard(
                       item: item,
-                      favourite: favourites.contains(item.id),
                       onTap: () => onOpenItem(item),
-                      onFavourite: () => onFavourite(item),
                       onAdd: () => onAdd(item),
                     );
                   }, childCount: items.length),
@@ -371,14 +544,16 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  static IconData _categoryIcon(String category) {
+  static String _categoryAsset(String category) {
     return switch (category) {
-      'Burgers' => Icons.lunch_dining_rounded,
-      'Sides' => Icons.fastfood_rounded,
-      'Drinks' => Icons.local_drink_rounded,
-      'Desserts' => Icons.icecream_rounded,
-      'Deals' => Icons.local_offer_rounded,
-      _ => Icons.apps_rounded,
+      'Burgers' => 'assets/images/beefburger-cutout.png',
+      'Pizzas' => 'assets/images/cheese_pizza-cutout.png',
+      'Chicken' => 'assets/images/Spicy_glazed_wings-cutout.png',
+      'Sides' => 'assets/images/fries-cutout.png',
+      'Wraps' => 'assets/images/chicken_wrap-cutout.png',
+      'Drinks' => 'assets/images/strawberry_frappe-cutout.png',
+      'Desserts' => 'assets/images/cheesecake_slice-cutout.png',
+      _ => 'assets/images/duo_deal-cutout.png',
     };
   }
 }
@@ -407,6 +582,7 @@ class _BestSellerCard extends StatelessWidget {
     final gradient = _gradients[index % _gradients.length];
     final darkText = index != 1;
     final foreground = darkText ? AppColors.dark : Colors.white;
+    final isFeaturedPizza = item.id == 'cheese-pizza';
 
     return Material(
       color: Colors.transparent,
@@ -414,15 +590,15 @@ class _BestSellerCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
         child: Container(
-          width: 270,
-          padding: const EdgeInsets.all(15),
+          width: 210,
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: gradient,
             ),
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
                 color: gradient.last.withValues(alpha: .25),
@@ -447,10 +623,10 @@ class _BestSellerCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                right: -25,
-                top: 43,
+                right: isFeaturedPizza ? -58 : -34,
+                top: isFeaturedPizza ? 47 : 49,
                 child: Transform.rotate(
-                  angle: -.04,
+                  angle: isFeaturedPizza ? -.11 : -.04,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       boxShadow: [
@@ -461,7 +637,11 @@ class _BestSellerCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: _FoodArtwork(item: item, width: 165, height: 165),
+                    child: _FoodArtwork(
+                      item: item,
+                      width: isFeaturedPizza ? 158 : 145,
+                      height: isFeaturedPizza ? 158 : 145,
+                    ),
                   ),
                 ),
               ),
@@ -497,9 +677,9 @@ class _BestSellerCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   SizedBox(
-                    width: 118,
+                    width: 112,
                     child: Text(
                       item.name,
                       maxLines: 2,
@@ -507,12 +687,12 @@ class _BestSellerCard extends StatelessWidget {
                       style: TextStyle(
                         color: foreground,
                         height: 1.08,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 3),
                   SizedBox(
                     width: 112,
                     child: Text(
@@ -529,23 +709,23 @@ class _BestSellerCard extends StatelessWidget {
                     formatUsd(item.price),
                     style: TextStyle(
                       color: darkText ? AppColors.dark : Colors.white,
-                      fontSize: 29,
+                      fontSize: 25,
                       height: 1,
                       letterSpacing: -.8,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      height: 40,
+                      height: 36,
                       child: FilledButton(
                         onPressed: onAdd,
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.dark,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -573,70 +753,71 @@ class _BestSellerCard extends StatelessWidget {
 class _HomeCategory extends StatelessWidget {
   const _HomeCategory({
     required this.label,
-    required this.icon,
+    required this.assetPath,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String assetPath;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 13),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF53CF7C) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: selected ? const Color(0xFF53CF7C) : const Color(0xFFE8E3DE),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    final displayLabel = switch (label) {
+      'Burgers' => 'Burger',
+      'Pizzas' => 'Pizza',
+      'Desserts' => 'Dessert',
+      _ => label,
+    };
+
+    return SizedBox(
+      width: 66,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(34),
+        child: Column(
           children: [
-            if (selected) ...[
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Container(
-              width: 36,
-              height: 36,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              width: 62,
+              height: 62,
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: selected
-                    ? Colors.white.withValues(alpha: .22)
-                    : const Color(0xFFF7F4F1),
+                color: Colors.white,
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFE9E9E9),
+                  width: 1,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0F000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
-              child: Icon(
-                icon,
-                size: 19,
-                color: selected ? Colors.white : AppColors.dark,
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
               ),
             ),
-            if (!selected) ...[
-              const SizedBox(width: 7),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.dark,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+            const SizedBox(height: 7),
+            Text(
+              displayLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.dark,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -647,31 +828,34 @@ class _HomeCategory extends StatelessWidget {
 class _SuggestedFoodCard extends StatelessWidget {
   const _SuggestedFoodCard({
     required this.item,
-    required this.favourite,
     required this.onTap,
-    required this.onFavourite,
     required this.onAdd,
   });
 
   final MenuItem item;
-  final bool favourite;
   final VoidCallback onTap;
-  final VoidCallback onFavourite;
   final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFEEE9E5)),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE8E8E8)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -680,8 +864,8 @@ class _SuggestedFoodCard extends StatelessWidget {
                 child: Container(
                   margin: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFEEE2),
-                    borderRadius: BorderRadius.circular(14),
+                    color: const Color(0xFFF6F6F6),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Stack(
                     children: [
@@ -693,18 +877,25 @@ class _SuggestedFoodCard extends StatelessWidget {
                         ),
                       ),
                       Positioned(
-                        right: 6,
-                        top: 6,
+                        right: 5,
+                        top: 5,
                         child: InkWell(
                           onTap: onAdd,
                           child: Container(
-                            width: 27,
-                            height: 27,
+                            width: 31,
+                            height: 31,
                             decoration: const BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x1A000000),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            child: const Icon(Icons.add, size: 17),
+                            child: const Icon(Icons.add_rounded, size: 20),
                           ),
                         ),
                       ),
@@ -713,55 +904,50 @@ class _SuggestedFoodCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 4, 9, 10),
+                padding: const EdgeInsets.fromLTRB(10, 5, 10, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.dark,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          formatUsd(item.price),
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 5),
                     Row(
                       children: [
                         const Icon(
                           Icons.star_rounded,
-                          color: Color(0xFFFFB000),
-                          size: 15,
+                          color: Colors.black,
+                          size: 14,
                         ),
+                        const SizedBox(width: 2),
                         Text(
                           '${item.rating}',
                           style: const TextStyle(
+                            color: AppColors.muted,
                             fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          formatUsd(item.price),
-                          style: const TextStyle(
-                            color: AppColors.orange,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: onFavourite,
-                          child: Icon(
-                            favourite
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            color: favourite
-                                ? Colors.redAccent
-                                : AppColors.dark,
-                            size: 17,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -790,24 +976,14 @@ class _FoodArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (item.category == 'Burgers') {
-      return Image.asset(
-        'assets/images/beefburger-cutout.png',
-        width: width,
-        height: height,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-      );
-    }
-
-    return SizedBox(
+    return Image.asset(
+      item.displayAssetPath,
       width: width,
       height: height,
-      child: Center(
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: Text(item.emoji, style: const TextStyle(fontSize: 62)),
-        ),
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, _, _) => Center(
+        child: Text(item.emoji, style: const TextStyle(fontSize: 62)),
       ),
     );
   }
@@ -996,9 +1172,19 @@ class _PremiumFoodCard extends StatelessWidget {
                   child: Stack(
                     children: [
                       Center(
-                        child: Text(
-                          item.emoji,
-                          style: const TextStyle(fontSize: 67),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Image.asset(
+                            item.displayAssetPath,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                            errorBuilder: (_, _, _) => Center(
+                              child: Text(
+                                item.emoji,
+                                style: const TextStyle(fontSize: 67),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       if (item.oldPrice != null)
