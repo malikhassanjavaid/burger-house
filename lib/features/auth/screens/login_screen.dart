@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/auth_layout.dart';
-import '../widgets/password_field.dart';
 import '../services/auth_service.dart';
+import '../widgets/auth_loading_overlay.dart';
+import '../widgets/password_field.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,24 +42,113 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(friendlyAuthError(error))));
+      if (isSignInCredentialError(error)) {
+        await _showAccountHelp(error);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(friendlyAuthError(error)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _showAccountHelp(Object error) async {
+    final missing = isDefinitelyMissingAccount(error);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(22, 12, 22, 22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              const SizedBox(height: 22),
+              const CircleAvatar(
+                radius: 29,
+                backgroundColor: Color(0xFFFFEEE2),
+                child: Icon(Icons.person_search_rounded, size: 30),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                missing ? 'Account not found' : 'Could not sign you in',
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                missing
+                    ? 'There is no BurgerHouse account for ${_email.text.trim()}. Create one to start ordering.'
+                    : 'Check your password if you already have an account, or create a new account if this is your first visit.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.black54, height: 1.4),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RegisterScreen(
+                          initialEmail: _email.text.trim(),
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Create an account'),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.pushNamed(context, AppRoutes.forgotPassword);
+                  },
+                  child: const Text('I have an account - reset password'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AuthLayout(
-      title: 'Welcome back!',
-      subtitle: 'Sign in to order your Burger House favourites.',
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return AuthLoadingOverlay(
+      loading: _isLoading,
+      message: 'Signing you in...',
+      child: AuthLayout(
+        title: 'Welcome back!',
+        subtitle: 'Sign in to order your Burger House favourites.',
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
@@ -105,7 +196,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
