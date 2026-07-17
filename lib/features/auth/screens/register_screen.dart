@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/auth_layout.dart';
+import '../../home/screens/home_screen.dart';
 import '../services/auth_service.dart';
+import '../widgets/auth_loading_overlay.dart';
 import '../widgets/password_field.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({this.initialEmail = '', super.key});
+
+  final String initialEmail;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -20,6 +23,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _password = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _email.text = widget.initialEmail;
+  }
 
   @override
   void dispose() {
@@ -42,16 +51,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _password.text,
       );
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
+      Navigator.pushAndRemoveUntil(
         context,
-        AppRoutes.home,
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            showNewAccountWelcome: true,
+            welcomeName: _name.text.trim(),
+          ),
+        ),
         (route) => false,
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(friendlyAuthError(error))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(friendlyAuthError(error)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -59,13 +76,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthLayout(
-      title: 'Create account',
-      subtitle: 'Join Burger House and get your first order started.',
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
+    return AuthLoadingOverlay(
+      loading: _isLoading,
+      message: 'Creating your account...',
+      child: AuthLayout(
+        title: 'Create account',
+        subtitle: 'Join Burger House and get your first order started.',
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
             TextFormField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
@@ -119,7 +139,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               onPressed: _isLoading ? null : () => Navigator.pop(context),
               child: const Text('Already have an account? Sign in'),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
