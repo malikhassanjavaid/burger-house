@@ -14,11 +14,19 @@ class CheckoutScreen extends StatefulWidget {
     required this.items,
     required this.initialAddress,
     required this.deliveryFee,
+    this.initialDeliveryNotes = '',
+    this.serviceFee = 0,
+    this.discount = 0,
+    this.couponCode,
   });
 
   final List<CartItem> items;
   final String initialAddress;
   final double deliveryFee;
+  final String initialDeliveryNotes;
+  final double serviceFee;
+  final double discount;
+  final String? couponCode;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -37,7 +45,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   double get _subtotal =>
       widget.items.fold(0, (total, item) => total + item.totalPrice);
-  double get _total => _subtotal + widget.deliveryFee;
+  double get _total =>
+      _subtotal + widget.deliveryFee + widget.serviceFee - widget.discount;
 
   @override
   void initState() {
@@ -45,6 +54,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final user = FirebaseAuth.instance.currentUser;
     _nameController.text = user?.displayName ?? '';
     _addressController.text = widget.initialAddress;
+    _notesController.text = widget.initialDeliveryNotes;
   }
 
   @override
@@ -98,6 +108,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'status': 'placed',
         'subtotal': _subtotal,
         'deliveryFee': widget.deliveryFee,
+        'serviceFee': widget.serviceFee,
+        'discount': widget.discount,
+        'couponCode': widget.couponCode,
         'total': _total,
         'items': widget.items
             .map(
@@ -248,6 +261,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       items: widget.items,
                       subtotal: _subtotal,
                       deliveryFee: widget.deliveryFee,
+                      serviceFee: widget.serviceFee,
+                      discount: widget.discount,
                       total: _total,
                     ),
                   ],
@@ -506,11 +521,15 @@ class _CheckoutSummary extends StatelessWidget {
     required this.items,
     required this.subtotal,
     required this.deliveryFee,
+    required this.serviceFee,
+    required this.discount,
     required this.total,
   });
   final List<CartItem> items;
   final double subtotal;
   final double deliveryFee;
+  final double serviceFee;
+  final double discount;
   final double total;
 
   @override
@@ -555,6 +574,14 @@ class _CheckoutSummary extends StatelessWidget {
           _SummaryRow(label: 'Subtotal', value: subtotal),
           const SizedBox(height: 9),
           _SummaryRow(label: 'Delivery fee', value: deliveryFee),
+          if (serviceFee > 0) ...[
+            const SizedBox(height: 9),
+            _SummaryRow(label: 'Service fee', value: serviceFee),
+          ],
+          if (discount > 0) ...[
+            const SizedBox(height: 9),
+            _SummaryRow(label: 'Coupon discount', value: -discount),
+          ],
           const Divider(height: 24),
           _SummaryRow(label: 'Total', value: total, emphasized: true),
         ],
@@ -587,9 +614,13 @@ class _SummaryRow extends StatelessWidget {
           ),
         ),
         Text(
-          formatUsd(value),
+          value < 0 ? '− ${formatUsd(value.abs())}' : formatUsd(value),
           style: TextStyle(
-            color: emphasized ? AppColors.orange : AppColors.dark,
+            color: value < 0
+                ? const Color(0xFF58A72E)
+                : emphasized
+                ? AppColors.orange
+                : AppColors.dark,
             fontSize: emphasized ? 18 : 14,
             fontWeight: FontWeight.w900,
           ),
