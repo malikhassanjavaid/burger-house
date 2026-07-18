@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,8 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../auth/services/auth_service.dart';
+import '../../location/models/delivery_location.dart';
+import '../../location/screens/location_setup_screen.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
@@ -33,12 +37,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<CartItem> _cartItems = [];
   String _searchText = '';
   String _selectedCategory = 'Burgers';
-  final String _address = 'House 24, Main Boulevard';
+  DeliveryLocation? _deliveryLocation;
+  String _address = 'Set your delivery address';
   int _selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
+    _loadDeliveryLocation();
     if (widget.showNewAccountWelcome) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -49,9 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
           barrierLabel: 'Welcome to BurgerHouse',
           barrierColor: Colors.black.withValues(alpha: .58),
           transitionDuration: const Duration(milliseconds: 380),
-          pageBuilder: (_, _, _) => _NewCustomerWelcomeDialog(
-            firstName: firstName,
-          ),
+          pageBuilder: (_, _, _) =>
+              _NewCustomerWelcomeDialog(firstName: firstName),
           transitionBuilder: (_, animation, _, child) {
             final curved = CurvedAnimation(
               parent: animation,
@@ -66,6 +71,39 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       });
     }
+  }
+
+  Future<void> _loadDeliveryLocation() async {
+    try {
+      final location = await _authService.getDeliveryLocation();
+      if (!mounted || location == null) return;
+      setState(() {
+        _deliveryLocation = location;
+        _address = location.formattedAddress;
+      });
+    } catch (_) {
+      // The home screen remains usable if the saved address cannot be loaded.
+    }
+  }
+
+  Future<void> _editDeliveryLocation() async {
+    final location = await Navigator.push<DeliveryLocation>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LocationSetupScreen(initialLocation: _deliveryLocation),
+      ),
+    );
+    if (!mounted || location == null) return;
+    setState(() {
+      _deliveryLocation = location;
+      _address = location.formattedAddress;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Delivery location updated'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   int get _cartCount =>
@@ -196,7 +234,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onAdd: _addQuickItem,
         onBrowse: () => setState(() => _selectedTab = 0),
       ),
-      4: _AccountTab(onSignOut: _signOut),
+      4: _AccountTab(
+        onSignOut: _signOut,
+        deliveryAddress: _address,
+        onEditAddress: _editDeliveryLocation,
+      ),
     };
 
     return Scaffold(
@@ -378,7 +420,7 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final featuredPizza = sampleMenu.firstWhere(
-      (item) => item.id == 'cheese-pizza',
+      (item) => item.id == 'superduper-pizza',
     );
     final bestSellers = [
       featuredPizza,
@@ -442,23 +484,10 @@ class _HomeTab extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                SizedBox(
-                  height: 222,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.none,
-                    itemCount: bestSellers.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 54),
-                    itemBuilder: (_, index) {
-                      final item = bestSellers[index];
-                      return _BestSellerCard(
-                        item: item,
-                        index: index,
-                        onTap: () => onOpenItem(item),
-                        onAdd: () => onAdd(item),
-                      );
-                    },
-                  ),
+                _BestSellerCarousel(
+                  items: bestSellers,
+                  onOpenItem: onOpenItem,
+                  onAdd: onAdd,
                 ),
                 const SizedBox(height: 18),
               ],
@@ -558,6 +587,94 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
+class _BestSellerCarousel extends StatefulWidget {
+  const _BestSellerCarousel({
+    required this.items,
+    required this.onOpenItem,
+    required this.onAdd,
+  });
+
+  final List<MenuItem> items;
+  final ValueChanged<MenuItem> onOpenItem;
+  final ValueChanged<MenuItem> onAdd;
+
+  @override
+  State<_BestSellerCarousel> createState() => _BestSellerCarouselState();
+}
+
+class _BestSellerCarouselState extends State<_BestSellerCarousel> {
+  static const _startingPage = 900;
+  late final PageController _controller;
+  Timer? _timer;
+  int _page = _startingPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(
+      initialPage: _startingPage,
+      viewportFraction: .82,
+    );
+    _startAutoSlide();
+  }
+
+  void _startAutoSlide() {
+    _timer?.cancel();
+    if (widget.items.length < 2) return;
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!_controller.hasClients) return;
+      _controller.animateToPage(
+        _page + 1,
+        duration: const Duration(milliseconds: 1100),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _BestSellerCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.items.length != widget.items.length) _startAutoSlide();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.items.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 222,
+      child: PageView.builder(
+        controller: _controller,
+        clipBehavior: Clip.none,
+        padEnds: false,
+        onPageChanged: (page) => _page = page,
+        itemBuilder: (_, page) {
+          final index = page % widget.items.length;
+          final item = widget.items[index];
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 28),
+              child: _BestSellerCard(
+                item: item,
+                index: index,
+                onTap: () => widget.onOpenItem(item),
+                onAdd: () => widget.onAdd(item),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _BestSellerCard extends StatelessWidget {
   const _BestSellerCard({
     required this.item,
@@ -582,7 +699,7 @@ class _BestSellerCard extends StatelessWidget {
     final gradient = _gradients[index % _gradients.length];
     final darkText = index != 1;
     final foreground = darkText ? AppColors.dark : Colors.white;
-    final isFeaturedPizza = item.id == 'cheese-pizza';
+    final isFeaturedPizza = item.id == 'superduper-pizza';
 
     return Material(
       color: Colors.transparent,
@@ -623,8 +740,8 @@ class _BestSellerCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                right: isFeaturedPizza ? -58 : -34,
-                top: isFeaturedPizza ? 47 : 49,
+                right: isFeaturedPizza ? -38 : -34,
+                top: isFeaturedPizza ? 51 : 49,
                 child: Transform.rotate(
                   angle: isFeaturedPizza ? -.11 : -.04,
                   child: DecoratedBox(
@@ -639,8 +756,11 @@ class _BestSellerCard extends StatelessWidget {
                     ),
                     child: _FoodArtwork(
                       item: item,
-                      width: isFeaturedPizza ? 158 : 145,
-                      height: isFeaturedPizza ? 158 : 145,
+                      assetPath: isFeaturedPizza
+                          ? 'assets/images/superduper_pizza_promo-cutout.png'
+                          : null,
+                      width: isFeaturedPizza ? 150 : 145,
+                      height: isFeaturedPizza ? 150 : 145,
                     ),
                   ),
                 ),
@@ -788,10 +908,7 @@ class _HomeCategory extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFE9E9E9),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFFE9E9E9), width: 1),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x0F000000),
@@ -968,23 +1085,24 @@ class _FoodArtwork extends StatelessWidget {
     required this.item,
     required this.width,
     required this.height,
+    this.assetPath,
   });
 
   final MenuItem item;
   final double width;
   final double height;
+  final String? assetPath;
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      item.displayAssetPath,
+      assetPath ?? item.displayAssetPath,
       width: width,
       height: height,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
-      errorBuilder: (_, _, _) => Center(
-        child: Text(item.emoji, style: const TextStyle(fontSize: 62)),
-      ),
+      errorBuilder: (_, _, _) =>
+          Center(child: Text(item.emoji, style: const TextStyle(fontSize: 62))),
     );
   }
 }
@@ -1322,8 +1440,14 @@ class _PremiumFoodCard extends StatelessWidget {
 }
 
 class _AccountTab extends StatelessWidget {
-  const _AccountTab({required this.onSignOut});
+  const _AccountTab({
+    required this.onSignOut,
+    required this.deliveryAddress,
+    required this.onEditAddress,
+  });
   final VoidCallback onSignOut;
+  final String deliveryAddress;
+  final VoidCallback onEditAddress;
 
   @override
   Widget build(BuildContext context) {
@@ -1370,8 +1494,8 @@ class _AccountTab extends StatelessWidget {
         _AccountTile(
           icon: Icons.location_on_outlined,
           title: 'Delivery addresses',
-          subtitle: 'Manage your saved locations',
-          onTap: () {},
+          subtitle: deliveryAddress,
+          onTap: onEditAddress,
         ),
         _AccountTile(
           icon: Icons.support_agent_outlined,
