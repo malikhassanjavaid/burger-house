@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../location/models/delivery_location.dart';
+
 class AuthService {
   AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
     : _auth = auth ?? FirebaseAuth.instance,
@@ -57,6 +59,30 @@ class AuthService {
 
   Future<void> sendPasswordResetEmail(String email) {
     return _auth.sendPasswordResetEmail(email: email.trim());
+  }
+
+  Future<void> saveDeliveryLocation(DeliveryLocation location) async {
+    final user = currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'Please sign in before saving a delivery location.',
+      );
+    }
+    await _firestore.collection('users').doc(user.uid).update({
+      'deliveryAddress': location.toMap(),
+      'addressUpdatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<DeliveryLocation?> getDeliveryLocation() async {
+    final user = currentUser;
+    if (user == null) return null;
+    final snapshot = await _firestore.collection('users').doc(user.uid).get();
+    final data = snapshot.data();
+    final address = data?['deliveryAddress'];
+    if (address is! Map) return null;
+    return DeliveryLocation.fromMap(Map<String, dynamic>.from(address));
   }
 
   Future<void> signOut() => _auth.signOut();

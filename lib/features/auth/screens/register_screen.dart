@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/auth_layout.dart';
 import '../../home/screens/home_screen.dart';
+import '../../location/screens/location_setup_screen.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_loading_overlay.dart';
 import '../widgets/password_field.dart';
@@ -51,12 +52,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _password.text,
       );
       if (!mounted) return;
+      final customerName = _name.text.trim();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (_) => HomeScreen(
-            showNewAccountWelcome: true,
-            welcomeName: _name.text.trim(),
+          builder: (_) => LocationSetupScreen(
+            firstTime: true,
+            destinationAfterSave: HomeScreen(
+              showNewAccountWelcome: true,
+              welcomeName: customerName,
+            ),
           ),
         ),
         (route) => false,
@@ -86,59 +91,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
           key: _formKey,
           child: Column(
             children: [
-            TextFormField(
-              controller: _name,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Full name',
-                prefixIcon: Icon(Icons.person_outline),
+              TextFormField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Full name',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+                validator: (v) =>
+                    (v ?? '').trim().isEmpty ? 'Enter your name' : null,
               ),
-              validator: (v) =>
-                  (v ?? '').trim().isEmpty ? 'Enter your name' : null,
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email address',
-                prefixIcon: Icon(Icons.email_outlined),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email address',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+                validator: (v) =>
+                    !(v ?? '').contains('@') ? 'Enter a valid email' : null,
               ),
-              validator: (v) =>
-                  !(v ?? '').contains('@') ? 'Enter a valid email' : null,
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone number',
-                prefixIcon: Icon(Icons.phone_outlined),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone number',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+                validator: (v) =>
+                    (v ?? '').length < 7 ? 'Enter a valid phone number' : null,
               ),
-              validator: (v) =>
-                  (v ?? '').length < 7 ? 'Enter a valid phone number' : null,
-            ),
-            const SizedBox(height: 14),
-            PasswordField(controller: _password),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _register,
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Create account'),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: _isLoading ? null : () => Navigator.pop(context),
-              child: const Text('Already have an account? Sign in'),
-            ),
+              const SizedBox(height: 14),
+              PasswordField(controller: _password),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _register,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Create account'),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: _isLoading ? null : () => Navigator.pop(context),
+                child: const Text('Already have an account? Sign in'),
+              ),
             ],
           ),
         ),

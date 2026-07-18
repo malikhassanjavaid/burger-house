@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/auth_layout.dart';
+import '../../home/screens/home_screen.dart';
+import '../../location/screens/location_setup_screen.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_loading_overlay.dart';
 import '../widgets/password_field.dart';
@@ -35,6 +37,21 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _authService.signIn(email: _email.text, password: _password.text);
       if (!mounted) return;
+      final location = await _authService.getDeliveryLocation();
+      if (!mounted) return;
+      if (location == null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LocationSetupScreen(
+              firstTime: true,
+              destinationAfterSave: HomeScreen(),
+            ),
+          ),
+          (route) => false,
+        );
+        return;
+      }
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.home,
@@ -91,7 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               Text(
                 missing ? 'Account not found' : 'Could not sign you in',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -110,9 +130,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => RegisterScreen(
-                          initialEmail: _email.text.trim(),
-                        ),
+                        builder: (_) =>
+                            RegisterScreen(initialEmail: _email.text.trim()),
                       ),
                     );
                   },
@@ -149,53 +168,53 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email address',
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-              validator: (value) => !(value ?? '').contains('@')
-                  ? 'Enter a valid email address'
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            PasswordField(controller: _password),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.forgotPassword),
-                child: const Text('Forgot password?'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Sign in'),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Don't have an account?"),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRoutes.register),
-                  child: const Text('Register'),
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email address',
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
-              ],
-            ),
+                validator: (value) => !(value ?? '').contains('@')
+                    ? 'Enter a valid email address'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              PasswordField(controller: _password),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                  child: const Text('Forgot password?'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _login,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Sign in'),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account?"),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, AppRoutes.register),
+                    child: const Text('Register'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
