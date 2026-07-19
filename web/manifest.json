@@ -1,11 +1,11 @@
 {
-    "name": "flutter_application_1",
-    "short_name": "flutter_application_1",
+    "name": "Feast Station",
+    "short_name": "Feast Station",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFF8F8",
+    "theme_color": "#F23846",
+    "description": "Order fresh favorites from Feast Station.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
