@@ -408,7 +408,7 @@ class _LocationMap extends StatelessWidget {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.burgerhouse.customer',
+                  userAgentPackageName: 'com.feaststation.customer',
                 ),
                 if (point != null)
                   MarkerLayer(

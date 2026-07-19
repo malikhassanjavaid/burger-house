@@ -86,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       message: 'Creating your account...',
       child: AuthLayout(
         title: 'Create account',
-        subtitle: 'Join Burger House and get your first order started.',
+        subtitle: 'Join Feast Station and get your first order started.',
         child: Form(
           key: _formKey,
           child: Column(

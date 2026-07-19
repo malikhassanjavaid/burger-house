@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               Text(
                 missing
-                    ? 'There is no BurgerHouse account for ${_email.text.trim()}. Create one to start ordering.'
+                    ? 'There is no Feast Station account for ${_email.text.trim()}. Create one to start ordering.'
                     : 'Check your password if you already have an account, or create a new account if this is your first visit.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.black54, height: 1.4),
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
       message: 'Signing you in...',
       child: AuthLayout(
         title: 'Welcome back!',
-        subtitle: 'Sign in to order your Burger House favourites.',
+        subtitle: 'Sign in to order your Feast Station favourites.',
         child: Form(
           key: _formKey,
           child: Column(
