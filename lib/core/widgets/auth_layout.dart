@@ -26,7 +26,7 @@ class AuthLayout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const BurgerLogo(size: 70, showName: false),
+                  const FeastStationLogo(size: 112, showTagline: false),
                   const SizedBox(height: 30),
                   Text(
                     title,

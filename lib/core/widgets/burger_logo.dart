@@ -2,51 +2,34 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-class BurgerLogo extends StatelessWidget {
-  const BurgerLogo({super.key, this.size = 110, this.showName = true});
+class FeastStationLogo extends StatelessWidget {
+  const FeastStationLogo({super.key, this.size = 132, this.showTagline = true});
 
   final double size;
-  final bool showName;
+  final bool showTagline;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        SizedBox(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .08),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
+          child: Image.asset(
+            'assets/images/feast_station_logo.png',
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
-          alignment: Alignment.center,
-          child: Text('🍔', style: TextStyle(fontSize: size * .55)),
         ),
-        if (showName) ...[
-          const SizedBox(height: 20),
+        if (showTagline) ...[
+          const SizedBox(height: 12),
           const Text(
-            'BURGER HOUSE',
+            'Fresh flavor. Fast delivery.',
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.4,
-              color: AppColors.dark,
-            ),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'Fresh. Fast. Delicious.',
-            style: TextStyle(
-              color: AppColors.orange,
-              fontWeight: FontWeight.w600,
+              color: AppColors.red,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .2,
             ),
           ),
         ],
