@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
         showGeneralDialog<void>(
           context: context,
           barrierDismissible: false,
-          barrierLabel: 'Welcome to BurgerHouse',
+          barrierLabel: 'Welcome to Feast Station',
           barrierColor: Colors.black.withValues(alpha: .58),
           transitionDuration: const Duration(milliseconds: 380),
           pageBuilder: (_, _, _) =>
@@ -145,15 +145,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('${cartItem.menuItem.name} added to cart'),
-          action: SnackBarAction(label: 'VIEW', onPressed: _openCart),
-        ),
-      );
   }
 
   Future<void> _openDetails(MenuItem item) async {
@@ -339,7 +330,7 @@ class _NewCustomerWelcomeDialog extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(
                   firstName.isEmpty
-                      ? 'Welcome to BurgerHouse!'
+                      ? 'Welcome to Feast Station!'
                       : 'Welcome, $firstName!',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
@@ -1150,7 +1141,7 @@ class _SearchTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 const Text(
-                  'Find something delicious from BurgerHouse',
+                  'Find something delicious from Feast Station',
                   style: TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 20),
@@ -1225,7 +1216,7 @@ class _SearchPrompt extends StatelessWidget {
             Icon(Icons.search_rounded, size: 62, color: AppColors.muted),
             SizedBox(height: 12),
             Text(
-              'Search the BurgerHouse menu',
+              'Search the Feast Station menu',
               style: TextStyle(
                 color: AppColors.dark,
                 fontWeight: FontWeight.w800,
@@ -1480,7 +1471,7 @@ class _AccountTab extends StatelessWidget {
         ),
         const SizedBox(height: 15),
         Text(
-          user?.displayName ?? 'BurgerHouse Customer',
+          user?.displayName ?? 'Feast Station Customer',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
@@ -1506,7 +1497,7 @@ class _AccountTab extends StatelessWidget {
         _AccountTile(
           icon: Icons.logout_rounded,
           title: 'Sign out',
-          subtitle: 'Sign out of your BurgerHouse account',
+          subtitle: 'Sign out of your Feast Station account',
           onTap: onSignOut,
           destructive: true,
         ),
@@ -1562,7 +1553,7 @@ class _SavedTab extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Your BurgerHouse favourites',
+                  'Your Feast Station favourites',
                   style: TextStyle(color: AppColors.muted),
                 ),
               ],
