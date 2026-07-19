@@ -16,25 +16,34 @@ class MenuDetailsScreen extends StatefulWidget {
     super.key,
     required this.item,
     required this.onAddToCart,
+    this.initialCartItem,
   });
 
   final MenuItem item;
   final ValueChanged<CartItem> onAddToCart;
+  final CartItem? initialCartItem;
 
   @override
   State<MenuDetailsScreen> createState() => _MenuDetailsScreenState();
 }
 
 class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
-  final int _quantity = 1;
+  late int _quantity;
   late String _size;
   late String _crust;
+  String _dealBurger = 'Classic Smash';
+  String _dealDrink = 'Classic Cola';
   final Set<String> _extras = {};
   final Set<String> _removedDefaults = {};
 
   Map<String, double> get _sizes => switch (widget.item.category) {
     'Pizzas' => const {'Small': 0, 'Medium': 4, 'Large': 7},
-    'Drinks' => const {'Small': 0, 'Medium': 1, 'Large': 2},
+    'Burgers' => const {'Single': 0, 'Double': 2.5, 'Triple': 4.5},
+    'Wraps' => const {'8 Inches': 0, '12 Inches': 3},
+    'Chicken' => const {'4 Pieces': 0, '8 Pieces': 3.5, '12 Pieces': 6.5},
+    'Sides' => const {'Regular': 0, 'Large': 1.5},
+    'Drinks' => const {'Regular': 0, 'Large': 1.5},
+    'Deals' => const {'Meal Deal': 0},
     _ => const {'Regular': 0, 'Large': 1.5},
   };
 
@@ -50,11 +59,15 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
       'Sliced Jalapeños': 1,
       'Green Capsicum': 0,
     },
-    'Burgers' || 'Wraps' => const {
+    'Burgers' => const {
+      'Cheese Slice': 0,
+      'Fresh Tomatoes': 0,
+      'Crisp Lettuce': 0,
+    },
+    'Wraps' => const {
       'Fresh Cut Onions': 0,
       'Cheddar Cheese': 0,
       'Jalapenos': .75,
-      'Extra Patty': 2.5,
     },
     _ => const {'Extra serving': 1, 'Fresh herbs': .5},
   };
@@ -70,10 +83,31 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _size = widget.item.category == 'Pizzas' && _sizes.containsKey('Medium')
+    final initial = widget.initialCartItem;
+    _quantity = initial?.quantity ?? 1;
+    final defaultSize =
+        widget.item.category == 'Pizzas' && _sizes.containsKey('Medium')
         ? 'Medium'
         : _sizes.keys.first;
+    _size = initial != null && _sizes.containsKey(initial.size)
+        ? initial.size
+        : defaultSize;
     _crust = _crusts.keys.first;
+    if (initial != null) {
+      for (final addOn in initial.addOns) {
+        if (addOn.endsWith(' crust')) {
+          final crust = addOn.substring(0, addOn.length - 6);
+          if (_crusts.containsKey(crust)) _crust = crust;
+        }
+        if (_toppings.containsKey(addOn)) _extras.add(addOn);
+        if (addOn.startsWith('Burger: ')) {
+          _dealBurger = addOn.substring('Burger: '.length);
+        }
+        if (addOn.startsWith('Drink: ')) {
+          _dealDrink = addOn.substring('Drink: '.length);
+        }
+      }
+    }
   }
 
   void _addToCart() {
@@ -83,7 +117,29 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
         quantity: _quantity,
         unitPrice: _unitPrice,
         size: _size,
-        addOns: ['$_crust crust', ..._extras],
+        addOns: [
+          if (widget.item.category != 'Burgers' &&
+              widget.item.category != 'Wraps' &&
+              widget.item.category != 'Sides' &&
+              widget.item.category != 'Chicken' &&
+              widget.item.category != 'Drinks' &&
+              widget.item.category != 'Desserts' &&
+              widget.item.category != 'Deals')
+            '$_crust crust',
+          if (widget.item.category != 'Sides' &&
+              widget.item.category != 'Chicken' &&
+              widget.item.category != 'Wraps' &&
+              widget.item.category != 'Drinks' &&
+              widget.item.category != 'Desserts' &&
+              widget.item.category != 'Deals')
+            ..._extras,
+          if (widget.item.category == 'Deals')
+            ...(widget.item.id == 'family-box'
+                ? const ['4 Burgers', '2 Large Fries', '4 Chilled Drinks']
+                : const ['2 Burgers', '1 Large Fries', '2 Chilled Drinks']),
+          if (widget.item.category == 'Deals') 'Burger: $_dealBurger',
+          if (widget.item.category == 'Deals') 'Drink: $_dealDrink',
+        ],
       ),
     );
     Navigator.pop(context);
@@ -116,6 +172,9 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
             item: widget.item,
             quantity: _quantity,
             total: _unitPrice * _quantity,
+            buttonLabel: widget.initialCartItem == null
+                ? 'ADD TO CART'
+                : 'UPDATE ITEM',
             onAdd: _addToCart,
           ),
         ],
@@ -124,6 +183,76 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
   }
 
   Widget _buildCustomizationFlow() {
+    if (widget.item.category == 'Deals') {
+      return _DealContentsSection(
+        item: widget.item,
+        selectedBurger: _dealBurger,
+        selectedDrink: _dealDrink,
+        onBurgerSelected: (value) => setState(() => _dealBurger = value),
+        onDrinkSelected: (value) => setState(() => _dealDrink = value),
+      );
+    }
+
+    if (widget.item.category == 'Desserts') {
+      return const SizedBox(height: 18);
+    }
+
+    if (widget.item.category == 'Sides') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 25, 24, 28),
+        child: _PieceSection(
+          title: 'Choose Size',
+          entries: _sizes,
+          selected: _size,
+          basePrice: widget.item.price,
+          imagePath: widget.item.displayAssetPath,
+          onSelected: (value) => setState(() => _size = value),
+        ),
+      );
+    }
+
+    if (widget.item.category == 'Chicken') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 25, 24, 28),
+        child: _PieceSection(
+          title: 'Choose number of Pieces',
+          entries: _sizes,
+          selected: _size,
+          basePrice: widget.item.price,
+          imagePath: widget.item.displayAssetPath,
+          onSelected: (value) => setState(() => _size = value),
+        ),
+      );
+    }
+
+    if (widget.item.category == 'Wraps') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 25, 24, 28),
+        child: _PieceSection(
+          title: 'Choose Size',
+          entries: _sizes,
+          selected: _size,
+          basePrice: widget.item.price,
+          imagePath: widget.item.displayAssetPath,
+          onSelected: (value) => setState(() => _size = value),
+        ),
+      );
+    }
+
+    if (widget.item.category == 'Drinks') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 25, 24, 28),
+        child: _PieceSection(
+          title: 'Choose Size',
+          entries: _sizes,
+          selected: _size,
+          basePrice: widget.item.price,
+          imagePath: widget.item.displayAssetPath,
+          onSelected: (value) => setState(() => _size = value),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 25, 24, 18),
       child: Column(
@@ -134,17 +263,22 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
             selected: _size,
             basePrice: widget.item.price,
             pizzaStyle: widget.item.category == 'Pizzas',
+            burgerStyle: widget.item.category == 'Burgers',
             onSelected: (value) => setState(() => _size = value),
           ),
-          const SizedBox(height: 38),
-          _CrustSection(
-            entries: _crusts,
-            selected: _crust,
-            onSelected: (value) => setState(() => _crust = value),
-          ),
+          if (widget.item.category != 'Burgers') ...[
+            const SizedBox(height: 38),
+            _CrustSection(
+              entries: _crusts,
+              selected: _crust,
+              onSelected: (value) => setState(() => _crust = value),
+            ),
+          ],
           const SizedBox(height: 38),
           _ExtrasSection(
-            title: 'Choose Toppings',
+            title: widget.item.category == 'Burgers'
+                ? 'Choose Ingredients'
+                : 'Choose Toppings',
             entries: _toppings,
             selected: _extras,
             removedDefaults: _removedDefaults,
@@ -167,6 +301,551 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
       if (!_removedDefaults.add(value)) _removedDefaults.remove(value);
     });
   }
+}
+
+class _DealContentsSection extends StatelessWidget {
+  const _DealContentsSection({
+    required this.item,
+    required this.selectedBurger,
+    required this.selectedDrink,
+    required this.onBurgerSelected,
+    required this.onDrinkSelected,
+  });
+
+  final MenuItem item;
+  final String selectedBurger;
+  final String selectedDrink;
+  final ValueChanged<String> onBurgerSelected;
+  final ValueChanged<String> onDrinkSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final familyDeal = item.id == 'family-box';
+    final parts = familyDeal
+        ? const [
+            _DealPart(
+              name: 'Signature Burgers',
+              detail: 'Freshly prepared house favourites',
+              quantity: 4,
+              image: 'assets/images/beefburger-cutout.png',
+            ),
+            _DealPart(
+              name: 'Large Fries',
+              detail: 'Golden, crispy and lightly seasoned',
+              quantity: 2,
+              image: 'assets/images/fries-cutout.png',
+            ),
+            _DealPart(
+              name: 'Chilled Drinks',
+              detail: 'Ice-cold drinks to complete the feast',
+              quantity: 4,
+              image: 'assets/images/coke-cutout.png',
+            ),
+          ]
+        : const [
+            _DealPart(
+              name: 'Premium Burgers',
+              detail: 'Two juicy Feast Station favourites',
+              quantity: 2,
+              image: 'assets/images/beefburger-cutout.png',
+            ),
+            _DealPart(
+              name: 'Large Fries',
+              detail: 'One generous serving of crispy fries',
+              quantity: 1,
+              image: 'assets/images/fries-cutout.png',
+            ),
+            _DealPart(
+              name: 'Chilled Drinks',
+              detail: 'Two refreshing ice-cold drinks',
+              quantity: 2,
+              image: 'assets/images/coke-cutout.png',
+            ),
+          ];
+    final saving = (item.oldPrice ?? item.price) - item.price;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E6E9)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x100C3955),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _ink,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.restaurant_menu_rounded,
+                    color: Colors.white,
+                    size: 25,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'COMPLETE MEAL',
+                        style: TextStyle(
+                          color: _softText,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        familyDeal
+                            ? 'A feast made for sharing'
+                            : 'The perfect meal for two',
+                        style: const TextStyle(
+                          color: _ink,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (saving > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF8EF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Save\n${formatUsd(saving)}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF247A42),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          _DealChoiceSelector(
+            title: 'Choose your burger',
+            subtitle: familyDeal
+                ? 'Your choice applies to all 4 burgers.'
+                : 'Your choice applies to both burgers.',
+            choices: const [
+              _DealChoice(
+                name: 'Classic Smash',
+                image: 'assets/images/beefburger-cutout.png',
+              ),
+              _DealChoice(
+                name: 'Firehouse',
+                image: 'assets/images/firehouse_burger-cutout.png',
+              ),
+              _DealChoice(
+                name: 'Crispy Chicken',
+                image: 'assets/images/chicken_burger-cutout.png',
+              ),
+            ],
+            selected: selectedBurger,
+            onSelected: onBurgerSelected,
+          ),
+          const SizedBox(height: 24),
+          _DealChoiceSelector(
+            title: 'Choose your drink',
+            subtitle: familyDeal
+                ? 'Your flavor applies to all 4 drinks.'
+                : 'Your flavor applies to both drinks.',
+            choices: const [
+              _DealChoice(
+                name: 'Classic Cola',
+                image: 'assets/images/coke-cutout.png',
+              ),
+              _DealChoice(
+                name: 'Lemon-Lime',
+                image: 'assets/images/sprite-cutout.png',
+              ),
+            ],
+            selected: selectedDrink,
+            onSelected: onDrinkSelected,
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            "What's inside your meal",
+            style: TextStyle(
+              color: _ink,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Everything below is included in this deal.',
+            style: TextStyle(color: _softText, fontSize: 12),
+          ),
+          const SizedBox(height: 16),
+          ...parts.map(
+            (part) => Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5EBEF)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x100C3955),
+                    blurRadius: 14,
+                    offset: Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7F1),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Image.asset(
+                      part.image,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          part.name,
+                          style: const TextStyle(
+                            color: _ink,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          part.detail,
+                          style: const TextStyle(
+                            color: _softText,
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF0),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'x${part.quantity}',
+                      style: const TextStyle(
+                        color: _accentRed,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DealPart {
+  const _DealPart({
+    required this.name,
+    required this.detail,
+    required this.quantity,
+    required this.image,
+  });
+
+  final String name;
+  final String detail;
+  final int quantity;
+  final String image;
+}
+
+class _DealChoiceSelector extends StatelessWidget {
+  const _DealChoiceSelector({
+    required this.title,
+    required this.subtitle,
+    required this.choices,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<_DealChoice> choices;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(
+          color: _ink,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(subtitle, style: const TextStyle(color: _softText, fontSize: 11)),
+      const SizedBox(height: 13),
+      SizedBox(
+        height: 142,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: choices.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 10),
+          itemBuilder: (context, index) {
+            final choice = choices[index];
+            final active = choice.name == selected;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onSelected(choice.name),
+                borderRadius: BorderRadius.circular(15),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 118,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: active ? _accentRed : const Color(0xFFE4E8EB),
+                      width: active ? 1.6 : 1,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0E0C3955),
+                        blurRadius: 11,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF7F1),
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: Image.asset(
+                                choice.image,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            choice.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _ink,
+                              fontSize: 11,
+                              height: 1.15,
+                              fontWeight: active
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (active)
+                        const Positioned(
+                          top: 1,
+                          right: 1,
+                          child: CircleAvatar(
+                            radius: 9,
+                            backgroundColor: _accentRed,
+                            child: Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
+
+class _DealChoice {
+  const _DealChoice({required this.name, required this.image});
+
+  final String name;
+  final String image;
+}
+
+class _PieceSection extends StatelessWidget {
+  const _PieceSection({
+    required this.title,
+    required this.entries,
+    required this.selected,
+    required this.basePrice,
+    required this.imagePath,
+    required this.onSelected,
+  });
+
+  final String title;
+  final Map<String, double> entries;
+  final String selected;
+  final double basePrice;
+  final String imagePath;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _SectionTitle(title),
+      const SizedBox(height: 20),
+      ...entries.entries.map((entry) {
+        final active = entry.key == selected;
+        final isDefault = entry.key == entries.keys.first;
+        return InkWell(
+          onTap: () => onSelected(entry.key),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: Container(
+                    width: 76,
+                    height: 76,
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(5),
+                    child: Image.asset(
+                      imagePath,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.key,
+                        style: const TextStyle(
+                          color: _ink,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        formatUsd(basePrice + entry.value),
+                        style: const TextStyle(
+                          color: _ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isDefault) ...[
+                        const SizedBox(height: 7),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _accentGold,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Text(
+                            'DEFAULT',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  active ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: active ? _accentRed : _softText,
+                  size: 28,
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    ],
+  );
 }
 
 class _ProductHero extends StatelessWidget {
@@ -317,12 +996,14 @@ class _SizeSection extends StatelessWidget {
     required this.selected,
     required this.basePrice,
     required this.pizzaStyle,
+    required this.burgerStyle,
     required this.onSelected,
   });
   final Map<String, double> entries;
   final String selected;
   final double basePrice;
   final bool pizzaStyle;
+  final bool burgerStyle;
   final ValueChanged<String> onSelected;
 
   @override
@@ -330,7 +1011,7 @@ class _SizeSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle('Choose Size'),
+        _SectionTitle(burgerStyle ? 'Choose Patty' : 'Choose Size'),
         const SizedBox(height: 26),
         Row(
           children: entries.entries.map((entry) {
@@ -346,7 +1027,7 @@ class _SizeSection extends StatelessWidget {
                   onTap: () => onSelected(entry.key),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    height: 192,
+                    height: 202,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -381,8 +1062,8 @@ class _SizeSection extends StatelessWidget {
                         ),
                         const Spacer(),
                         SizedBox(
-                          width: 58,
-                          height: 58,
+                          width: burgerStyle ? 74 : 58,
+                          height: burgerStyle ? 68 : 58,
                           child: pizzaStyle
                               ? Image.asset(
                                   switch (index) {
@@ -392,6 +1073,16 @@ class _SizeSection extends StatelessWidget {
                                       'assets/images/pizza_size_6-cutout.png',
                                     _ =>
                                       'assets/images/pizza_size_8-cutout.png',
+                                  },
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                )
+                              : burgerStyle
+                              ? Image.asset(
+                                  switch (index) {
+                                    0 => 'assets/images/patty_single.png',
+                                    1 => 'assets/images/patty_double.png',
+                                    _ => 'assets/images/patty_triple.png',
                                   },
                                   fit: BoxFit.contain,
                                   filterQuality: FilterQuality.high,
@@ -418,6 +1109,8 @@ class _SizeSection extends StatelessWidget {
                                   1 => 6,
                                   _ => 8,
                                 }} Pieces)'
+                              : burgerStyle
+                              ? '(${index + 1} ${index == 0 ? 'Patty' : 'Patties'})'
                               : '(Serves ${index + 1})',
                           style: const TextStyle(
                             color: _accentRed,
@@ -558,6 +1251,15 @@ class _ExtrasSection extends StatelessWidget {
 
   static String _extraImage(String name) {
     final value = name.toLowerCase();
+    if (value.contains('cheese slice')) {
+      return 'assets/images/burger_cheese_slice.jpg';
+    }
+    if (value.contains('tomato')) {
+      return 'assets/images/burger_tomatoes.jpg';
+    }
+    if (value.contains('lettuce')) {
+      return 'assets/images/burger_lettuce.jpg';
+    }
     if (value.contains('mushroom')) {
       return 'assets/images/topping_mushrooms.jpg';
     }
@@ -591,6 +1293,9 @@ class _ExtrasSection extends StatelessWidget {
       'Red Onion' => 'Crisp red onion rings with a mild, sweet flavour',
       'Sliced Jalapeños' => 'Tangy jalapeño slices with a spicy kick',
       'Green Capsicum' => 'Fresh green capsicum with a light crunch',
+      'Cheese Slice' => 'Smooth cheddar-style cheese for a creamy finish',
+      'Fresh Tomatoes' => 'Juicy tomato slices prepared fresh for your burger',
+      'Crisp Lettuce' => 'Fresh, crunchy lettuce for a lighter bite',
       'Cheddar Cheese' => 'A rich layer of melted cheddar cheese',
       'Extra Patty' => 'An extra juicy, flame-grilled patty',
       _ => 'Freshly prepared to customize your meal',
@@ -743,11 +1448,13 @@ class _ProductBottomBar extends StatelessWidget {
     required this.quantity,
     required this.total,
     required this.onAdd,
+    this.buttonLabel = 'ADD TO CART',
   });
   final MenuItem item;
   final int quantity;
   final double total;
   final VoidCallback onAdd;
+  final String buttonLabel;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -817,9 +1524,12 @@ class _ProductBottomBar extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.shopping_bag_outlined, size: 17),
-              label: const Text(
-                'ADD TO CART',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              label: Text(
+                buttonLabel,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
