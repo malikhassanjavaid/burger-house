@@ -9,13 +9,13 @@ import 'features/home/screens/home_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/splash/screens/splash_screen.dart';
 
-class BurgerHouseApp extends StatelessWidget {
-  const BurgerHouseApp({super.key});
+class FeastStationApp extends StatelessWidget {
+  const FeastStationApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Burger House',
+      title: 'Feast Station',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,

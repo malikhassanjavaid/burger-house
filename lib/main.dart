@@ -21,5 +21,5 @@ Future<void> main() async {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const BurgerHouseApp());
+  runApp(const FeastStationApp());
 }

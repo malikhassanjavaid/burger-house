@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const orange = Color(0xFFFF6B00);
-  static const dark = Color(0xFF211A16);
-  static const cream = Color(0xFFFFF8F1);
-  static const muted = Color(0xFF756A64);
+  static const red = Color(0xFFF23846);
+  static const redDark = Color(0xFFC9152A);
+  static const blush = Color(0xFFFFE9EC);
+  static const dark = Color(0xFF171315);
+  static const cream = Color(0xFFFFF8F8);
+  static const muted = Color(0xFF746A6D);
+
+  // Compatibility alias for existing screens while the visual system uses red.
+  static const orange = red;
 }
 
 abstract final class AppTheme {
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.orange,
-      primary: AppColors.orange,
+      seedColor: AppColors.red,
+      primary: AppColors.red,
       surface: AppColors.cream,
     );
 
@@ -52,7 +57,7 @@ abstract final class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(56),
-          backgroundColor: AppColors.orange,
+          backgroundColor: AppColors.red,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
