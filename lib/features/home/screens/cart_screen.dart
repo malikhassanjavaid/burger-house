@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/currency.dart';
@@ -5,6 +7,7 @@ import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 import 'checkout_screen.dart';
+import 'menu_details_screen.dart';
 
 const _cartBg = Color(0xFFF4FAFE);
 const _cartRed = Color(0xFFF23845);
@@ -32,9 +35,8 @@ class _CartScreenState extends State<CartScreen> {
   static const _minimumOrder = 5.0;
   static const _deliveryFee = 1.5;
   late List<CartItem> _items;
+  late List<MenuItem> _recommendations;
   String _deliveryNotes = '';
-  bool _noKetchup = true;
-  bool _noCutlery = true;
   String? _couponCode;
 
   double get _subtotal => _items.fold(0, (sum, item) => sum + item.totalPrice);
@@ -45,17 +47,31 @@ class _CartScreenState extends State<CartScreen> {
   bool get _meetsMinimum => _subtotal >= _minimumOrder;
   int get _itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
 
-  MenuItem get _recommended => sampleMenu.firstWhere(
-    (item) =>
-        item.category == 'Sides' &&
-        !_items.any((cart) => cart.menuItem.id == item.id),
-    orElse: () => sampleMenu.firstWhere((item) => item.category == 'Drinks'),
-  );
-
   @override
   void initState() {
     super.initState();
     _items = List.of(widget.items);
+    _refreshRecommendations();
+  }
+
+  void _refreshRecommendations() {
+    final random = Random();
+    final categories = <String>['Sides', 'Drinks', 'Chicken']..shuffle(random);
+    final selected = <MenuItem>[];
+    for (final category in categories) {
+      final choices =
+          sampleMenu
+              .where(
+                (item) =>
+                    item.category == category &&
+                    !_items.any((cart) => cart.menuItem.id == item.id),
+              )
+              .toList()
+            ..shuffle(random);
+      if (choices.isNotEmpty) selected.add(choices.first);
+      if (selected.length == 2) break;
+    }
+    _recommendations = selected;
   }
 
   void _notifyHome() => widget.onCartChanged(List.of(_items));
@@ -72,7 +88,10 @@ class _CartScreenState extends State<CartScreen> {
 
   void _removeItem(int index) {
     final removed = _items[index];
-    setState(() => _items.removeAt(index));
+    setState(() {
+      _items.removeAt(index);
+      _refreshRecommendations();
+    });
     _notifyHome();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -81,7 +100,10 @@ class _CartScreenState extends State<CartScreen> {
         action: SnackBarAction(
           label: 'UNDO',
           onPressed: () {
-            setState(() => _items.insert(index, removed));
+            setState(() {
+              _items.insert(index, removed);
+              _refreshRecommendations();
+            });
             _notifyHome();
           },
         ),
@@ -89,14 +111,43 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void _addRecommendation() {
-    final item = _recommended;
-    setState(
-      () => _items.add(
-        CartItem(menuItem: item, quantity: 1, unitPrice: item.price),
+  void _addRecommendation(MenuItem item) {
+    setState(() {
+      _items.add(CartItem(menuItem: item, quantity: 1, unitPrice: item.price));
+      _refreshRecommendations();
+    });
+    _notifyHome();
+  }
+
+  Future<void> _showItemDetails(int index) async {
+    final item = _items[index];
+    final shouldEdit = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (sheetContext) => _CartItemDetailsSheet(item: item),
+    );
+    if (shouldEdit == true && mounted) await _editCartItem(index);
+  }
+
+  Future<void> _editCartItem(int index) async {
+    if (index >= _items.length) return;
+    final original = _items[index];
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MenuDetailsScreen(
+          item: original.menuItem,
+          initialCartItem: original,
+          onAddToCart: (updated) {
+            if (!mounted || index >= _items.length) return;
+            setState(() => _items[index] = updated);
+            _notifyHome();
+          },
+        ),
       ),
     );
-    _notifyHome();
   }
 
   Future<void> _editInstructions() async {
@@ -282,6 +333,7 @@ class _CartScreenState extends State<CartScreen> {
                             item: _items[index],
                             onRemove: () => _removeItem(index),
                             onIncrease: () => _changeQuantity(index, 1),
+                            onViewDetails: () => _showItemDetails(index),
                           ),
                         ),
                       ),
@@ -292,28 +344,36 @@ class _CartScreenState extends State<CartScreen> {
                             : _deliveryNotes,
                         onTap: _editInstructions,
                       ),
-                      const SizedBox(height: 13),
-                      _EcoCard(
-                        noKetchup: _noKetchup,
-                        noCutlery: _noCutlery,
-                        onKetchup: () =>
-                            setState(() => _noKetchup = !_noKetchup),
-                        onCutlery: () =>
-                            setState(() => _noCutlery = !_noCutlery),
-                      ),
                       const SizedBox(height: 28),
                       const Text(
                         'Complete Your Meal',
                         style: TextStyle(
                           color: _cartInk,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: 15),
-                      _RecommendationCard(
-                        item: _recommended,
-                        onAdd: _addRecommendation,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: List.generate(_recommendations.length, (
+                          index,
+                        ) {
+                          final item = _recommendations[index];
+                          return Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: index == _recommendations.length - 1
+                                    ? 0
+                                    : 10,
+                              ),
+                              child: _RecommendationCard(
+                                item: item,
+                                onAdd: () => _addRecommendation(item),
+                              ),
+                            ),
+                          );
+                        }),
                       ),
                       const SizedBox(height: 27),
                       _ActionCard(
@@ -377,7 +437,7 @@ class _CartHeader extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
     bottom: false,
     child: SizedBox(
-      height: 90,
+      height: 82,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Row(
@@ -401,22 +461,22 @@ class _CartHeader extends StatelessWidget {
               'Cart',
               style: TextStyle(
                 color: _cartInk,
-                fontSize: 23,
-                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(width: 9),
             Text(
               '($itemCount Item${itemCount == 1 ? '' : 's'})',
-              style: const TextStyle(color: _cartInk, fontSize: 14),
+              style: const TextStyle(color: _cartInk, fontSize: 12),
             ),
             const Spacer(),
             const Text(
               'EDIT',
               style: TextStyle(
                 color: _cartBlue,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -431,13 +491,15 @@ class _CartItemCard extends StatelessWidget {
     required this.item,
     required this.onRemove,
     required this.onIncrease,
+    required this.onViewDetails,
   });
   final CartItem item;
   final VoidCallback onRemove;
   final VoidCallback onIncrease;
+  final VoidCallback onViewDetails;
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(13),
@@ -453,8 +515,8 @@ class _CartItemCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 92,
-          height: 92,
+          width: 76,
+          height: 76,
           padding: const EdgeInsets.all(4),
           child: Image.asset(
             item.menuItem.displayAssetPath,
@@ -475,8 +537,8 @@ class _CartItemCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _cartInk,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -484,8 +546,8 @@ class _CartItemCard extends StatelessWidget {
                     formatUsd(item.totalPrice),
                     style: const TextStyle(
                       color: _cartInk,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -493,23 +555,34 @@ class _CartItemCard extends StatelessWidget {
               const SizedBox(height: 7),
               Text(
                 [item.size, ...item.addOns.take(1)].join(' | '),
-                style: const TextStyle(color: _cartInk, fontSize: 13),
+                style: const TextStyle(color: _cartInk, fontSize: 11),
               ),
-              const SizedBox(height: 21),
+              const SizedBox(height: 16),
               Row(
                 children: [
-                  const Text(
-                    'View Details',
-                    style: TextStyle(
-                      color: _cartBlue,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                  InkWell(
+                    onTap: onViewDetails,
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 5),
+                      child: Row(
+                        children: [
+                          Text(
+                            'View Details',
+                            style: TextStyle(
+                              color: _cartBlue,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Icon(
+                            Icons.keyboard_double_arrow_down_rounded,
+                            color: _cartBlue,
+                            size: 15,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.keyboard_double_arrow_down_rounded,
-                    color: _cartBlue,
-                    size: 19,
                   ),
                   const Spacer(),
                   _SquareButton(
@@ -518,12 +591,12 @@ class _CartItemCard extends StatelessWidget {
                     onTap: onRemove,
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 13),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       '${item.quantity}',
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -542,6 +615,178 @@ class _CartItemCard extends StatelessWidget {
   );
 }
 
+class _CartItemDetailsSheet extends StatelessWidget {
+  const _CartItemDetailsSheet({required this.item});
+
+  final CartItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final configuration = <String>[
+      if (item.size.trim().isNotEmpty) item.size,
+      ...item.addOns,
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 18),
+              decoration: const BoxDecoration(
+                color: _cartBg,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD2DBE1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    item.menuItem.name,
+                    style: const TextStyle(
+                      color: _cartInk,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    formatUsd(item.totalPrice),
+                    style: const TextStyle(
+                      color: _cartMuted,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (configuration.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: configuration
+                            .map(
+                              (value) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F7FB),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  value,
+                                  style: const TextStyle(
+                                    color: _cartInk,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 15),
+                    ],
+                    Text(
+                      item.menuItem.description,
+                      style: const TextStyle(
+                        color: Color(0xFF4F5660),
+                        fontSize: 13,
+                        height: 1.5,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+              decoration: const BoxDecoration(
+                color: _cartBg,
+                border: Border(top: BorderSide(color: Color(0xFFE3EBF0))),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _cartInk,
+                        backgroundColor: Colors.white,
+                        side: BorderSide.none,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _cartRed,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SquareButton extends StatelessWidget {
   const _SquareButton({
     required this.icon,
@@ -556,13 +801,13 @@ class _SquareButton extends StatelessWidget {
     onTap: onTap,
     borderRadius: BorderRadius.circular(10),
     child: Container(
-      width: 43,
-      height: 43,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: Colors.white),
+      child: Icon(icon, color: Colors.white, size: 20),
     ),
   );
 }
@@ -590,10 +835,10 @@ class _ActionCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(13),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 28),
+            Icon(icon, color: iconColor, size: 24),
             const SizedBox(width: 15),
             Expanded(
               child: Column(
@@ -605,7 +850,7 @@ class _ActionCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: subtitle == null ? _cartMuted : _cartInk,
-                      fontSize: subtitle == null ? 16 : 18,
+                      fontSize: subtitle == null ? 13 : 15,
                       fontWeight: subtitle == null
                           ? FontWeight.w500
                           : FontWeight.w800,
@@ -615,7 +860,7 @@ class _ActionCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle!,
-                      style: const TextStyle(color: _cartMuted, fontSize: 13),
+                      style: const TextStyle(color: _cartMuted, fontSize: 11),
                     ),
                   ],
                 ],
@@ -625,135 +870,10 @@ class _ActionCard extends StatelessWidget {
               const Icon(
                 Icons.arrow_forward_ios_rounded,
                 color: _cartInk,
-                size: 20,
+                size: 17,
               ),
           ],
         ),
-      ),
-    ),
-  );
-}
-
-class _EcoCard extends StatelessWidget {
-  const _EcoCard({
-    required this.noKetchup,
-    required this.noCutlery,
-    required this.onKetchup,
-    required this.onCutlery,
-  });
-  final bool noKetchup;
-  final bool noCutlery;
-  final VoidCallback onKetchup;
-  final VoidCallback onCutlery;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(13),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x160C3955),
-          blurRadius: 17,
-          offset: Offset(0, 8),
-        ),
-      ],
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(Icons.eco_rounded, color: Color(0xFF70BB35), size: 35),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    color: const Color(0xFF75B848),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
-                    ),
-                    child: const Text(
-                      'ACT GREEN',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'Small acts, when multiplied by several people, can change the world',
-                style: TextStyle(color: _cartMuted, height: 1.35, fontSize: 12),
-              ),
-              const SizedBox(height: 11),
-              Wrap(
-                spacing: 8,
-                runSpacing: 7,
-                children: [
-                  _EcoChip(
-                    label: 'NO KETCHUP 🙏',
-                    selected: noKetchup,
-                    onTap: onKetchup,
-                  ),
-                  _EcoChip(
-                    label: 'NO CUTLERY 🙏',
-                    selected: noCutlery,
-                    onTap: onCutlery,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _EcoChip extends StatelessWidget {
-  const _EcoChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(15),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F6FC),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-            color: const Color(0xFF65BD35),
-            size: 18,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF4D5965),
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     ),
   );
@@ -765,8 +885,8 @@ class _RecommendationCard extends StatelessWidget {
   final VoidCallback onAdd;
   @override
   Widget build(BuildContext context) => Container(
-    width: 210,
-    height: 238,
+    width: double.infinity,
+    height: 205,
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       color: Colors.white,
@@ -794,8 +914,8 @@ class _RecommendationCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: _cartInk,
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const Spacer(),
@@ -805,15 +925,19 @@ class _RecommendationCard extends StatelessWidget {
               formatUsd(item.price),
               style: const TextStyle(
                 color: _cartInk,
+                fontSize: 11,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const Spacer(),
             TextButton.icon(
               onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded, size: 17),
-              label: const Text('Add'),
-              style: TextButton.styleFrom(foregroundColor: _cartRed),
+              icon: const Icon(Icons.add_rounded, size: 14),
+              label: const Text('Add', style: TextStyle(fontSize: 11)),
+              style: TextButton.styleFrom(
+                foregroundColor: _cartRed,
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+              ),
             ),
           ],
         ),
@@ -859,7 +983,7 @@ class _TotalsCard extends StatelessWidget {
             'Inclusive of applicable taxes',
             style: TextStyle(
               color: Colors.orange.shade700,
-              fontSize: 12,
+              fontSize: 11,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -888,8 +1012,8 @@ class _TotalRow extends StatelessWidget {
           label,
           style: TextStyle(
             color: strong ? _cartInk : _cartMuted,
-            fontSize: strong ? 16 : 14,
-            fontWeight: strong ? FontWeight.w900 : FontWeight.w500,
+            fontSize: strong ? 14 : 12,
+            fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
           ),
         ),
       ),
@@ -897,8 +1021,8 @@ class _TotalRow extends StatelessWidget {
         '${discount ? '− ' : ''}${formatUsd(value.abs())}',
         style: TextStyle(
           color: discount ? const Color(0xFF58A72E) : _cartInk,
-          fontSize: strong ? 16 : 14,
-          fontWeight: strong ? FontWeight.w900 : FontWeight.w600,
+          fontSize: strong ? 14 : 12,
+          fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
         ),
       ),
     ],
@@ -925,8 +1049,8 @@ class _CartBottomBar extends StatelessWidget {
     child: SafeArea(
       top: false,
       child: Container(
-        height: 86,
-        padding: const EdgeInsets.all(12),
+        height: 76,
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: _cartRed,
           borderRadius: BorderRadius.circular(13),
@@ -936,8 +1060,8 @@ class _CartBottomBar extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(9),
               child: Container(
-                width: 55,
-                height: 55,
+                width: 48,
+                height: 48,
                 color: Colors.white,
                 child: Image.asset(item.displayAssetPath, fit: BoxFit.contain),
               ),
@@ -961,8 +1085,8 @@ class _CartBottomBar extends StatelessWidget {
                     formatUsd(total),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const Text(
@@ -979,8 +1103,8 @@ class _CartBottomBar extends StatelessWidget {
                 foregroundColor: _cartRed,
                 disabledBackgroundColor: Colors.white70,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 16,
+                  horizontal: 18,
+                  vertical: 13,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -988,7 +1112,7 @@ class _CartBottomBar extends StatelessWidget {
               ),
               child: const Text(
                 'CHECKOUT',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -1029,7 +1153,7 @@ class _EmptyCart extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Add something delicious from the BurgerHouse menu.',
+              'Add something delicious from the Feast Station menu.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _cartMuted),
             ),
