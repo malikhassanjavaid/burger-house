@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
@@ -8,12 +7,16 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../auth/services/auth_service.dart';
 import '../../location/models/delivery_location.dart';
-import '../../location/screens/location_setup_screen.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
+import '../widgets/menu_search_tab.dart';
+import '../widgets/profile_tab.dart';
 import 'cart_screen.dart';
 import 'menu_details_screen.dart';
+import 'profile_address_screen.dart';
+import 'profile_details_screen.dart';
+import 'profile_orders_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -86,37 +89,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _editDeliveryLocation() async {
-    final location = await Navigator.push<DeliveryLocation>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => LocationSetupScreen(initialLocation: _deliveryLocation),
-      ),
-    );
-    if (!mounted || location == null) return;
-    setState(() {
-      _deliveryLocation = location;
-      _address = location.formattedAddress;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Delivery location updated'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   int get _cartCount =>
       _cartItems.fold(0, (totalCount, item) => totalCount + item.quantity);
 
   List<MenuItem> get _filteredItems {
     final query = _searchText.toLowerCase();
     return sampleMenu.where((item) {
-      final searchMatches =
-          query.isEmpty ||
-          item.name.toLowerCase().contains(query) ||
-          item.description.toLowerCase().contains(query) ||
-          item.category.toLowerCase().contains(query);
+      final searchable = '${item.name} ${item.description} ${item.category}'
+          .toLowerCase();
+
+      if (query == 'popular') return item.isPopular;
+      if (query == 'spicy') {
+        return const [
+          'spicy',
+          'jalapeno',
+          'pepper',
+          'fajita',
+          'krunch',
+        ].any(searchable.contains);
+      }
+      if (query == 'cheesy') {
+        return const [
+          'cheese',
+          'cheddar',
+          'mozzarella',
+          'creamy',
+        ].any(searchable.contains);
+      }
+      if (query == 'veg') {
+        return const {
+              'cheese-pizza',
+              'fries',
+              'cola',
+              'sprite',
+              'oreo-shake',
+              'vanilla-frappe',
+              'chocolate-frappe',
+              'strawberry-frappe',
+              'brownie',
+              'cheesecake',
+              'loaded-cake',
+              'tiramisu',
+            }.contains(item.id) ||
+            item.category == 'Desserts';
+      }
+
+      final searchMatches = query.isEmpty || searchable.contains(query);
       return searchMatches;
     }).toList();
   }
@@ -170,6 +188,39 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _openProfileDetails() async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileDetailsScreen()),
+    );
+    if (updated == true && mounted) setState(() {});
+  }
+
+  Future<void> _openProfileAddress() {
+    return Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileAddressScreen(
+          initialLocation: _deliveryLocation,
+          onLocationChanged: (location) {
+            if (!mounted) return;
+            setState(() {
+              _deliveryLocation = location;
+              _address = location.formattedAddress;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openProfileOrders() {
+    return Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileOrdersScreen()),
+    );
+  }
+
   void _toggleFavourite(MenuItem item) {
     setState(() {
       if (!_favourites.add(item.id)) _favourites.remove(item.id);
@@ -201,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpenItem: _openDetails,
         onAdd: _addQuickItem,
       ),
-      2: _SearchTab(
+      2: MenuSearchTab(
         controller: _searchController,
         searchText: _searchText,
         items: _filteredItems,
@@ -211,6 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _searchController.clear();
           setState(() => _searchText = '');
         },
+        onBack: () => setState(() => _selectedTab = 0),
         onOpenItem: _openDetails,
         onFavourite: _toggleFavourite,
         onAdd: _addQuickItem,
@@ -225,10 +277,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onAdd: _addQuickItem,
         onBrowse: () => setState(() => _selectedTab = 0),
       ),
-      4: _AccountTab(
+      4: ProfileTab(
+        onDetails: _openProfileDetails,
+        onAddress: _openProfileAddress,
+        onOrders: _openProfileOrders,
         onSignOut: _signOut,
-        deliveryAddress: _address,
-        onEditAddress: _editDeliveryLocation,
       ),
     };
 
@@ -1098,137 +1151,6 @@ class _FoodArtwork extends StatelessWidget {
   }
 }
 
-class _SearchTab extends StatelessWidget {
-  const _SearchTab({
-    required this.controller,
-    required this.searchText,
-    required this.items,
-    required this.favourites,
-    required this.onChanged,
-    required this.onClear,
-    required this.onOpenItem,
-    required this.onFavourite,
-    required this.onAdd,
-  });
-
-  final TextEditingController controller;
-  final String searchText;
-  final List<MenuItem> items;
-  final Set<String> favourites;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-  final ValueChanged<MenuItem> onOpenItem;
-  final ValueChanged<MenuItem> onFavourite;
-  final ValueChanged<MenuItem> onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Search',
-                  style: TextStyle(
-                    fontSize: 29,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.dark,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Find something delicious from Feast Station',
-                  style: TextStyle(color: AppColors.muted),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: controller,
-                  autofocus: searchText.isEmpty,
-                  onChanged: onChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Search burgers, sides and drinks',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: searchText.isEmpty
-                        ? null
-                        : IconButton(
-                            onPressed: onClear,
-                            icon: const Icon(Icons.close),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (searchText.isEmpty)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: _SearchPrompt(),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(18, 4, 18, 100),
-            sliver: items.isEmpty
-                ? const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _NoMenuResults(),
-                  )
-                : SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: .70,
-                        ),
-                    delegate: SliverChildBuilderDelegate((_, index) {
-                      final item = items[index];
-                      return _PremiumFoodCard(
-                        item: item,
-                        favourite: favourites.contains(item.id),
-                        onTap: () => onOpenItem(item),
-                        onFavourite: () => onFavourite(item),
-                        onAdd: () => onAdd(item),
-                      );
-                    }, childCount: items.length),
-                  ),
-          ),
-      ],
-    );
-  }
-}
-
-class _SearchPrompt extends StatelessWidget {
-  const _SearchPrompt();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: 80),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_rounded, size: 62, color: AppColors.muted),
-            SizedBox(height: 12),
-            Text(
-              'Search the Feast Station menu',
-              style: TextStyle(
-                color: AppColors.dark,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _PremiumFoodCard extends StatelessWidget {
   const _PremiumFoodCard({
     required this.item,
@@ -1430,82 +1352,6 @@ class _PremiumFoodCard extends StatelessWidget {
   }
 }
 
-class _AccountTab extends StatelessWidget {
-  const _AccountTab({
-    required this.onSignOut,
-    required this.deliveryAddress,
-    required this.onEditAddress,
-  });
-  final VoidCallback onSignOut;
-  final String deliveryAddress;
-  final VoidCallback onEditAddress;
-
-  @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 32, 20, 120),
-      children: [
-        Center(
-          child: Container(
-            width: 88,
-            height: 88,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFF9A43), AppColors.orange],
-              ),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              (user?.displayName?.isNotEmpty ?? false)
-                  ? user!.displayName![0].toUpperCase()
-                  : 'B',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 34,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 15),
-        Text(
-          user?.displayName ?? 'Feast Station Customer',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          user?.email ?? '',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted),
-        ),
-        const SizedBox(height: 30),
-        _AccountTile(
-          icon: Icons.location_on_outlined,
-          title: 'Delivery addresses',
-          subtitle: deliveryAddress,
-          onTap: onEditAddress,
-        ),
-        _AccountTile(
-          icon: Icons.support_agent_outlined,
-          title: 'Help and support',
-          subtitle: 'Get help with your orders',
-          onTap: () {},
-        ),
-        _AccountTile(
-          icon: Icons.logout_rounded,
-          title: 'Sign out',
-          subtitle: 'Sign out of your Feast Station account',
-          onTap: onSignOut,
-          destructive: true,
-        ),
-      ],
-    );
-  }
-}
-
 class _SavedTab extends StatelessWidget {
   const _SavedTab({
     required this.items,
@@ -1582,51 +1428,6 @@ class _SavedTab extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AccountTile extends StatelessWidget {
-  const _AccountTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.destructive = false,
-  });
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 11),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        child: ListTile(
-          onTap: onTap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          leading: Icon(
-            icon,
-            color: destructive ? Colors.redAccent : AppColors.orange,
-          ),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              color: destructive ? Colors.redAccent : AppColors.dark,
-            ),
-          ),
-          subtitle: Text(subtitle),
-          trailing: const Icon(Icons.chevron_right),
-        ),
-      ),
     );
   }
 }
