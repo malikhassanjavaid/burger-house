@@ -14,10 +14,12 @@ the ordering features are complete—place and track orders in real time.
 - Persistent authentication sessions and sign out
 - Premium customer homepage with best sellers and food categories
 - Dedicated menu search and saved-items navigation
+- Quick menu filters for popular, spicy, cheesy, and vegetarian picks
 - Product customization with sizes, add-ons, quantity and instructions
 - Shopping cart with minimum-order and delivery-fee calculations
 - Validated checkout with delivery details and Cash on Delivery
 - Firestore order creation and customer-owned order security rules
+- Customer profile editing, saved delivery addresses, and live order history
 - USD pricing throughout the ordering flow
 - Responsive black-and-white bottom navigation
 - Responsive Material 3 interface
