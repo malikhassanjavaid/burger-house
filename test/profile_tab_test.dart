@@ -22,8 +22,14 @@ void main() {
               onDetails: () => detailsOpened = true,
               onAddress: () {},
               onOrders: () {},
-              onSignOut: () => signedOut = true,
             ),
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ProfileLogoutBar(onSignOut: () => signedOut = true),
+              const SizedBox(height: 72),
+            ],
           ),
         ),
       ),
@@ -35,12 +41,16 @@ void main() {
     expect(find.text('MY FAVOURITES'), findsNothing);
     expect(tester.takeException(), isNull);
 
+    final logoutButton = find.widgetWithText(FilledButton, 'LOGOUT');
+    final logoutBottom = tester.getBottomRight(logoutButton).dy;
+    expect(logoutBottom, closeTo(716, 1));
+
     await tester.tap(find.text('MY DETAILS'));
     expect(detailsOpened, isTrue);
 
     await tester.tap(find.text('LOGOUT'));
     await tester.pumpAndSettle();
-    expect(find.text('Log out of Feast Station?'), findsOneWidget);
+    expect(find.text('Log out of Hungry Spot?'), findsOneWidget);
 
     await tester.tap(find.text('LOGOUT').last);
     await tester.pumpAndSettle();

@@ -345,7 +345,7 @@ class _DealContentsSection extends StatelessWidget {
         : const [
             _DealPart(
               name: 'Premium Burgers',
-              detail: 'Two juicy Feast Station favourites',
+              detail: 'Two juicy Hungry Spot favourites',
               quantity: 2,
               image: 'assets/images/beefburger-cutout.png',
             ),

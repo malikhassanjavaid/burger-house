@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
         showGeneralDialog<void>(
           context: context,
           barrierDismissible: false,
-          barrierLabel: 'Welcome to Feast Station',
+          barrierLabel: 'Welcome to Hungry Spot',
           barrierColor: Colors.black.withValues(alpha: .58),
           transitionDuration: const Duration(milliseconds: 380),
           pageBuilder: (_, _, _) =>
@@ -281,7 +281,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onDetails: _openProfileDetails,
         onAddress: _openProfileAddress,
         onOrders: _openProfileOrders,
-        onSignOut: _signOut,
       ),
     };
 
@@ -289,16 +288,22 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       extendBody: true,
       body: SafeArea(bottom: false, child: pages[_selectedTab] ?? pages[0]!),
-      bottomNavigationBar: _MinimalBottomBar(
-        selectedIndex: _selectedTab,
-        cartCount: _cartCount,
-        onSelected: (index) {
-          if (index == 1) {
-            _openCart();
-          } else {
-            setState(() => _selectedTab = index);
-          }
-        },
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_selectedTab == 4) ProfileLogoutBar(onSignOut: _signOut),
+          _MinimalBottomBar(
+            selectedIndex: _selectedTab,
+            cartCount: _cartCount,
+            onSelected: (index) {
+              if (index == 1) {
+                _openCart();
+              } else {
+                setState(() => _selectedTab = index);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -383,7 +388,7 @@ class _NewCustomerWelcomeDialog extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(
                   firstName.isEmpty
-                      ? 'Welcome to Feast Station!'
+                      ? 'Welcome to Hungry Spot!'
                       : 'Welcome, $firstName!',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
@@ -1399,7 +1404,7 @@ class _SavedTab extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Your Feast Station favourites',
+                  'Your Hungry Spot favourites',
                   style: TextStyle(color: AppColors.muted),
                 ),
               ],

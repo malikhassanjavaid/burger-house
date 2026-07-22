@@ -1153,7 +1153,7 @@ class _EmptyCart extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Add something delicious from the Feast Station menu.',
+              'Add something delicious from the Hungry Spot menu.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _cartMuted),
             ),

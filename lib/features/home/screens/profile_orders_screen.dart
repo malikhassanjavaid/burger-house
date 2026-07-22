@@ -66,7 +66,7 @@ class ProfileOrdersScreen extends StatelessWidget {
                           icon: Icons.receipt_long_outlined,
                           title: 'No orders yet',
                           message:
-                              'Your Feast Station orders will appear here after checkout.',
+                              'Your Hungry Spot orders will appear here after checkout.',
                         );
                       }
 

@@ -12,12 +12,43 @@ class ProfileTab extends StatelessWidget {
     required this.onDetails,
     required this.onAddress,
     required this.onOrders,
-    required this.onSignOut,
   });
 
   final VoidCallback onDetails;
   final VoidCallback onAddress;
   final VoidCallback onOrders;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: _profileBackground,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 44, 20, 190),
+        children: [
+          const Text(
+            'MY ACCOUNT',
+            style: TextStyle(
+              color: AppColors.red,
+              fontSize: 27,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.7,
+            ),
+          ),
+          const SizedBox(height: 25),
+          _ProfileMenuTile(title: 'MY DETAILS', onTap: onDetails),
+          const SizedBox(height: 13),
+          _ProfileMenuTile(title: 'MY ADDRESS', onTap: onAddress),
+          const SizedBox(height: 13),
+          _ProfileMenuTile(title: 'MY ORDERS', onTap: onOrders),
+        ],
+      ),
+    );
+  }
+}
+
+class ProfileLogoutBar extends StatelessWidget {
+  const ProfileLogoutBar({super.key, required this.onSignOut});
+
   final VoidCallback onSignOut;
 
   Future<void> _confirmSignOut(BuildContext context) async {
@@ -60,7 +91,7 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 15),
               const Text(
-                'Log out of Feast Station?',
+                'Log out of Hungry Spot?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _profileInk,
@@ -134,63 +165,28 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationClearance =
-        72 + MediaQuery.paddingOf(context).bottom + 4.0;
     return ColoredBox(
       color: _profileBackground,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                44,
-                20,
-                navigationClearance + 78,
-              ),
-              children: [
-                const Text(
-                  'MY ACCOUNT',
-                  style: TextStyle(
-                    color: AppColors.red,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -.7,
-                  ),
-                ),
-                const SizedBox(height: 25),
-                _ProfileMenuTile(title: 'MY DETAILS', onTap: onDetails),
-                const SizedBox(height: 13),
-                _ProfileMenuTile(title: 'MY ADDRESS', onTap: onAddress),
-                const SizedBox(height: 13),
-                _ProfileMenuTile(title: 'MY ORDERS', onTap: onOrders),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+        child: FilledButton.icon(
+          onPressed: () => _confirmSignOut(context),
+          icon: const Icon(Icons.logout_rounded, size: 18),
+          label: const Text('LOGOUT'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.red,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: .3,
             ),
           ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: navigationClearance,
-            child: FilledButton.icon(
-              onPressed: () => _confirmSignOut(context),
-              icon: const Icon(Icons.logout_rounded, size: 18),
-              label: const Text('LOGOUT'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.red,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(54),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .3,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
