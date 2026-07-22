@@ -1,5 +1,5 @@
 name: flutter_application_1
-description: "Feast Station customer ordering application."
+description: "Hungry Spot customer ordering application."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -41,6 +41,7 @@ dependencies:
   geocoding: ^5.0.0
   geolocator: ^14.0.3
   latlong2: ^0.10.1
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:
