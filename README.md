@@ -1,6 +1,6 @@
-# Feast Station
+# Hungry Spot
 
-A Flutter customer ordering application for Feast Station. Customers can create
+A Flutter customer ordering application for Hungry Spot. Customers can create
 accounts, sign in securely, choose a delivery address, search the menu, and—once
 the ordering features are complete—place and track orders in real time.
 

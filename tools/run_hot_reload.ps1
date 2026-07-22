@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $adb)) {
 
 Set-Location -LiteralPath $projectRoot
 
-Write-Host "Building the BurgerHouse debug APK..." -ForegroundColor Cyan
+Write-Host "Building the Hungry Spot debug APK..." -ForegroundColor Cyan
 & flutter build apk --debug
 if ($LASTEXITCODE -ne 0) {
     throw "Flutter build failed."

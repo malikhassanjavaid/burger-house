@@ -1,11 +1,11 @@
 {
-    "name": "Feast Station",
-    "short_name": "Feast Station",
+    "name": "Hungry Spot",
+    "short_name": "Hungry Spot",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFF8F8",
     "theme_color": "#F23846",
-    "description": "Order fresh favorites from Feast Station.",
+    "description": "Order fresh favorites from Hungry Spot.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
