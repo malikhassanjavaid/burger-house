@@ -31,7 +31,11 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
 /coverage/
+
+# Local screenshots captured while checking Flutter layouts
+/flutter_*.png
 
 # Symbolication related
 app.*.symbols
