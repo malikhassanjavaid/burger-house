@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'burger_logo.dart';
+import 'brand_logo.dart';
 
 class AuthLayout extends StatelessWidget {
   const AuthLayout({
@@ -26,7 +26,7 @@ class AuthLayout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const FeastStationLogo(size: 112, showTagline: false),
+                  const HungrySpotLogo(size: 160),
                   const SizedBox(height: 30),
                   Text(
                     title,
