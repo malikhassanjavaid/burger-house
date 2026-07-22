@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/app.dart';
+import 'package:flutter_application_1/core/widgets/brand_logo.dart';
 
 void main() {
-  testWidgets('Feast Station starts on splash screen', (tester) async {
-    await tester.pumpWidget(const FeastStationApp());
-    expect(find.text('Your next feast starts here'), findsOneWidget);
-    expect(find.text('FEAST STATION'), findsOneWidget);
+  testWidgets('Hungry Spot starts on branded splash screen', (tester) async {
+    await tester.pumpWidget(const HungrySpotApp());
+    expect(find.byType(HungrySpotLogo), findsOneWidget);
   });
 }

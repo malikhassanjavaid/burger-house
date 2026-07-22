@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/brand_logo.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,7 +17,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const _items = [
     _OnboardingItem(
-      eyebrow: 'WELCOME TO FEAST STATION',
+      eyebrow: 'WELCOME TO HUNGRY SPOT',
       title: 'Dive Into\nPure Flavor',
       body:
           'Explore pizzas, burgers, sides and more—prepared fresh whenever hunger calls.',
@@ -88,9 +89,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 46,
-                          height: 46,
-                          padding: const EdgeInsets.all(5),
+                          width: 132,
+                          height: 78,
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
@@ -102,23 +103,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ],
                           ),
-                          child: Image.asset(
-                            'assets/images/feast_station_logo.png',
-                            fit: BoxFit.contain,
-                          ),
+                          child: const HungrySpotLogo(size: 122),
                         ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'FEAST STATION',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.7,
-                            ),
-                          ),
-                        ),
+                        const Spacer(),
                         TextButton(
                           onPressed: _openLogin,
                           style: TextButton.styleFrom(

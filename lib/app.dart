@@ -9,13 +9,13 @@ import 'features/home/screens/home_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/splash/screens/splash_screen.dart';
 
-class FeastStationApp extends StatelessWidget {
-  const FeastStationApp({super.key});
+class HungrySpotApp extends StatelessWidget {
+  const HungrySpotApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Feast Station',
+      title: 'Hungry Spot',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,

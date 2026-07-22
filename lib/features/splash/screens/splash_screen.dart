@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/burger_logo.dart';
+import '../../../core/widgets/brand_logo.dart';
 import '../../auth/services/auth_service.dart';
 import '../../home/screens/home_screen.dart';
 import '../../location/screens/location_setup_screen.dart';
@@ -30,6 +30,21 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     if (authService.currentUser == null) {
       Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+      return;
+    }
+    bool verified;
+    try {
+      verified = await authService.hasVerifiedSession();
+    } catch (_) {
+      await authService.signOut();
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+      return;
+    }
+    if (!verified) {
+      await authService.signOut();
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
       return;
     }
     try {
@@ -83,12 +98,12 @@ class _SplashScreenState extends State<SplashScreen> {
                       child: Opacity(opacity: value.clamp(0, 1), child: child),
                     ),
                     child: Container(
-                      width: 246,
-                      height: 246,
-                      padding: const EdgeInsets.all(22),
+                      width: 286,
+                      height: 232,
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(56),
+                        borderRadius: BorderRadius.circular(42),
                         border: Border.all(color: AppColors.blush, width: 1.5),
                         boxShadow: [
                           BoxShadow(
@@ -98,31 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           ),
                         ],
                       ),
-                      child: const FeastStationLogo(
-                        size: 190,
-                        showTagline: false,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 34),
-                  const Text(
-                    'Your next feast starts here',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.dark,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -.4,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Fresh favorites, made to order.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      child: const HungrySpotLogo(size: 265),
                     ),
                   ),
                   const Spacer(flex: 2),
@@ -135,16 +126,6 @@ class _SplashScreenState extends State<SplashScreen> {
                         color: AppColors.red,
                         backgroundColor: AppColors.blush,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'FEAST STATION',
-                    style: TextStyle(
-                      color: AppColors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2.2,
                     ),
                   ),
                   const SizedBox(height: 24),
