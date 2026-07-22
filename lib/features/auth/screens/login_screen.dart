@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
-import '../../../core/widgets/auth_layout.dart';
 import '../../home/screens/home_screen.dart';
 import '../../location/screens/location_setup_screen.dart';
 import '../services/auth_service.dart';
+import '../widgets/auth_form_widgets.dart';
 import '../widgets/auth_loading_overlay.dart';
+import '../widgets/email_verification_sheet.dart';
 import '../widgets/password_field.dart';
 import 'register_screen.dart';
 
@@ -36,30 +37,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await _authService.signIn(email: _email.text, password: _password.text);
-      if (!mounted) return;
-      final location = await _authService.getDeliveryLocation();
-      if (!mounted) return;
-      if (location == null) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const LocationSetupScreen(
-              firstTime: true,
-              destinationAfterSave: HomeScreen(),
-            ),
-          ),
-          (route) => false,
-        );
-        return;
-      }
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.home,
-        (route) => false,
-      );
+      await _continueAfterSignIn();
     } catch (error) {
       if (!mounted) return;
-      if (isSignInCredentialError(error)) {
+      if (isUnverifiedEmailError(error)) {
+        await _showVerificationRequired();
+      } else if (isSignInCredentialError(error)) {
         await _showAccountHelp(error);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,8 +57,80 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _showVerificationRequired() async {
+    final shouldResend = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EmailVerificationSheet(
+        email: _email.text.trim().toLowerCase(),
+        title: 'Gmail not verified',
+        message:
+            'Open the verification link we sent before logging in. If it expired or is missing, request a new one.',
+        primaryLabel: 'RESEND EMAIL',
+      ),
+    );
+    if (shouldResend != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await _authService.resendEmailVerification(
+        email: _email.text,
+        password: _password.text,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A new verification email has been sent.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(friendlyAuthError(error)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _continueAfterSignIn({
+    bool showWelcome = false,
+    String? welcomeName,
+  }) async {
+    if (!mounted) return;
+    final location = await _authService.getDeliveryLocation();
+    if (!mounted) return;
+    if (location == null) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LocationSetupScreen(
+            firstTime: true,
+            destinationAfterSave: HomeScreen(
+              showNewAccountWelcome: showWelcome,
+              welcomeName: welcomeName,
+            ),
+          ),
+        ),
+        (route) => false,
+      );
+      return;
+    }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.home,
+      (route) => false,
+    );
+  }
+
   Future<void> _showAccountHelp(Object error) async {
     final missing = isDefinitelyMissingAccount(error);
+    final cleanEmail = normalizeAuthEmail(_email.text);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -107,7 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                missing ? 'Account not found' : 'Could not sign you in',
+                missing
+                    ? 'Account not found'
+                    : 'Email or password doesn\'t match',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -116,8 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               Text(
                 missing
-                    ? 'There is no Feast Station account for ${_email.text.trim()}. Create one to start ordering.'
-                    : 'Check your password if you already have an account, or create a new account if this is your first visit.',
+                    ? 'There is no Hungry Spot account for $cleanEmail. Create one to start ordering.'
+                    : 'Firebase could not match $cleanEmail with that password. If an earlier sign-up was interrupted, create the account again. Otherwise reset the password securely.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.black54, height: 1.4),
               ),
@@ -160,60 +217,51 @@ class _LoginScreenState extends State<LoginScreen> {
     return AuthLoadingOverlay(
       loading: _isLoading,
       message: 'Signing you in...',
-      child: AuthLayout(
-        title: 'Welcome back!',
-        subtitle: 'Sign in to order your Feast Station favourites.',
+      child: AuthFormShell(
+        headline: 'Log in to the\ngood stuff',
+        topSpacing: 38,
+        headlineFontSize: 23,
+        headlineFontWeight: FontWeight.w500,
+        logoSize: 210,
+        logoContentScale: 1.24,
+        bottomAction: AuthPrimaryButton(
+          label: 'LOG IN',
+          icon: Icons.login_rounded,
+          loading: _isLoading,
+          onPressed: _login,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
+              AuthTextField(
                 controller: _email,
+                label: 'Email',
+                hintText: 'Enter Email',
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
+                textInputAction: TextInputAction.next,
                 validator: (value) => !(value ?? '').contains('@')
                     ? 'Enter a valid email address'
                     : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               PasswordField(controller: _password),
+              const SizedBox(height: 19),
               Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
+                alignment: Alignment.centerLeft,
+                child: AuthLinkButton(
+                  label: 'Forgot your password?',
                   onPressed: () =>
                       Navigator.pushNamed(context, AppRoutes.forgotPassword),
-                  child: const Text('Forgot password?'),
                 ),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Sign in'),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account?"),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, AppRoutes.register),
-                    child: const Text('Register'),
-                  ),
-                ],
+              const SizedBox(height: 42),
+              AuthFooterPrompt(
+                message: 'Not a member yet?',
+                actionLabel: 'Sign up',
+                onPressed: () =>
+                    Navigator.pushNamed(context, AppRoutes.register),
               ),
             ],
           ),
