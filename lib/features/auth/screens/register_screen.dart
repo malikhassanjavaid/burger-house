@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/auth_layout.dart';
-import '../../home/screens/home_screen.dart';
-import '../../location/screens/location_setup_screen.dart';
+import '../../../core/routes/app_routes.dart';
 import '../services/auth_service.dart';
+import '../widgets/auth_form_widgets.dart';
 import '../widgets/auth_loading_overlay.dart';
+import '../widgets/email_verification_sheet.dart';
 import '../widgets/password_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -52,20 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _password.text,
       );
       if (!mounted) return;
-      final customerName = _name.text.trim();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LocationSetupScreen(
-            firstTime: true,
-            destinationAfterSave: HomeScreen(
-              showNewAccountWelcome: true,
-              welcomeName: customerName,
-            ),
-          ),
-        ),
-        (route) => false,
-      );
+      await _showVerificationSent();
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,70 +66,90 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _showVerificationSent() async {
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EmailVerificationSheet(
+        email: _email.text.trim().toLowerCase(),
+        title: 'Verify your Gmail',
+        message:
+            'We sent a verification link to your inbox. Open it to confirm this Gmail address, then return and log in.',
+        primaryLabel: 'GO TO LOGIN',
+        showSecondaryAction: false,
+      ),
+    );
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.login,
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthLoadingOverlay(
       loading: _isLoading,
       message: 'Creating your account...',
-      child: AuthLayout(
-        title: 'Create account',
-        subtitle: 'Join Feast Station and get your first order started.',
+      child: AuthFormShell(
+        headline: 'Create your\naccount',
+        topSpacing: 38,
+        headlineFontSize: 23,
+        headlineFontWeight: FontWeight.w500,
+        logoSize: 210,
+        logoContentScale: 1.24,
+        bottomAction: AuthPrimaryButton(
+          label: 'SIGN UP',
+          icon: Icons.person_add_alt_1_rounded,
+          loading: _isLoading,
+          onPressed: _register,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
+              AuthTextField(
                 controller: _name,
+                label: 'Full name',
+                hintText: 'Enter Full Name',
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Full name',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
+                textInputAction: TextInputAction.next,
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? 'Enter your name' : null,
               ),
               const SizedBox(height: 14),
-              TextFormField(
+              AuthTextField(
                 controller: _email,
+                label: 'Email',
+                hintText: 'Enter Email',
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                validator: (v) =>
-                    !(v ?? '').contains('@') ? 'Enter a valid email' : null,
+                textInputAction: TextInputAction.next,
+                validator: (v) => isValidGmailAddress(v ?? '')
+                    ? null
+                    : 'Use a valid @gmail.com address',
               ),
               const SizedBox(height: 14),
-              TextFormField(
+              AuthTextField(
                 controller: _phone,
+                label: 'Phone number',
+                hintText: 'Enter Phone Number',
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Phone number',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
+                textInputAction: TextInputAction.next,
                 validator: (v) =>
                     (v ?? '').length < 7 ? 'Enter a valid phone number' : null,
               ),
               const SizedBox(height: 14),
               PasswordField(controller: _password),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _register,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Create account'),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: _isLoading ? null : () => Navigator.pop(context),
-                child: const Text('Already have an account? Sign in'),
+              const SizedBox(height: 26),
+              AuthFooterPrompt(
+                message: 'Already a member?',
+                actionLabel: 'Log in',
+                onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
