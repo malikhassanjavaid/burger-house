@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/brand_logo.dart';
 
 const authInk = Color(0xFF242426);
@@ -215,47 +216,11 @@ class AuthPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonStyle = FilledButton.styleFrom(
-      backgroundColor: AppColors.red,
-      foregroundColor: Colors.white,
-      disabledBackgroundColor: AppColors.red.withValues(alpha: .58),
-      minimumSize: const Size.fromHeight(54),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      textStyle: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w900,
-        letterSpacing: .3,
-      ),
-    );
-
-    if (loading) {
-      return FilledButton(
-        onPressed: null,
-        style: buttonStyle,
-        child: const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 2.2,
-          ),
-        ),
-      );
-    }
-
-    if (icon != null) {
-      return FilledButton.icon(
-        onPressed: onPressed,
-        style: buttonStyle,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-      );
-    }
-
-    return FilledButton(
+    return AppPrimaryButton(
+      label: label,
       onPressed: onPressed,
-      style: buttonStyle,
-      child: Text(label),
+      icon: icon,
+      isLoading: loading,
     );
   }
 }

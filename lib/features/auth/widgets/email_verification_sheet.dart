@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_primary_button.dart';
 
 class EmailVerificationSheet extends StatelessWidget {
   const EmailVerificationSheet({
@@ -101,27 +102,9 @@ class EmailVerificationSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.red,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: Text(
-                  primaryLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .3,
-                  ),
-                ),
-              ),
+            AppPrimaryButton(
+              label: primaryLabel,
+              onPressed: () => Navigator.pop(context, true),
             ),
             if (showSecondaryAction)
               TextButton(

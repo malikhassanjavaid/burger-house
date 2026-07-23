@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/auth_layout.dart';
 import '../services/auth_service.dart';
 
@@ -66,18 +67,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   !(v ?? '').contains('@') ? 'Enter a valid email' : null,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _sendResetLink,
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Send reset link'),
+            AppPrimaryButton(
+              label: 'SEND RESET LINK',
+              onPressed: _sendResetLink,
+              isLoading: _isLoading,
             ),
             const SizedBox(height: 10),
             TextButton.icon(
