@@ -21,13 +21,24 @@ service cloud.firestore {
         && request.resource.data.status == 'placed'
         && request.resource.data.paymentMethod == 'cash_on_delivery'
         && request.resource.data.paymentStatus == 'pending'
+        && request.resource.data.orderNumber is string
+        && request.resource.data.customerEmail is string
+        && request.resource.data.receiverName is string
+        && request.resource.data.phone is string
+        && request.resource.data.deliveryAddress is string
         && request.resource.data.items is list
         && request.resource.data.items.size() > 0
         && request.resource.data.subtotal >= 5
         && request.resource.data.deliveryFee >= 0
+        && request.resource.data.serviceFee >= 0
+        && request.resource.data.discount >= 0
+        && request.resource.data.etaMinMinutes == 30
+        && request.resource.data.etaMaxMinutes == 40
         && request.resource.data.total
           == request.resource.data.subtotal
-            + request.resource.data.deliveryFee;
+            + request.resource.data.deliveryFee
+            + request.resource.data.serviceFee
+            - request.resource.data.discount;
 
       allow read: if signedIn()
         && resource.data.customerId == request.auth.uid;

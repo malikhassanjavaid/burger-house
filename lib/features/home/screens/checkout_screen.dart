@@ -1,10 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../models/cart_item.dart';
+import '../services/order_service.dart';
+import 'order_confirmation_screen.dart';
 
 enum PaymentMethod { cashOnDelivery, card, wallet }
 
@@ -14,6 +16,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.items,
     required this.initialAddress,
     required this.deliveryFee,
+    required this.onOrderPlaced,
     this.initialDeliveryNotes = '',
     this.serviceFee = 0,
     this.discount = 0,
@@ -23,6 +26,7 @@ class CheckoutScreen extends StatefulWidget {
   final List<CartItem> items;
   final String initialAddress;
   final double deliveryFee;
+  final VoidCallback onOrderPlaced;
   final String initialDeliveryNotes;
   final double serviceFee;
   final double discount;
@@ -39,6 +43,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _addressController = TextEditingController();
   final _landmarkController = TextEditingController();
   final _notesController = TextEditingController();
+  final _orderService = OrderService();
 
   PaymentMethod _paymentMethod = PaymentMethod.cashOnDelivery;
   bool _isPlacingOrder = false;
@@ -87,81 +92,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     setState(() => _isPlacingOrder = true);
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw FirebaseAuthException(
-          code: 'not-authenticated',
-          message: 'Please sign in again before placing your order.',
-        );
-      }
-
-      final order = await FirebaseFirestore.instance.collection('orders').add({
-        'customerId': user.uid,
-        'customerEmail': user.email,
-        'receiverName': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'deliveryAddress': _addressController.text.trim(),
-        'landmark': _landmarkController.text.trim(),
-        'deliveryNotes': _notesController.text.trim(),
-        'paymentMethod': 'cash_on_delivery',
-        'paymentStatus': 'pending',
-        'status': 'placed',
-        'subtotal': _subtotal,
-        'deliveryFee': widget.deliveryFee,
-        'serviceFee': widget.serviceFee,
-        'discount': widget.discount,
-        'couponCode': widget.couponCode,
-        'total': _total,
-        'items': widget.items
-            .map(
-              (item) => {
-                'menuItemId': item.menuItem.id,
-                'name': item.menuItem.name,
-                'quantity': item.quantity,
-                'unitPrice': item.unitPrice,
-                'totalPrice': item.totalPrice,
-                'size': item.size,
-                'addOns': item.addOns,
-                'instructions': item.instructions,
-              },
-            )
-            .toList(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      if (!mounted) return;
-      setState(() => _isPlacingOrder = false);
-      final shortId = order.id.length > 6
-          ? order.id.substring(order.id.length - 6).toUpperCase()
-          : order.id.toUpperCase();
-      final orderNumber = 'BH-$shortId';
-
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          icon: const Icon(
-            Icons.check_circle_rounded,
-            color: Color(0xFF26A269),
-            size: 58,
-          ),
-          title: const Text('Order confirmed!'),
-          content: Text(
-            'Your order $orderNumber has been received. Payment will be collected on delivery.',
-            textAlign: TextAlign.center,
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Done'),
-            ),
-          ],
+      final order = await _orderService.placeOrder(
+        PlaceOrderRequest(
+          items: widget.items,
+          receiverName: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          deliveryAddress: _addressController.text.trim(),
+          landmark: _landmarkController.text.trim(),
+          deliveryNotes: _notesController.text.trim(),
+          paymentMethod: 'cash_on_delivery',
+          subtotal: _subtotal,
+          deliveryFee: widget.deliveryFee,
+          serviceFee: widget.serviceFee,
+          discount: widget.discount,
+          couponCode: widget.couponCode,
+          total: _total,
         ),
       );
 
-      if (mounted) Navigator.pop(context, true);
+      if (!mounted) return;
+      setState(() => _isPlacingOrder = false);
+      widget.onOrderPlaced();
+      await Navigator.of(context).pushAndRemoveUntil<void>(
+        MaterialPageRoute(
+          builder: (_) => OrderConfirmationScreen(order: order),
+        ),
+        (route) => route.isFirst,
+      );
     } on FirebaseException catch (error) {
       if (!mounted) return;
       setState(() => _isPlacingOrder = false);
@@ -647,18 +604,10 @@ class _PlaceOrderBar extends StatelessWidget {
       color: Colors.white,
       child: SafeArea(
         top: false,
-        child: ElevatedButton(
-          onPressed: loading ? null : onPlaceOrder,
-          child: loading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
-                )
-              : Text('Place order • ${formatUsd(total)}'),
+        child: AppPrimaryButton(
+          label: 'PLACE ORDER • ${formatUsd(total)}',
+          onPressed: onPlaceOrder,
+          isLoading: loading,
         ),
       ),
     );
