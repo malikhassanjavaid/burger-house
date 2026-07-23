@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
@@ -194,13 +195,9 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context, controller.text.trim()),
-                style: FilledButton.styleFrom(backgroundColor: _cartRed),
-                child: const Text('SAVE INSTRUCTIONS'),
-              ),
+            AppPrimaryButton(
+              label: 'SAVE INSTRUCTIONS',
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
             ),
           ],
         ),
@@ -254,16 +251,10 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(
-                  context,
-                  controller.text.trim().toUpperCase(),
-                ),
-                style: FilledButton.styleFrom(backgroundColor: _cartRed),
-                child: const Text('APPLY COUPON'),
-              ),
+            AppPrimaryButton(
+              label: 'APPLY COUPON',
+              onPressed: () =>
+                  Navigator.pop(context, controller.text.trim().toUpperCase()),
             ),
           ],
         ),
@@ -290,7 +281,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> _checkout() async {
-    final placed = await Navigator.push<bool>(
+    await Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (_) => CheckoutScreen(
@@ -301,12 +292,14 @@ class _CartScreenState extends State<CartScreen> {
           serviceFee: _serviceFee,
           discount: _discount,
           couponCode: _couponCode,
+          onOrderPlaced: () {
+            if (!mounted) return;
+            setState(() => _items.clear());
+            _notifyHome();
+          },
         ),
       ),
     );
-    if (placed != true || !mounted) return;
-    setState(() => _items.clear());
-    _notifyHome();
   }
 
   @override
@@ -759,22 +752,11 @@ class _CartItemDetailsSheet extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: FilledButton(
+                    child: AppPrimaryButton(
+                      label: 'Close',
                       onPressed: () => Navigator.pop(context, false),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _cartRed,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        'Close',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      height: 48,
+                      borderRadius: 10,
                     ),
                   ),
                 ],
@@ -1124,48 +1106,112 @@ class _CartBottomBar extends StatelessWidget {
 
 class _EmptyCart extends StatelessWidget {
   const _EmptyCart({required this.onBack});
+
   final VoidCallback onBack;
+
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircleAvatar(
-              radius: 62,
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.shopping_cart_outlined,
-                color: _cartRed,
-                size: 55,
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 82,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                children: [
+                  Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    elevation: 5,
+                    shadowColor: Colors.black12,
+                    child: IconButton(
+                      tooltip: 'Back to menu',
+                      onPressed: onBack,
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: _cartBlue,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  const Text(
+                    'Cart',
+                    style: TextStyle(
+                      color: _cartInk,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Your cart is empty',
-              style: TextStyle(
-                color: _cartInk,
-                fontSize: 25,
-                fontWeight: FontWeight.w900,
-              ),
+          ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final imageSize = (constraints.maxWidth * .64)
+                    .clamp(205.0, 270.0)
+                    .toDouble();
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 36),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: (constraints.maxHeight - 68)
+                          .clamp(0.0, double.infinity)
+                          .toDouble(),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Image.asset(
+                          'assets/images/empty_cart_illustration.png',
+                          key: const ValueKey('empty-cart-illustration'),
+                          width: imageSize,
+                          height: imageSize,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 25),
+                        const Text(
+                          'Your Cart is Empty',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _cartInk,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -.35,
+                          ),
+                        ),
+                        const SizedBox(height: 13),
+                        const Text(
+                          'Please add some items from the menu.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _cartMuted,
+                            fontSize: 14,
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 25),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: AppPrimaryButton(
+                            label: 'Explore Menu',
+                            onPressed: onBack,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add something delicious from the Hungry Spot menu.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _cartMuted),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: onBack,
-              style: FilledButton.styleFrom(backgroundColor: _cartRed),
-              child: const Text('EXPLORE MENU'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
 }
