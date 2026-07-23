@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/services/auth_service.dart';
 import '../../location/models/delivery_location.dart';
 import '../../location/screens/location_setup_screen.dart';
@@ -295,22 +296,10 @@ class _EmptyAddressCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          FilledButton.icon(
+          AppPrimaryButton(
             onPressed: onAdd,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('ADD ADDRESS'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.red,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(49),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(13),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+            icon: Icons.add_rounded,
+            label: 'ADD ADDRESS',
           ),
         ],
       ),

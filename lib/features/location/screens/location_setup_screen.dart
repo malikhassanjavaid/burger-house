@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/widgets/auth_loading_overlay.dart';
 import '../models/delivery_location.dart';
@@ -327,14 +328,13 @@ class _LocationSetupScreenState extends State<LocationSetupScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: const Icon(Icons.location_on_rounded),
-                  label: Text(
-                    widget.firstTime
-                        ? 'Save & start ordering'
-                        : 'Save location',
-                  ),
+                AppPrimaryButton(
+                  onPressed: _save,
+                  icon: Icons.location_on_rounded,
+                  label: widget.firstTime
+                      ? 'SAVE & START ORDERING'
+                      : 'SAVE LOCATION',
+                  isLoading: _saving,
                 ),
                 const SizedBox(height: 12),
                 const Row(
