@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_primary_button.dart';
 
 const _profileBackground = Color(0xFFF4FAFE);
 const _profileInk = Color(0xFF15161C);
@@ -134,23 +135,11 @@ class ProfileLogoutBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: FilledButton(
+                    child: AppPrimaryButton(
+                      label: 'LOGOUT',
                       onPressed: () => Navigator.pop(sheetContext, true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.red,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                      ),
-                      child: const Text(
-                        'LOGOUT',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      height: 48,
+                      borderRadius: 13,
                     ),
                   ),
                 ],
@@ -169,23 +158,10 @@ class ProfileLogoutBar extends StatelessWidget {
       color: _profileBackground,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-        child: FilledButton.icon(
+        child: AppPrimaryButton(
+          label: 'LOGOUT',
           onPressed: () => _confirmSignOut(context),
-          icon: const Icon(Icons.logout_rounded, size: 18),
-          label: const Text('LOGOUT'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.red,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(54),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              letterSpacing: .3,
-            ),
-          ),
+          icon: Icons.logout_rounded,
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/services/auth_service.dart';
 import '../widgets/profile_page_header.dart';
 
@@ -242,36 +243,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                         ),
                       ],
                       const SizedBox(height: 22),
-                      FilledButton(
-                        onPressed: _saving ? null : _saveProfile,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.red,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: AppColors.red.withValues(
-                            alpha: .55,
-                          ),
-                          minimumSize: const Size.fromHeight(52),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                        ),
-                        child: _saving
-                            ? const SizedBox(
-                                width: 19,
-                                height: 19,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.2,
-                                ),
-                              )
-                            : const Text(
-                                'UPDATE PROFILE',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: .2,
-                                ),
-                              ),
+                      AppPrimaryButton(
+                        label: 'UPDATE PROFILE',
+                        onPressed: _saveProfile,
+                        isLoading: _saving,
                       ),
                     ],
                   ),
