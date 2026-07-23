@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/services/auth_service.dart';
 import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
+import '../services/customer_data_service.dart';
 import '../widgets/menu_search_tab.dart';
 import '../widgets/profile_tab.dart';
 import 'cart_screen.dart';
@@ -35,19 +37,24 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final _authService = AuthService();
+  final _customerDataService = CustomerDataService();
   final Set<String> _favourites = {};
 
   List<CartItem> _cartItems = [];
+  Future<void> _cartWriteQueue = Future<void>.value();
+  Future<void> _favouritesWriteQueue = Future<void>.value();
   String _searchText = '';
   String _selectedCategory = 'Burgers';
   DeliveryLocation? _deliveryLocation;
   String _address = 'Set your delivery address';
   int _selectedTab = 0;
+  bool _restoringCustomerState = true;
 
   @override
   void initState() {
     super.initState();
-    _loadDeliveryLocation();
+    unawaited(_loadDeliveryLocation());
+    unawaited(_restoreCustomerState());
     if (widget.showNewAccountWelcome) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -86,6 +93,24 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (_) {
       // The home screen remains usable if the saved address cannot be loaded.
+    }
+  }
+
+  Future<void> _restoreCustomerState() async {
+    try {
+      final customerState = await _customerDataService.loadState();
+      if (!mounted) return;
+      setState(() {
+        _cartItems = List.of(customerState.cartItems);
+        _favourites
+          ..clear()
+          ..addAll(customerState.favouriteIds);
+      });
+    } catch (_) {
+      // A cached or temporary empty state keeps the menu usable. Future cart
+      // changes will retry the Firestore write automatically.
+    } finally {
+      if (mounted) setState(() => _restoringCustomerState = false);
     }
   }
 
@@ -163,6 +188,35 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+    _queueCartSave();
+  }
+
+  void _replaceCart(List<CartItem> items) {
+    setState(() => _cartItems = List.of(items));
+    _queueCartSave();
+  }
+
+  void _queueCartSave() {
+    final snapshot = List<CartItem>.of(_cartItems);
+    _cartWriteQueue = _cartWriteQueue.then<void>((_) async {
+      try {
+        await _customerDataService.saveCart(snapshot);
+      } catch (_) {
+        // Keep the local UI responsive. Firestore's next write/load retries
+        // synchronization for the signed-in customer.
+      }
+    });
+  }
+
+  void _queueFavouritesSave() {
+    final snapshot = Set<String>.of(_favourites);
+    _favouritesWriteQueue = _favouritesWriteQueue.then<void>((_) async {
+      try {
+        await _customerDataService.saveFavourites(snapshot);
+      } catch (_) {
+        // The current session remains usable during a temporary network issue.
+      }
+    });
   }
 
   Future<void> _openDetails(MenuItem item) async {
@@ -182,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => CartScreen(
           items: _cartItems,
           deliveryAddress: _address,
-          onCartChanged: (items) => setState(() => _cartItems = items),
+          onCartChanged: _replaceCart,
         ),
       ),
     );
@@ -225,6 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       if (!_favourites.add(item.id)) _favourites.remove(item.id);
     });
+    _queueFavouritesSave();
   }
 
   Future<void> _signOut() async {
@@ -287,7 +342,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       extendBody: true,
-      body: SafeArea(bottom: false, child: pages[_selectedTab] ?? pages[0]!),
+      body: SafeArea(
+        bottom: false,
+        child: _restoringCustomerState
+            ? const _CustomerStateLoading()
+            : pages[_selectedTab] ?? pages[0]!,
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -409,31 +469,63 @@ class _NewCustomerWelcomeDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.orange,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(54),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(17),
-                      ),
-                    ),
-                    icon: const Icon(Icons.arrow_forward_rounded),
-                    label: const Text(
-                      'Start ordering',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
+                AppPrimaryButton(
+                  label: 'START ORDERING',
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icons.arrow_forward_rounded,
+                  borderRadius: 17,
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomerStateLoading extends StatelessWidget {
+  const _CustomerStateLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFFF4FAFE),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 62,
+              height: 62,
+              padding: const EdgeInsets.all(17),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1247657A),
+                    blurRadius: 18,
+                    offset: Offset(0, 7),
+                  ),
+                ],
+              ),
+              child: const CircularProgressIndicator(
+                color: AppColors.red,
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'RESTORING YOUR HUNGRY SPOT',
+              style: TextStyle(
+                color: AppColors.dark,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: .7,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1156,6 +1248,8 @@ class _FoodArtwork extends StatelessWidget {
   }
 }
 
+// Kept for the existing compact menu-card design variant.
+// ignore: unused_element
 class _PremiumFoodCard extends StatelessWidget {
   const _PremiumFoodCard({
     required this.item,
@@ -1377,110 +1471,320 @@ class _SavedTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return _MessagePage(
-        icon: Icons.favorite_border_rounded,
-        title: 'Nothing saved yet',
-        message: 'Tap the heart on food you want to find quickly.',
-        actionLabel: 'Browse menu',
-        onAction: onBrowse,
-      );
+      return _SavedEmptyState(onBrowse: onBrowse);
     }
 
-    return CustomScrollView(
-      slivers: [
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(18, 24, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Saved items',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.dark,
+    return ColoredBox(
+      color: const Color(0xFFF4FAFE),
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Saved',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.dark,
+                      letterSpacing: -.3,
+                    ),
                   ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Your Hungry Spot favourites',
-                  style: TextStyle(color: AppColors.muted),
-                ),
-              ],
+                  const SizedBox(height: 5),
+                  Text(
+                    '${items.length} favourite ${items.length == 1 ? 'meal' : 'meals'} ready for you',
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 120),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 14,
-              childAspectRatio: .70,
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 120),
+            sliver: SliverList.separated(
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (_, index) {
+                final item = items[index];
+                return _SavedFoodCard(
+                  item: item,
+                  favourite: favourites.contains(item.id),
+                  onTap: () => onOpenItem(item),
+                  onFavourite: () => onFavourite(item),
+                  onAdd: () => onAdd(item),
+                );
+              },
             ),
-            delegate: SliverChildBuilderDelegate((_, index) {
-              final item = items[index];
-              return _PremiumFoodCard(
-                item: item,
-                favourite: favourites.contains(item.id),
-                onTap: () => onOpenItem(item),
-                onFavourite: () => onFavourite(item),
-                onAdd: () => onAdd(item),
-              );
-            }, childCount: items.length),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _MessagePage extends StatelessWidget {
-  const _MessagePage({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-  final IconData icon;
-  final String title;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+class _SavedEmptyState extends StatelessWidget {
+  const _SavedEmptyState({required this.onBrowse});
+
+  final VoidCallback onBrowse;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 108,
-              height: 108,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFE5CE),
-                shape: BoxShape.circle,
+    return ColoredBox(
+      color: const Color(0xFFF4FAFE),
+      child: Column(
+        children: [
+          const SizedBox(
+            height: 76,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 22),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Saved',
+                  style: TextStyle(
+                    color: AppColors.dark,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -.3,
+                  ),
+                ),
               ),
-              child: Icon(icon, size: 48, color: AppColors.orange),
             ),
-            const SizedBox(height: 22),
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted),
+          ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final imageSize = (constraints.maxWidth * .61)
+                    .clamp(200.0, 260.0)
+                    .toDouble();
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 110),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: (constraints.maxHeight - 62)
+                          .clamp(0.0, double.infinity)
+                          .toDouble(),
+                    ),
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/empty_saved_illustration.png',
+                          key: const ValueKey('empty-saved-illustration'),
+                          width: imageSize,
+                          height: imageSize,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 22),
+                        const Text(
+                          'No favourites yet',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -.35,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Save the meals you love and find them here anytime.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 14,
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 25),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: AppPrimaryButton(
+                            label: 'Explore Menu',
+                            onPressed: onBrowse,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-            if (onAction != null) ...[
-              const SizedBox(height: 20),
-              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SavedFoodCard extends StatelessWidget {
+  const _SavedFoodCard({
+    required this.item,
+    required this.favourite,
+    required this.onTap,
+    required this.onFavourite,
+    required this.onAdd,
+  });
+
+  final MenuItem item;
+  final bool favourite;
+  final VoidCallback onTap;
+  final VoidCallback onFavourite;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 146,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE8EEF2)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10233A).withValues(alpha: .07),
+                blurRadius: 18,
+                offset: const Offset(0, 7),
+              ),
             ],
-          ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 118,
+                height: 126,
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Hero(
+                  tag: 'saved-${item.id}',
+                  child: Image.asset(
+                    item.displayAssetPath,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (_, _, _) => Center(
+                      child: Text(
+                        item.emoji,
+                        style: const TextStyle(fontSize: 54),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.dark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: onFavourite,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(
+                              favourite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: favourite
+                                  ? AppColors.red
+                                  : AppColors.muted,
+                              size: 21,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      item.category,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 10.5,
+                        height: 1.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFB400),
+                          size: 15,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${item.rating}',
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          formatUsd(item.price),
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    AppPrimaryButton(
+                      label: 'Add to cart',
+                      onPressed: onAdd,
+                      height: 34,
+                      borderRadius: 10,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
