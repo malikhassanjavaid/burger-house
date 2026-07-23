@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../home/screens/home_screen.dart';
 import '../../location/screens/location_setup_screen.dart';
 import '../services/auth_service.dart';
@@ -179,21 +180,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: const TextStyle(color: Colors.black54, height: 1.4),
               ),
               const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            RegisterScreen(initialEmail: _email.text.trim()),
-                      ),
-                    );
-                  },
-                  child: const Text('Create an account'),
-                ),
+              AppPrimaryButton(
+                label: 'CREATE AN ACCOUNT',
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          RegisterScreen(initialEmail: _email.text.trim()),
+                    ),
+                  );
+                },
               ),
               SizedBox(
                 width: double.infinity,
