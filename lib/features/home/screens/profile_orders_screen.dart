@@ -52,11 +52,15 @@ class ProfileOrdersScreen extends StatelessWidget {
                       final documents = [...?snapshot.data?.docs]
                         ..sort((a, b) {
                           final aTime =
-                              (a.data()['createdAt'] as Timestamp?)
+                              ((a.data()['createdAt'] ??
+                                          a.data()['createdAtClient'])
+                                      as Timestamp?)
                                   ?.millisecondsSinceEpoch ??
                               0;
                           final bTime =
-                              (b.data()['createdAt'] as Timestamp?)
+                              ((b.data()['createdAt'] ??
+                                          b.data()['createdAtClient'])
+                                      as Timestamp?)
                                   ?.millisecondsSinceEpoch ??
                               0;
                           return bTime.compareTo(aTime);
@@ -110,9 +114,11 @@ class _OrderCard extends StatelessWidget {
   final String id;
   final Map<String, dynamic> data;
 
-  String get _shortId {
+  String get _orderNumber {
+    final savedNumber = (data['orderNumber'] as String?)?.trim();
+    if (savedNumber?.isNotEmpty == true) return savedNumber!;
     final short = id.length > 7 ? id.substring(id.length - 7) : id;
-    return 'FS-${short.toUpperCase()}';
+    return 'HS-${short.toUpperCase()}';
   }
 
   @override
@@ -120,7 +126,14 @@ class _OrderCard extends StatelessWidget {
     final items = (data['items'] as List?) ?? const [];
     final total = (data['total'] as num?) ?? 0;
     final status = (data['status'] as String?) ?? 'placed';
-    final createdAt = data['createdAt'] as Timestamp?;
+    final createdAt =
+        (data['createdAt'] ?? data['createdAtClient']) as Timestamp?;
+    final etaMin = (data['etaMinMinutes'] as num?)?.toInt() ?? 30;
+    final etaMax = (data['etaMaxMinutes'] as num?)?.toInt() ?? 40;
+    final itemCount = items.fold<int>(0, (total, rawItem) {
+      if (rawItem is! Map) return total;
+      return total + ((rawItem['quantity'] as num?)?.toInt() ?? 1);
+    });
     final statusInfo = _OrderStatus.fromValue(status);
 
     return Container(
@@ -160,7 +173,7 @@ class _OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _shortId,
+                      _orderNumber,
                       style: const TextStyle(
                         color: profilePageInk,
                         fontSize: 13,
@@ -169,7 +182,7 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${items.length} ${items.length == 1 ? 'item' : 'items'} • ${_formatDate(createdAt)}',
+                      '$itemCount ${itemCount == 1 ? 'item' : 'items'} • ${_formatDate(createdAt)}',
                       style: const TextStyle(
                         color: profilePageMuted,
                         fontSize: 10.5,
@@ -221,9 +234,26 @@ class _OrderCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              if (!_isFinishedStatus(status)) ...[
+                const Icon(
+                  Icons.schedule_rounded,
+                  color: profilePageMuted,
+                  size: 14,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$etaMin–$etaMax min',
+                  style: const TextStyle(
+                    color: profilePageMuted,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 5),
+              ],
               TextButton(
                 onPressed: () =>
-                    _showOrderDetails(context, id: _shortId, data: data),
+                    _showOrderDetails(context, id: _orderNumber, data: data),
                 style: TextButton.styleFrom(
                   foregroundColor: profilePageBlue,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -249,9 +279,10 @@ Future<void> _showOrderDetails(
   final items = (data['items'] as List?) ?? const [];
   final total = (data['total'] as num?) ?? 0;
   final address = (data['deliveryAddress'] as String?) ?? '';
-  final status = _OrderStatus.fromValue(
-    (data['status'] as String?) ?? 'placed',
-  );
+  final statusValue = (data['status'] as String?) ?? 'placed';
+  final etaMin = (data['etaMinMinutes'] as num?)?.toInt() ?? 30;
+  final etaMax = (data['etaMaxMinutes'] as num?)?.toInt() ?? 40;
+  final status = _OrderStatus.fromValue(statusValue);
 
   return showModalBottomSheet<void>(
     context: context,
@@ -329,6 +360,38 @@ Future<void> _showOrderDetails(
               ],
             ),
             const SizedBox(height: 20),
+            if (!_isFinishedStatus(statusValue))
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 13,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.blush,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.delivery_dining_rounded,
+                      color: AppColors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Estimated delivery in $etaMin–$etaMax minutes',
+                        style: const TextStyle(
+                          color: profilePageInk,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ...items.map((rawItem) {
               final item = Map<String, dynamic>.from(rawItem as Map);
               final quantity = (item['quantity'] as num?)?.toInt() ?? 1;
@@ -457,6 +520,14 @@ Future<void> _showOrderDetails(
       ),
     ),
   );
+}
+
+bool _isFinishedStatus(String status) {
+  return const {
+    'delivered',
+    'completed',
+    'cancelled',
+  }.contains(status.toLowerCase());
 }
 
 String _formatDate(Timestamp? timestamp) {
