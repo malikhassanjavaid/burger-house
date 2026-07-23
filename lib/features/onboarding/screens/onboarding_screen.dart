@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/onboarding_preferences.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/brand_logo.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.onCompleted});
+
+  final Future<void> Function()? onCompleted;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -14,50 +16,71 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
+  bool _finishing = false;
 
-  static const _items = [
-    _OnboardingItem(
-      eyebrow: 'WELCOME TO HUNGRY SPOT',
-      title: 'Dive Into\nPure Flavor',
+  static const _yellow = Color(0xFFFFC400);
+
+  static const _pages = [
+    _OnboardingPageData(
+      background: AppColors.red,
+      progressColor: Colors.white,
+      eyebrow: 'FRESHLY MADE',
+      title: 'Good food,\nmade for your moment.',
       body:
-          'Explore pizzas, burgers, sides and more—prepared fresh whenever hunger calls.',
-      asset: 'assets/images/superduper_pizza_promo-cutout.png',
-      imageScale: 1.04,
-      imageRotation: -.06,
+          'Discover crowd favorites prepared fresh and ready whenever hunger calls.',
+      asset: 'assets/images/onboarding/intro_1_cutout.png',
+      imageWidthFactor: .94,
+      imageLabel: 'Happy customer holding a fresh pizza',
     ),
-    _OnboardingItem(
+    _OnboardingPageData(
+      background: _yellow,
+      progressColor: AppColors.dark,
       eyebrow: 'MADE YOUR WAY',
-      title: 'Step Into A\nWorld Of Flavor',
+      title: 'Every bite,\nmade your way.',
       body:
-          'Choose your size, ingredients and extras, then we will make every bite just right.',
-      asset: 'assets/images/firehouse_burger-cutout.png',
-      imageScale: 1.08,
-      imageRotation: .02,
+          'Choose your size, extras, and ingredients for a meal that feels personal.',
+      asset: 'assets/images/onboarding/intro_2_cutout.png',
+      imageWidthFactor: .92,
+      imageLabel: 'Freshly prepared cheeseburger',
     ),
-    _OnboardingItem(
-      eyebrow: 'FAST & FRESH',
-      title: 'Flavor Awaits\nYou',
+    _OnboardingPageData(
+      background: AppColors.red,
+      progressColor: Colors.white,
+      eyebrow: 'FAST TO YOUR DOOR',
+      title: 'Your next craving,\none tap away.',
       body:
-          'From savory favorites to sweet finishes, your next feast is only a few taps away.',
-      asset: 'assets/images/cheesecake_slice-cutout.png',
-      imageScale: .9,
-      imageRotation: -.05,
+          'Place your order and follow every step from our kitchen to your door.',
+      asset: 'assets/images/onboarding/intro_3_cutout.png',
+      imageWidthFactor: 1,
+      imageLabel: 'Fresh cheese pizza',
     ),
   ];
 
-  void _next() {
-    if (_page == _items.length - 1) {
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
+  Future<void> _completeOnboarding() async {
+    if (_finishing) return;
+    setState(() => _finishing = true);
+    try {
+      if (widget.onCompleted != null) {
+        await widget.onCompleted!();
+      } else {
+        await OnboardingPreferences.markCompleted();
+      }
+    } catch (_) {
+      // A local storage problem should never keep the customer from signing in.
+    }
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
+  }
+
+  Future<void> _next() async {
+    if (_page == _pages.length - 1) {
+      await _completeOnboarding();
       return;
     }
-    _controller.nextPage(
+    await _controller.nextPage(
       duration: const Duration(milliseconds: 420),
       curve: Curves.easeOutCubic,
     );
-  }
-
-  void _openLogin() {
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override
@@ -68,147 +91,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final current = _pages[_page];
     return Scaffold(
-      backgroundColor: AppColors.red,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFD9162E), AppColors.red, Color(0xFFFF5360)],
-          ),
-        ),
+      body: AnimatedContainer(
+        key: const ValueKey('onboarding-background'),
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        color: current.background,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final compact = constraints.maxHeight < 720;
+              final compact = constraints.maxHeight < 700;
               return Column(
                 children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(22, compact ? 8 : 14, 18, 0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 132,
-                          height: 78,
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: .1),
-                                blurRadius: 18,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const HungrySpotLogo(size: 122),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: _openLogin,
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Skip'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(22, 16, 22, 0),
-                    child: Row(
-                      children: List.generate(
-                        _items.length,
-                        (index) => Expanded(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 260),
-                            height: 4,
-                            margin: EdgeInsets.only(
-                              right: index == _items.length - 1 ? 0 : 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: index <= _page
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: .28),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  _OnboardingHeader(
+                    currentPage: _page,
+                    pageCount: _pages.length,
+                    color: current.progressColor,
+                    compact: compact,
+                    onSkip: _completeOnboarding,
                   ),
                   Expanded(
                     child: PageView.builder(
                       controller: _controller,
-                      itemCount: _items.length,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _pages.length,
                       onPageChanged: (value) => setState(() => _page = value),
-                      itemBuilder: (_, index) => _OnboardingPage(
-                        item: _items[index],
+                      itemBuilder: (_, index) => _OnboardingHero(
+                        key: ValueKey('onboarding-page-$index'),
+                        data: _pages[index],
+                        index: index,
                         compact: compact,
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(18, 4, 18, compact ? 12 : 18),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          height: compact ? 50 : 54,
-                          child: ElevatedButton(
-                            onPressed: _next,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: AppColors.redDark,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                            ),
-                            child: Text(
-                              _page == _items.length - 1
-                                  ? 'Get started'
-                                  : 'Continue',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          height: compact ? 48 : 52,
-                          child: OutlinedButton(
-                            onPressed: _openLogin,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: .78),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                            ),
-                            child: const Text(
-                              'I already have an account',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ),
-                        if (!compact) ...[
-                          const SizedBox(height: 13),
-                          Text(
-                            'By continuing, you agree to our Terms of Service and Privacy Policy.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: .72),
-                              fontSize: 10.5,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                  _OnboardingBottomPanel(
+                    data: current,
+                    page: _page,
+                    compact: compact,
+                    loading: _finishing,
+                    onContinue: _next,
                   ),
                 ],
               );
@@ -220,84 +142,245 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-class _OnboardingPage extends StatelessWidget {
-  const _OnboardingPage({required this.item, required this.compact});
+class _OnboardingHeader extends StatelessWidget {
+  const _OnboardingHeader({
+    required this.currentPage,
+    required this.pageCount,
+    required this.color,
+    required this.compact,
+    required this.onSkip,
+  });
 
-  final _OnboardingItem item;
+  final int currentPage;
+  final int pageCount;
+  final Color color;
+  final bool compact;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: compact ? 54 : 62,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Semantics(
+                label: 'Page ${currentPage + 1} of $pageCount',
+                child: Row(
+                  children: List.generate(
+                    pageCount,
+                    (index) => Expanded(
+                      child: AnimatedContainer(
+                        key: ValueKey('onboarding-progress-$index'),
+                        duration: const Duration(milliseconds: 240),
+                        height: 4,
+                        margin: EdgeInsets.only(
+                          right: index == pageCount - 1 ? 0 : 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withValues(
+                            alpha: index == currentPage
+                                ? 1
+                                : index < currentPage
+                                ? .58
+                                : .24,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 20),
+            SizedBox(
+              width: 48,
+              child: TextButton(
+                key: const ValueKey('onboarding-skip'),
+                onPressed: onSkip,
+                style: TextButton.styleFrom(
+                  foregroundColor: color,
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  alignment: Alignment.centerRight,
+                ),
+                child: const Text(
+                  'Skip',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OnboardingHero extends StatelessWidget {
+  const _OnboardingHero({
+    super.key,
+    required this.data,
+    required this.index,
+    required this.compact,
+  });
+
+  final _OnboardingPageData data;
+  final int index;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, compact ? 18 : 26, 24, 2),
+      padding: EdgeInsets.fromLTRB(18, compact ? 4 : 10, 18, compact ? 8 : 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            key: ValueKey('onboarding-hero-stage-$index'),
+            alignment: Alignment.center,
+            fit: StackFit.expand,
+            children: [
+              Center(
+                child: Container(
+                  width: constraints.biggest.shortestSide * .82,
+                  height: constraints.biggest.shortestSide * .82,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: data.progressColor.withValues(alpha: .065),
+                  ),
+                ),
+              ),
+              Center(
+                child: FractionallySizedBox(
+                  widthFactor: data.imageWidthFactor,
+                  heightFactor: .96,
+                  child: Semantics(
+                    label: data.imageLabel,
+                    image: true,
+                    child: Image.asset(
+                      data.asset,
+                      key: ValueKey('onboarding-image-$index'),
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.fastfood_rounded,
+                        size: 132,
+                        color: data.progressColor.withValues(alpha: .32),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _OnboardingBottomPanel extends StatelessWidget {
+  const _OnboardingBottomPanel({
+    required this.data,
+    required this.page,
+    required this.compact,
+    required this.loading,
+    required this.onContinue,
+  });
+
+  final _OnboardingPageData data;
+  final int page;
+  final bool compact;
+  final bool loading;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('onboarding-bottom-panel'),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        24,
+        compact ? 19 : 23,
+        24,
+        compact ? 14 : 18,
+      ),
+
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item.eyebrow,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: .76),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.8,
-            ),
-          ),
-          const SizedBox(height: 9),
-          Text(
-            item.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: compact ? 35 : 42,
-              height: .96,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -1.5,
-            ),
-          ),
-          const SizedBox(height: 13),
-          Text(
-            item.body,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: .84),
-              fontSize: compact ? 12.5 : 14,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: compact ? 230 : 280,
-                    height: compact ? 230 : 280,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.white.withValues(alpha: .22),
-                          Colors.white.withValues(alpha: .03),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Transform.rotate(
-                    angle: item.imageRotation,
-                    child: Transform.scale(
-                      scale: item.imageScale,
-                      child: Image.asset(
-                        item.asset,
-                        width: compact ? 250 : 312,
-                        height: compact ? 220 : 286,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
-                    ),
-                  ),
-                ],
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 230),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(.03, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
               ),
             ),
+            child: Column(
+              key: ValueKey('onboarding-copy-$page'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  data.eyebrow,
+                  style: TextStyle(
+                    color: data.progressColor.withValues(alpha: .76),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.35,
+                  ),
+                ),
+                SizedBox(height: compact ? 6 : 8),
+                SizedBox(
+                  height: compact ? 56 : 64,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      data.title,
+                      maxLines: 2,
+                      style: TextStyle(
+                        color: data.progressColor,
+                        fontSize: compact ? 27 : 31,
+                        height: 1.02,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -.85,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: compact ? 7 : 9),
+                Text(
+                  data.body,
+                  style: TextStyle(
+                    color: data.progressColor.withValues(alpha: .76),
+                    fontSize: compact ? 11 : 12,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: compact ? 16 : 20),
+          _OnboardingContinueButton(
+            key: const ValueKey('onboarding-continue'),
+            pageBackground: data.background,
+            height: compact ? 49 : 52,
+            loading: loading,
+            onPressed: onContinue,
           ),
         ],
       ),
@@ -305,20 +388,79 @@ class _OnboardingPage extends StatelessWidget {
   }
 }
 
-class _OnboardingItem {
-  const _OnboardingItem({
+class _OnboardingContinueButton extends StatelessWidget {
+  const _OnboardingContinueButton({
+    super.key,
+    required this.pageBackground,
+    required this.height,
+    required this.loading,
+    required this.onPressed,
+  });
+
+  final Color pageBackground;
+  final double height;
+  final bool loading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final yellowPage = pageBackground == _OnboardingScreenState._yellow;
+    final background = yellowPage ? AppColors.dark : Colors.white;
+    final foreground = yellowPage ? Colors.white : AppColors.red;
+
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: FilledButton.icon(
+        onPressed: loading ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: background,
+          foregroundColor: foreground,
+          disabledBackgroundColor: background.withValues(alpha: .68),
+          disabledForegroundColor: foreground,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: .4,
+          ),
+        ),
+        icon: loading
+            ? SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: foreground,
+                ),
+              )
+            : const Icon(Icons.arrow_forward_rounded, size: 18),
+        label: Text(loading ? 'PLEASE WAIT' : 'CONTINUE'),
+      ),
+    );
+  }
+}
+
+class _OnboardingPageData {
+  const _OnboardingPageData({
+    required this.background,
+    required this.progressColor,
     required this.eyebrow,
     required this.title,
     required this.body,
     required this.asset,
-    required this.imageScale,
-    required this.imageRotation,
+    required this.imageWidthFactor,
+    required this.imageLabel,
   });
 
+  final Color background;
+  final Color progressColor;
   final String eyebrow;
   final String title;
   final String body;
   final String asset;
-  final double imageScale;
-  final double imageRotation;
+  final double imageWidthFactor;
+  final String imageLabel;
 }
