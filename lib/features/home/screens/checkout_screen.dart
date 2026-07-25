@@ -1,9 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../location/models/delivery_location.dart';
 import '../models/cart_item.dart';
 import '../services/order_service.dart';
 import 'order_confirmation_screen.dart';
@@ -15,6 +18,7 @@ class CheckoutScreen extends StatefulWidget {
     super.key,
     required this.items,
     required this.initialAddress,
+    this.initialLocation,
     required this.deliveryFee,
     required this.onOrderPlaced,
     this.initialDeliveryNotes = '',
@@ -25,6 +29,7 @@ class CheckoutScreen extends StatefulWidget {
 
   final List<CartItem> items;
   final String initialAddress;
+  final DeliveryLocation? initialLocation;
   final double deliveryFee;
   final VoidCallback onOrderPlaced;
   final String initialDeliveryNotes;
@@ -43,6 +48,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _addressController = TextEditingController();
   final _landmarkController = TextEditingController();
   final _notesController = TextEditingController();
+  final _addressFocusNode = FocusNode();
   final _orderService = OrderService();
 
   PaymentMethod _paymentMethod = PaymentMethod.cashOnDelivery;
@@ -69,6 +75,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _addressController.dispose();
     _landmarkController.dispose();
     _notesController.dispose();
+    _addressFocusNode.dispose();
     super.dispose();
   }
 
@@ -160,10 +167,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
                   children: [
+                    const Text(
+                      'Almost there',
+                      style: TextStyle(
+                        color: AppColors.dark,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Confirm the details below and we will start preparing your order.',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12.5,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     const _CheckoutHeading(
                       number: '1',
-                      title: 'Delivery address',
-                      subtitle: 'Where should we deliver your order?',
+                      title: 'Delivery details',
+                      subtitle: 'Your saved location and contact information',
+                    ),
+                    const SizedBox(height: 14),
+                    _CheckoutLocationCard(
+                      location: widget.initialLocation,
+                      addressController: _addressController,
+                      onEdit: () => _addressFocusNode.requestFocus(),
                     ),
                     const SizedBox(height: 14),
                     _AddressForm(
@@ -172,6 +204,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       addressController: _addressController,
                       landmarkController: _landmarkController,
                       notesController: _notesController,
+                      addressFocusNode: _addressFocusNode,
                     ),
                     const SizedBox(height: 30),
                     const _CheckoutHeading(
@@ -238,6 +271,268 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
+class _CheckoutLocationCard extends StatelessWidget {
+  const _CheckoutLocationCard({
+    required this.location,
+    required this.addressController,
+    required this.onEdit,
+  });
+
+  final DeliveryLocation? location;
+  final TextEditingController addressController;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final latitude = location?.latitude;
+    final longitude = location?.longitude;
+    final point = latitude != null && longitude != null
+        ? LatLng(latitude, longitude)
+        : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF0E5E6)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.dark.withValues(alpha: .06),
+            blurRadius: 22,
+            offset: const Offset(0, 9),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(21)),
+            child: SizedBox(
+              height: 150,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (point != null)
+                    IgnorePointer(
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: point,
+                          initialZoom: 15.5,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.hungryspot.customer',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: point,
+                                width: 54,
+                                height: 64,
+                                alignment: Alignment.topCenter,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 4,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.red.withValues(
+                                          alpha: .28,
+                                        ),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.home_rounded,
+                                    color: Colors.white,
+                                    size: 23,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const _CheckoutMapPlaceholder(),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .94),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 10),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.near_me_rounded,
+                            color: AppColors.red,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            point == null
+                                ? 'DELIVERY LOCATION'
+                                : 'PIN CONFIRMED',
+                            style: const TextStyle(
+                              color: AppColors.dark,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: .35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 14, 12, 15),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 39,
+                  height: 39,
+                  decoration: BoxDecoration(
+                    color: AppColors.blush,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.location_on_rounded,
+                    color: AppColors.red,
+                    size: 21,
+                  ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: addressController,
+                    builder: (context, value, _) {
+                      final address = value.text.trim();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            location?.label.trim().isNotEmpty == true
+                                ? location!.label
+                                : 'Delivery address',
+                            style: const TextStyle(
+                              color: AppColors.dark,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            address.isEmpty
+                                ? 'Add a complete address for your rider'
+                                : address,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 11.5,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: onEdit,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.red,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 8,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.edit_location_alt_outlined, size: 17),
+                  label: const Text(
+                    'Edit',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutMapPlaceholder extends StatelessWidget {
+  const _CheckoutMapPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFFFFF1F2),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -22,
+            top: -26,
+            child: Icon(
+              Icons.route_rounded,
+              size: 150,
+              color: AppColors.red.withValues(alpha: .07),
+            ),
+          ),
+          Center(
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.red.withValues(alpha: .13),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.location_searching_rounded,
+                color: AppColors.red,
+                size: 28,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AddressForm extends StatelessWidget {
   const _AddressForm({
     required this.nameController,
@@ -245,6 +540,7 @@ class _AddressForm extends StatelessWidget {
     required this.addressController,
     required this.landmarkController,
     required this.notesController,
+    required this.addressFocusNode,
   });
 
   final TextEditingController nameController;
@@ -252,6 +548,7 @@ class _AddressForm extends StatelessWidget {
   final TextEditingController addressController;
   final TextEditingController landmarkController;
   final TextEditingController notesController;
+  final FocusNode addressFocusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +590,7 @@ class _AddressForm extends StatelessWidget {
           const SizedBox(height: 12),
           TextFormField(
             controller: addressController,
+            focusNode: addressFocusNode,
             textCapitalization: TextCapitalization.sentences,
             maxLines: 2,
             decoration: const InputDecoration(
