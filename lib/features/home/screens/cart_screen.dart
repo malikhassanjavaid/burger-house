@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
@@ -22,10 +23,12 @@ class CartScreen extends StatefulWidget {
     required this.items,
     required this.deliveryAddress,
     required this.onCartChanged,
+    this.deliveryLocation,
   });
 
   final List<CartItem> items;
   final String deliveryAddress;
+  final DeliveryLocation? deliveryLocation;
   final ValueChanged<List<CartItem>> onCartChanged;
 
   @override
@@ -287,6 +290,7 @@ class _CartScreenState extends State<CartScreen> {
         builder: (_) => CheckoutScreen(
           items: _items,
           initialAddress: widget.deliveryAddress,
+          initialLocation: widget.deliveryLocation,
           initialDeliveryNotes: _deliveryNotes,
           deliveryFee: _deliveryFee,
           serviceFee: _serviceFee,
