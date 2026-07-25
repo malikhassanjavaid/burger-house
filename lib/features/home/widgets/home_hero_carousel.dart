@@ -7,11 +7,21 @@ import '../../../core/theme/app_theme.dart';
 import '../models/menu_item.dart';
 import 'restaurant_menu_tab.dart';
 
+const _homePosterAspectRatio = 942 / 1672;
+const _bestSellerViewportHeight = 252.0;
+
+double _compactHomeCardWidth(double availableWidth) {
+  final targetWidth = math.min(availableWidth * .37, 140.0);
+  final availableHeight = _bestSellerViewportHeight - 20;
+  return math.min(targetWidth, availableHeight * _homePosterAspectRatio);
+}
+
 class HomeHeroCarousel extends StatefulWidget {
   const HomeHeroCarousel({
     required this.deals,
     required this.onDealSelected,
     required this.pizzas,
+    this.topPicks = const [],
     required this.favourites,
     required this.onPizzaSelected,
     required this.onFavourite,
@@ -22,6 +32,7 @@ class HomeHeroCarousel extends StatefulWidget {
   final ValueChanged<MenuItem> onDealSelected;
 
   final List<MenuItem> pizzas;
+  final List<MenuItem> topPicks;
   final Set<String> favourites;
   final ValueChanged<MenuItem> onPizzaSelected;
   final ValueChanged<MenuItem> onFavourite;
@@ -98,127 +109,161 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.white,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Column(
-            children: [
-              const SizedBox(height: 18),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: AspectRatio(
-                  aspectRatio: 2.25,
-                  child: PageView.builder(
-                    controller: _controller,
-                    physics: const BouncingScrollPhysics(),
-                    onPageChanged: _handlePageChanged,
-                    itemBuilder: (context, page) {
-                      final asset =
-                          HomeHeroCarousel.bannerAssets[page %
-                              HomeHeroCarousel.bannerAssets.length];
-                      return AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          final currentPage =
-                              _controller.hasClients &&
-                                  _controller.position.hasContentDimensions
-                              ? (_controller.page ?? _page.toDouble())
-                              : _page.toDouble();
-                          final distance = (currentPage - page).abs().clamp(
-                            0.0,
-                            1.0,
-                          );
-                          return Opacity(
-                            opacity: 1 - (distance * .2),
-                            child: Transform.scale(
-                              scale: 1 - (distance * .035),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: Semantics(
-                            image: true,
-                            label:
-                                'Hungry Spot promotion ${page % HomeHeroCarousel.bannerAssets.length + 1}',
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(22),
-                              child: RepaintBoundary(
-                                child: Image.asset(
-                                  asset,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                  gaplessPlayback: true,
-                                ),
-                              ),
-                            ),
-                          ),
+      child: ListView(
+        key: const PageStorageKey('home-content'),
+        padding: const EdgeInsets.only(bottom: 116),
+        physics: const BouncingScrollPhysics(),
+        children: [
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: AspectRatio(
+              aspectRatio: 2.25,
+              child: PageView.builder(
+                controller: _controller,
+                physics: const BouncingScrollPhysics(),
+                onPageChanged: _handlePageChanged,
+                itemBuilder: (context, page) {
+                  final asset =
+                      HomeHeroCarousel.bannerAssets[page %
+                          HomeHeroCarousel.bannerAssets.length];
+                  return AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      final currentPage =
+                          _controller.hasClients &&
+                              _controller.position.hasContentDimensions
+                          ? (_controller.page ?? _page.toDouble())
+                          : _page.toDouble();
+                      final distance = (currentPage - page).abs().clamp(
+                        0.0,
+                        1.0,
+                      );
+                      return Opacity(
+                        opacity: 1 - (distance * .2),
+                        child: Transform.scale(
+                          scale: 1 - (distance * .035),
+                          child: child,
                         ),
                       );
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Semantics(
+                        image: true,
+                        label:
+                            'Hungry Spot promotion ${page % HomeHeroCarousel.bannerAssets.length + 1}',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: RepaintBoundary(
+                            child: Image.asset(
+                              asset,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
+                              gaplessPlayback: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 13),
+          _HeroPageIndicator(selectedIndex: _visibleIndex),
+          const SizedBox(height: 22),
+          if (widget.deals.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                'Best Sellers \u{1F4A5}',
+                style: TextStyle(
+                  color: AppColors.dark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: _bestSellerViewportHeight,
+              child: _BestSellerPosters(
+                deals: widget.deals,
+                onDealSelected: widget.onDealSelected,
+              ),
+            ),
+            const SizedBox(height: 26),
+          ],
+          if (widget.pizzas.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                'For the Love of Pizza \u{2764}\u{FE0F}',
+                style: TextStyle(
+                  color: AppColors.dark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _HomePizzaRow(
+              pizzas: widget.pizzas,
+              favourites: widget.favourites,
+              onPizzaSelected: widget.onPizzaSelected,
+              onFavourite: widget.onFavourite,
+            ),
+          ],
+          if (widget.topPicks.isNotEmpty) ...[
+            const SizedBox(height: 26),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                'Top Picks',
+                style: TextStyle(
+                  color: AppColors.dark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _HomePizzaRow(
+              pizzas: widget.topPicks,
+              keyPrefix: 'home-top-pick',
+              favourites: widget.favourites,
+              onPizzaSelected: widget.onPizzaSelected,
+              onFavourite: widget.onFavourite,
+            ),
+          ],
+          const SizedBox(height: 28),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Semantics(
+              image: true,
+              label: 'Hungry Spot fast delivery banner',
+              child: AspectRatio(
+                key: const ValueKey('home-bottom-banner'),
+                aspectRatio: 1776 / 887,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/images/bottom_hero.png',
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
                 ),
               ),
-              const SizedBox(height: 13),
-              _HeroPageIndicator(selectedIndex: _visibleIndex),
-              Expanded(
-                child: ListView(
-                  key: const PageStorageKey('home-content'),
-                  padding: const EdgeInsets.only(top: 22, bottom: 116),
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    if (widget.deals.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 18),
-                        child: Text(
-                          'Best Sellers \u{1F4A5}',
-                          style: TextStyle(
-                            color: AppColors.dark,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -.2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 252,
-                        child: _BestSellerPosters(
-                          deals: widget.deals,
-                          onDealSelected: widget.onDealSelected,
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                    ],
-                    if (widget.pizzas.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 18),
-                        child: Text(
-                          'For the Love of Pizza \u{2764}\u{FE0F}',
-                          style: TextStyle(
-                            color: AppColors.dark,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -.2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _HomePizzaRow(
-                        pizzas: widget.pizzas,
-                        favourites: widget.favourites,
-                        onPizzaSelected: widget.onPizzaSelected,
-                        onFavourite: widget.onFavourite,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -234,14 +279,8 @@ class _BestSellerPosters extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const posterAspectRatio = 942 / 1672;
-        final targetWidth = math.min(constraints.maxWidth * .37, 140.0);
-        final availableHeight = math.max(0.0, constraints.maxHeight - 20);
-        final posterWidth = math.min(
-          targetWidth,
-          availableHeight * posterAspectRatio,
-        );
-        final posterHeight = posterWidth / posterAspectRatio;
+        final posterWidth = _compactHomeCardWidth(constraints.maxWidth);
+        final posterHeight = posterWidth / _homePosterAspectRatio;
 
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
@@ -290,12 +329,14 @@ class _BestSellerPosters extends StatelessWidget {
 class _HomePizzaRow extends StatelessWidget {
   const _HomePizzaRow({
     required this.pizzas,
+    this.keyPrefix = 'home-pizza',
     required this.favourites,
     required this.onPizzaSelected,
     required this.onFavourite,
   });
 
   final List<MenuItem> pizzas;
+  final String keyPrefix;
   final Set<String> favourites;
   final ValueChanged<MenuItem> onPizzaSelected;
   final ValueChanged<MenuItem> onFavourite;
@@ -304,8 +345,8 @@ class _HomePizzaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - 48) / 2;
-        final cardHeight = cardWidth / .57;
+        final cardWidth = _compactHomeCardWidth(constraints.maxWidth);
+        final cardHeight = cardWidth / .68;
 
         return SizedBox(
           height: cardHeight,
@@ -318,13 +359,14 @@ class _HomePizzaRow extends StatelessWidget {
             itemBuilder: (context, index) {
               final pizza = pizzas[index];
               return SizedBox(
-                key: ValueKey('home-pizza-${pizza.id}'),
+                key: ValueKey('$keyPrefix-${pizza.id}'),
                 width: cardWidth,
                 child: RestaurantMenuCard(
                   item: pizza,
                   favourite: favourites.contains(pizza.id),
                   onTap: () => onPizzaSelected(pizza),
                   onFavourite: () => onFavourite(pizza),
+                  compact: true,
                 ),
               );
             },
