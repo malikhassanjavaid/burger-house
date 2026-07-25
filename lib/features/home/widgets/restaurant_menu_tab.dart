@@ -414,6 +414,7 @@ class RestaurantMenuCard extends StatelessWidget {
     required this.favourite,
     required this.onTap,
     required this.onFavourite,
+    this.compact = false,
     super.key,
   });
 
@@ -421,6 +422,7 @@ class RestaurantMenuCard extends StatelessWidget {
   final bool favourite;
   final VoidCallback onTap;
   final VoidCallback onFavourite;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -447,18 +449,18 @@ class RestaurantMenuCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                flex: 12,
+                flex: compact ? 10 : 12,
                 child: Container(
-                  margin: const EdgeInsets.all(7),
+                  margin: EdgeInsets.all(compact ? 6 : 7),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5F7FA),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(compact ? 15 : 18),
                   ),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(9),
+                        padding: EdgeInsets.all(compact ? 7 : 9),
                         child: Hero(
                           tag: 'menu-art-${item.id}',
                           child: Image.asset(
@@ -475,8 +477,8 @@ class RestaurantMenuCard extends StatelessWidget {
                         ),
                       ),
                       Positioned(
-                        top: 7,
-                        right: 7,
+                        top: compact ? 5 : 7,
+                        right: compact ? 5 : 7,
                         child: Material(
                           color: Colors.white,
                           shape: const CircleBorder(),
@@ -485,13 +487,13 @@ class RestaurantMenuCard extends StatelessWidget {
                             onTap: onFavourite,
                             customBorder: const CircleBorder(),
                             child: SizedBox(
-                              width: 32,
-                              height: 32,
+                              width: compact ? 28 : 32,
+                              height: compact ? 28 : 32,
                               child: Icon(
                                 favourite
                                     ? Icons.favorite_rounded
                                     : Icons.favorite_border_rounded,
-                                size: 18,
+                                size: compact ? 16 : 18,
                                 color: favourite
                                     ? AppColors.red
                                     : AppColors.dark,
@@ -505,9 +507,11 @@ class RestaurantMenuCard extends StatelessWidget {
                 ),
               ),
               Expanded(
-                flex: 9,
+                flex: compact ? 11 : 9,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(13, 7, 13, 13),
+                  padding: compact
+                      ? const EdgeInsets.fromLTRB(10, 5, 10, 7)
+                      : const EdgeInsets.fromLTRB(13, 7, 13, 13),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -515,28 +519,28 @@ class RestaurantMenuCard extends StatelessWidget {
                         item.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.dark,
-                          fontSize: 15.5,
-                          height: 1.12,
+                          fontSize: compact ? 12.5 : 15.5,
+                          height: compact ? 1.08 : 1.12,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -.25,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: compact ? 2 : 4),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.star_rounded,
                             color: Color(0xFFFFB313),
-                            size: 15,
+                            size: compact ? 13 : 15,
                           ),
                           const SizedBox(width: 2),
                           Text(
                             '${item.rating}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: _menuMuted,
-                              fontSize: 10.5,
+                              fontSize: compact ? 9 : 10.5,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -549,15 +553,15 @@ class RestaurantMenuCard extends StatelessWidget {
                             child: Text(
                               formatUsd(item.price),
                               maxLines: 1,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.dark,
-                                fontSize: 18,
+                                fontSize: compact ? 14.5 : 18,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -.4,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 5),
+                          SizedBox(width: compact ? 3 : 5),
                           OutlinedButton(
                             onPressed: onTap,
                             style: OutlinedButton.styleFrom(
@@ -566,28 +570,36 @@ class RestaurantMenuCard extends StatelessWidget {
                                 color: AppColors.red,
                                 width: 1.5,
                               ),
-                              minimumSize: const Size(64, 34),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+                              minimumSize: Size(
+                                compact ? 54 : 64,
+                                compact ? 28 : 34,
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: compact ? 6 : 8,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(11),
+                                borderRadius: BorderRadius.circular(
+                                  compact ? 9 : 11,
+                                ),
                               ),
                               visualDensity: VisualDensity.compact,
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   'VIEW',
                                   style: TextStyle(
-                                    fontSize: 9,
+                                    fontSize: compact ? 8 : 9,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: .25,
                                   ),
                                 ),
-                                SizedBox(width: 2),
-                                Icon(Icons.arrow_forward_rounded, size: 14),
+                                SizedBox(width: compact ? 1 : 2),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: compact ? 12 : 14,
+                                ),
                               ],
                             ),
                           ),
