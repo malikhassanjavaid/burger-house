@@ -249,6 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => CartScreen(
           items: _cartItems,
           deliveryAddress: _address,
+          deliveryLocation: _deliveryLocation,
           onCartChanged: _replaceCart,
         ),
       ),
@@ -315,11 +316,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final homePizzas = sampleMenu
         .where((item) => item.category == 'Pizzas')
         .toList(growable: false);
+    final homeTopPicks = sampleMenu
+        .where((item) => item.id == 'beef-wrap' || item.id == 'loaded-fries')
+        .toList(growable: false);
     final pages = <int, Widget>{
       0: HomeHeroCarousel(
         deals: homeDeals,
         onDealSelected: _addDealAndOpenCart,
         pizzas: homePizzas,
+        topPicks: homeTopPicks,
         favourites: _favourites,
         onPizzaSelected: _openDetails,
         onFavourite: _toggleFavourite,
@@ -574,37 +579,10 @@ class _SavedTab extends StatelessWidget {
     }
 
     return ColoredBox(
-      color: const Color(0xFFF4FAFE),
+      color: AppColors.cream,
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Saved',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.dark,
-                      letterSpacing: -.3,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${items.length} favourite ${items.length == 1 ? 'meal' : 'meals'} ready for you',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          SliverToBoxAdapter(child: _SavedHeader(count: items.length)),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 120),
             sliver: SliverList.separated(
@@ -628,6 +606,87 @@ class _SavedTab extends StatelessWidget {
   }
 }
 
+class _SavedHeader extends StatelessWidget {
+  const _SavedHeader({this.count});
+
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.blush,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.bookmark_rounded,
+              color: AppColors.red,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 13),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Saved meals',
+                  style: TextStyle(
+                    color: AppColors.dark,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -.35,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Your Hungry Spot favourites',
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (count != null)
+            Container(
+              key: const ValueKey('saved-count-chip'),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.red,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.red.withValues(alpha: .2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Text(
+                '$count ${count == 1 ? 'item' : 'items'}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SavedEmptyState extends StatelessWidget {
   const _SavedEmptyState({required this.onBrowse});
 
@@ -636,27 +695,10 @@ class _SavedEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFFF4FAFE),
+      color: AppColors.cream,
       child: Column(
         children: [
-          const SizedBox(
-            height: 76,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 22),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Saved',
-                  style: TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -.3,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          const _SavedHeader(),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -664,7 +706,7 @@ class _SavedEmptyState extends StatelessWidget {
                     .clamp(200.0, 260.0)
                     .toDouble();
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 110),
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 110),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: (constraints.maxHeight - 62)
@@ -673,33 +715,52 @@ class _SavedEmptyState extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        Image.asset(
-                          'assets/images/empty_saved_illustration.png',
-                          key: const ValueKey('empty-saved-illustration'),
+                        SizedBox(
                           width: imageSize,
                           height: imageSize,
-                          fit: BoxFit.contain,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: imageSize * .8,
+                                height: imageSize * .8,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [AppColors.blush, AppColors.cream],
+                                  ),
+                                ),
+                              ),
+                              Image.asset(
+                                'assets/images/empty_saved_illustration.png',
+                                key: const ValueKey('empty-saved-illustration'),
+                                width: imageSize,
+                                height: imageSize,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 18),
                         const Text(
-                          'No favourites yet',
+                          'Nothing saved yet',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.dark,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                             letterSpacing: -.35,
                           ),
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Save the meals you love and find them here anytime.',
+                          'Tap the bookmark on any meal to keep your favourites close.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.muted,
-                            fontSize: 14,
-                            height: 1.4,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 12.5,
+                            height: 1.5,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 25),
@@ -707,6 +768,8 @@ class _SavedEmptyState extends StatelessWidget {
                           constraints: const BoxConstraints(maxWidth: 320),
                           child: AppPrimaryButton(
                             label: 'Explore Menu',
+                            height: 50,
+                            borderRadius: 15,
                             onPressed: onBrowse,
                           ),
                         ),
@@ -742,33 +805,33 @@ class _SavedFoodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Container(
-          height: 146,
-          padding: const EdgeInsets.all(10),
+          height: 164,
+          padding: const EdgeInsets.all(11),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE8EEF2)),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFFFDCE1)),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10233A).withValues(alpha: .07),
-                blurRadius: 18,
-                offset: const Offset(0, 7),
+                color: AppColors.red.withValues(alpha: .07),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: 118,
-                height: 126,
+                width: 112,
+                height: 142,
                 padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F1),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppColors.blush,
+                  borderRadius: BorderRadius.circular(17),
                 ),
                 child: Hero(
                   tag: 'saved-${item.id}',
@@ -808,35 +871,49 @@ class _SavedFoodCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         InkWell(
                           onTap: onFavourite,
-                          borderRadius: BorderRadius.circular(20),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2),
+                          borderRadius: BorderRadius.circular(11),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppColors.blush,
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            alignment: Alignment.center,
                             child: Icon(
                               favourite
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
-                              color: favourite
-                                  ? AppColors.red
-                                  : AppColors.muted,
-                              size: 21,
+                              color: AppColors.red,
+                              size: 19,
                             ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 3),
-                    Text(
-                      item.category,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.blush,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        item.category.toUpperCase(),
+                        style: const TextStyle(
+                          color: AppColors.redDark,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       item.description,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.muted,
@@ -865,7 +942,7 @@ class _SavedFoodCard extends StatelessWidget {
                         Text(
                           formatUsd(item.price),
                           style: const TextStyle(
-                            color: AppColors.dark,
+                            color: AppColors.red,
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
                           ),
@@ -876,8 +953,8 @@ class _SavedFoodCard extends StatelessWidget {
                     AppPrimaryButton(
                       label: 'Add to cart',
                       onPressed: onAdd,
-                      height: 34,
-                      borderRadius: 10,
+                      height: 36,
+                      borderRadius: 12,
                     ),
                   ],
                 ),
@@ -906,17 +983,17 @@ class _MinimalBottomBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Container(
-      height: 72 + bottomInset,
-      padding: EdgeInsets.only(bottom: bottomInset),
+      height: 80 + bottomInset,
+      padding: EdgeInsets.fromLTRB(8, 7, 8, bottomInset + 3),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFECECEC))),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        border: const Border(top: BorderSide(color: Color(0xFFF1EAEC))),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: .07),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: AppColors.dark.withValues(alpha: .08),
+            blurRadius: 24,
+            offset: const Offset(0, -7),
           ),
         ],
       ),
@@ -925,31 +1002,36 @@ class _MinimalBottomBar extends StatelessWidget {
           _MinimalNavItem(
             icon: Icons.home_outlined,
             selectedIcon: Icons.home_rounded,
+            label: 'Home',
             selected: selectedIndex == 0,
             onTap: () => onSelected(0),
           ),
           _MinimalNavItem(
-            icon: Icons.shopping_cart_outlined,
-            selectedIcon: Icons.shopping_cart_rounded,
+            icon: Icons.shopping_bag_outlined,
+            selectedIcon: Icons.shopping_bag_rounded,
+            label: 'Cart',
             badgeCount: cartCount,
-            selected: false,
+            selected: selectedIndex == 1,
             onTap: () => onSelected(1),
           ),
           _MinimalNavItem(
-            icon: Icons.restaurant_menu_outlined,
-            selectedIcon: Icons.restaurant_menu_rounded,
+            icon: Icons.fastfood_outlined,
+            selectedIcon: Icons.fastfood_rounded,
+            label: 'Menu',
             selected: selectedIndex == 2,
             onTap: () => onSelected(2),
           ),
           _MinimalNavItem(
-            icon: Icons.favorite_border_rounded,
-            selectedIcon: Icons.favorite_rounded,
+            icon: Icons.bookmark_border_rounded,
+            selectedIcon: Icons.bookmark_rounded,
+            label: 'Saved',
             selected: selectedIndex == 3,
             onTap: () => onSelected(3),
           ),
           _MinimalNavItem(
-            icon: Icons.person_outline_rounded,
-            selectedIcon: Icons.person_rounded,
+            icon: Icons.account_circle_outlined,
+            selectedIcon: Icons.account_circle_rounded,
+            label: 'Profile',
             selected: selectedIndex == 4,
             onTap: () => onSelected(4),
           ),
@@ -963,6 +1045,7 @@ class _MinimalNavItem extends StatelessWidget {
   const _MinimalNavItem({
     required this.icon,
     required this.selectedIcon,
+    required this.label,
     required this.selected,
     required this.onTap,
     this.badgeCount = 0,
@@ -970,44 +1053,89 @@ class _MinimalNavItem extends StatelessWidget {
 
   final IconData icon;
   final IconData selectedIcon;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
   final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
+    final badgeLabel = badgeCount > 99 ? '99+' : '$badgeCount';
+
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: selected ? Colors.black : Colors.transparent,
-              shape: BoxShape.circle,
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: .18),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: ValueKey('bottom-nav-${label.toLowerCase()}'),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      width: 38,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: selected ? AppColors.blush : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ]
-                  : null,
-            ),
-            alignment: Alignment.center,
-            child: Badge(
-              isLabelVisible: badgeCount > 0,
-              backgroundColor: AppColors.orange,
-              label: Text('$badgeCount'),
-              child: Icon(
-                selected ? selectedIcon : icon,
-                color: selected ? Colors.white : Colors.black87,
-                size: 26,
-              ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        selected ? selectedIcon : icon,
+                        color: selected
+                            ? AppColors.red
+                            : const Color(0xFF625B5E),
+                        size: selected ? 24 : 23,
+                      ),
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        top: -4,
+                        right: -7,
+                        child: Container(
+                          constraints: const BoxConstraints(minWidth: 18),
+                          height: 18,
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.red,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            badgeLabel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8.5,
+                              height: 1,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  style: TextStyle(
+                    color: selected ? AppColors.red : const Color(0xFF746C70),
+                    fontSize: 10.5,
+                    height: 1,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  ),
+                  child: Text(label, maxLines: 1),
+                ),
+              ],
             ),
           ),
         ),
