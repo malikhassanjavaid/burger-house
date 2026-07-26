@@ -219,7 +219,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
               items: widget.bestSellerBurgers,
               keyPrefix: 'home-best-seller',
               favourites: widget.favourites,
-              onPizzaSelected: widget.onPizzaSelected,
+              onItemSelected: widget.onPizzaSelected,
               onFavourite: widget.onFavourite,
             ),
             const SizedBox(height: 26),
@@ -241,7 +241,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             _HomeMenuRow(
               items: widget.pizzas,
               favourites: widget.favourites,
-              onPizzaSelected: widget.onPizzaSelected,
+              onItemSelected: widget.onPizzaSelected,
               onFavourite: widget.onFavourite,
             ),
           ],
@@ -264,7 +264,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
               items: widget.topPicks,
               keyPrefix: 'home-top-pick',
               favourites: widget.favourites,
-              onPizzaSelected: widget.onPizzaSelected,
+              onItemSelected: widget.onPizzaSelected,
               onFavourite: widget.onFavourite,
             ),
           ],
@@ -356,14 +356,14 @@ class _HomeMenuRow extends StatelessWidget {
     required this.items,
     this.keyPrefix = 'home-pizza',
     required this.favourites,
-    required this.onPizzaSelected,
+    required this.onItemSelected,
     required this.onFavourite,
   });
 
   final List<MenuItem> items;
   final String keyPrefix;
   final Set<String> favourites;
-  final ValueChanged<MenuItem> onPizzaSelected;
+  final ValueChanged<MenuItem> onItemSelected;
   final ValueChanged<MenuItem> onFavourite;
 
   @override
@@ -390,7 +390,7 @@ class _HomeMenuRow extends StatelessWidget {
                 child: RestaurantMenuCard(
                   item: item,
                   favourite: favourites.contains(item.id),
-                  onTap: () => onPizzaSelected(item),
+                  onTap: () => onItemSelected(item),
                   onFavourite: () => onFavourite(item),
                   compact: true,
                 ),
