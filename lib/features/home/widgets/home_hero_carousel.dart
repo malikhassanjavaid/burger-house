@@ -216,7 +216,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             ),
             const SizedBox(height: 12),
             _HomeMenuRow(
-              pizzas: widget.bestSellerBurgers,
+              items: widget.bestSellerBurgers,
               keyPrefix: 'home-best-seller',
               favourites: widget.favourites,
               onPizzaSelected: widget.onPizzaSelected,
@@ -239,7 +239,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             ),
             const SizedBox(height: 12),
             _HomeMenuRow(
-              pizzas: widget.pizzas,
+              items: widget.pizzas,
               favourites: widget.favourites,
               onPizzaSelected: widget.onPizzaSelected,
               onFavourite: widget.onFavourite,
@@ -261,7 +261,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             ),
             const SizedBox(height: 12),
             _HomeMenuRow(
-              pizzas: widget.topPicks,
+              items: widget.topPicks,
               keyPrefix: 'home-top-pick',
               favourites: widget.favourites,
               onPizzaSelected: widget.onPizzaSelected,
@@ -353,14 +353,14 @@ class _BestSellerPosters extends StatelessWidget {
 
 class _HomeMenuRow extends StatelessWidget {
   const _HomeMenuRow({
-    required this.pizzas,
+    required this.items,
     this.keyPrefix = 'home-pizza',
     required this.favourites,
     required this.onPizzaSelected,
     required this.onFavourite,
   });
 
-  final List<MenuItem> pizzas;
+  final List<MenuItem> items;
   final String keyPrefix;
   final Set<String> favourites;
   final ValueChanged<MenuItem> onPizzaSelected;
@@ -380,18 +380,18 @@ class _HomeMenuRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            itemCount: pizzas.length,
+            itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final pizza = pizzas[index];
+              final item = items[index];
               return SizedBox(
-                key: ValueKey('$keyPrefix-${pizza.id}'),
+                key: ValueKey('$keyPrefix-${item.id}'),
                 width: cardWidth,
                 child: RestaurantMenuCard(
-                  item: pizza,
-                  favourite: favourites.contains(pizza.id),
-                  onTap: () => onPizzaSelected(pizza),
-                  onFavourite: () => onFavourite(pizza),
+                  item: item,
+                  favourite: favourites.contains(item.id),
+                  onTap: () => onPizzaSelected(item),
+                  onFavourite: () => onFavourite(item),
                   compact: true,
                 ),
               );
