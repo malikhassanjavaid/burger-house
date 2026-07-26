@@ -179,18 +179,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
           _HeroPageIndicator(selectedIndex: _visibleIndex),
           const SizedBox(height: 22),
           if (widget.deals.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18),
-              child: Text(
-                'Featured Deals',
-                style: TextStyle(
-                  color: AppColors.dark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.2,
-                ),
-              ),
-            ),
+            const _HomeSectionHeading('Featured Deals'),
             const SizedBox(height: 12),
             SizedBox(
               height: _bestSellerViewportHeight,
@@ -202,18 +191,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             const SizedBox(height: 26),
           ],
           if (widget.bestSellerBurgers.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18),
-              child: Text(
-                'Best Seller',
-                style: TextStyle(
-                  color: AppColors.dark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.2,
-                ),
-              ),
-            ),
+            const _HomeSectionHeading('Best Seller'),
             const SizedBox(height: 12),
             _HomeMenuRow(
               items: widget.bestSellerBurgers,
@@ -225,18 +203,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             const SizedBox(height: 26),
           ],
           if (widget.pizzas.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18),
-              child: Text(
-                'For the Love of Pizza \u{2764}\u{FE0F}',
-                style: TextStyle(
-                  color: AppColors.dark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.2,
-                ),
-              ),
-            ),
+            const _HomeSectionHeading('For the Love of Pizza \u{2764}\u{FE0F}'),
             const SizedBox(height: 12),
             _HomeMenuRow(
               items: widget.pizzas,
@@ -247,18 +214,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
           ],
           if (widget.topPicks.isNotEmpty) ...[
             const SizedBox(height: 26),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18),
-              child: Text(
-                'Top Picks',
-                style: TextStyle(
-                  color: AppColors.dark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.2,
-                ),
-              ),
-            ),
+            const _HomeSectionHeading('Top Picks'),
             const SizedBox(height: 12),
             _HomeMenuRow(
               items: widget.topPicks,
@@ -289,6 +245,28 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeSectionHeading extends StatelessWidget {
+  const _HomeSectionHeading(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.dark,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -.2,
+        ),
       ),
     );
   }
