@@ -215,7 +215,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
               ),
             ),
             const SizedBox(height: 12),
-            _HomePizzaRow(
+            _HomeMenuRow(
               pizzas: widget.bestSellerBurgers,
               keyPrefix: 'home-best-seller',
               favourites: widget.favourites,
@@ -238,7 +238,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
               ),
             ),
             const SizedBox(height: 12),
-            _HomePizzaRow(
+            _HomeMenuRow(
               pizzas: widget.pizzas,
               favourites: widget.favourites,
               onPizzaSelected: widget.onPizzaSelected,
@@ -260,7 +260,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
               ),
             ),
             const SizedBox(height: 12),
-            _HomePizzaRow(
+            _HomeMenuRow(
               pizzas: widget.topPicks,
               keyPrefix: 'home-top-pick',
               favourites: widget.favourites,
@@ -351,8 +351,8 @@ class _BestSellerPosters extends StatelessWidget {
   }
 }
 
-class _HomePizzaRow extends StatelessWidget {
-  const _HomePizzaRow({
+class _HomeMenuRow extends StatelessWidget {
+  const _HomeMenuRow({
     required this.pizzas,
     this.keyPrefix = 'home-pizza',
     required this.favourites,
