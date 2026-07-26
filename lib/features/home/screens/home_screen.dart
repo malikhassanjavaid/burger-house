@@ -10,6 +10,7 @@ import '../../auth/services/auth_service.dart';
 import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
+import '../models/fulfillment_method.dart';
 import '../models/menu_item.dart';
 import '../services/customer_data_service.dart';
 import '../widgets/home_hero_carousel.dart';
@@ -39,9 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final _authService = AuthService();
   final _customerDataService = CustomerDataService();
+  FulfillmentMethod _fulfillmentMethod = FulfillmentMethod.delivery;
   final Set<String> _favourites = {};
 
-  List<CartItem> _cartItems = [];
+  List<CartItem> _deliveryCartItems = [];
+  List<CartItem> _pickupCartItems = [];
   Future<void> _cartWriteQueue = Future<void>.value();
   Future<void> _favouritesWriteQueue = Future<void>.value();
   String _searchText = '';
@@ -102,7 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final customerState = await _customerDataService.loadState();
       if (!mounted) return;
       setState(() {
-        _cartItems = List.of(customerState.cartItems);
+        _deliveryCartItems = List.of(customerState.deliveryCartItems);
+        _pickupCartItems = List.of(customerState.pickupCartItems);
         _favourites
           ..clear()
           ..addAll(customerState.favouriteIds);
@@ -115,8 +119,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  int get _cartCount =>
-      _cartItems.fold(0, (totalCount, item) => totalCount + item.quantity);
+  List<CartItem> get _activeCartItems =>
+      _fulfillmentMethod.isPickup ? _pickupCartItems : _deliveryCartItems;
+
+  int get _cartCount => _activeCartItems.fold(
+    0,
+    (totalCount, item) => totalCount + item.quantity,
+  );
 
   List<MenuItem> get _filteredItems {
     final query = _searchText.toLowerCase();
@@ -188,32 +197,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _addCartItem(CartItem cartItem) {
+    final fulfillmentMethod = _fulfillmentMethod;
     setState(() {
-      final index = _cartItems.indexWhere(
+      final cartItems = fulfillmentMethod.isPickup
+          ? _pickupCartItems
+          : _deliveryCartItems;
+      final index = cartItems.indexWhere(
         (item) => item.configurationKey == cartItem.configurationKey,
       );
       if (index == -1) {
-        _cartItems.add(cartItem);
+        cartItems.add(cartItem);
       } else {
-        final existing = _cartItems[index];
-        _cartItems[index] = existing.copyWith(
+        final existing = cartItems[index];
+        cartItems[index] = existing.copyWith(
           quantity: existing.quantity + cartItem.quantity,
         );
       }
     });
-    _queueCartSave();
+    _queueCartSave(fulfillmentMethod);
   }
 
   void _replaceCart(List<CartItem> items) {
-    setState(() => _cartItems = List.of(items));
-    _queueCartSave();
+    final fulfillmentMethod = _fulfillmentMethod;
+    setState(() {
+      if (fulfillmentMethod.isPickup) {
+        _pickupCartItems = List.of(items);
+      } else {
+        _deliveryCartItems = List.of(items);
+      }
+    });
+    _queueCartSave(fulfillmentMethod);
   }
 
-  void _queueCartSave() {
-    final snapshot = List<CartItem>.of(_cartItems);
+  void _queueCartSave(FulfillmentMethod fulfillmentMethod) {
+    final snapshot = List<CartItem>.of(
+      fulfillmentMethod.isPickup ? _pickupCartItems : _deliveryCartItems,
+    );
     _cartWriteQueue = _cartWriteQueue.then<void>((_) async {
       try {
-        await _customerDataService.saveCart(snapshot);
+        await _customerDataService.saveCart(fulfillmentMethod, snapshot);
       } catch (_) {
         // Keep the local UI responsive. Firestore's next write/load retries
         // synchronization for the signed-in customer.
@@ -247,10 +269,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => CartScreen(
-          items: _cartItems,
+          items: List<CartItem>.of(_activeCartItems),
           deliveryAddress: _address,
           deliveryLocation: _deliveryLocation,
           onCartChanged: _replaceCart,
+          fulfillmentMethod: _fulfillmentMethod,
         ),
       ),
     );
@@ -337,6 +360,10 @@ class _HomeScreenState extends State<HomeScreen> {
         topPicks: homeTopPicks,
         favourites: _favourites,
         onPizzaSelected: _openDetails,
+        fulfillmentMethod: _fulfillmentMethod,
+        onFulfillmentChanged: (method) {
+          setState(() => _fulfillmentMethod = method);
+        },
         onFavourite: _toggleFavourite,
       ),
       2: RestaurantMenuTab(

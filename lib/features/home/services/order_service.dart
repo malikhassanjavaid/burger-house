@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/cart_item.dart';
+import '../models/fulfillment_method.dart';
 
 class PlaceOrderRequest {
   const PlaceOrderRequest({
     required this.items,
     required this.receiverName,
     required this.phone,
+    this.fulfillmentMethod = FulfillmentMethod.delivery,
     required this.deliveryAddress,
     required this.landmark,
     required this.deliveryNotes,
@@ -23,6 +25,7 @@ class PlaceOrderRequest {
   final List<CartItem> items;
   final String receiverName;
   final String phone;
+  final FulfillmentMethod fulfillmentMethod;
   final String deliveryAddress;
   final String landmark;
   final String deliveryNotes;
@@ -43,6 +46,9 @@ class PlacedOrder {
     required this.etaMaxMinutes,
     required this.deliveryAddress,
     required this.total,
+    this.fulfillmentMethod = FulfillmentMethod.delivery,
+    this.pickupStoreName = HungrySpotPickup.storeName,
+    this.pickupInstructions = HungrySpotPickup.instructions,
   });
 
   final String id;
@@ -51,6 +57,9 @@ class PlacedOrder {
   final int etaMaxMinutes;
   final String deliveryAddress;
   final double total;
+  final FulfillmentMethod fulfillmentMethod;
+  final String pickupStoreName;
+  final String pickupInstructions;
 }
 
 /// Creates an order and clears the customer's draft cart in one batch.
@@ -90,7 +99,13 @@ class OrderService {
       'customerEmail': user.email,
       'receiverName': request.receiverName,
       'phone': request.phone,
+      'fulfillmentMethod': request.fulfillmentMethod.firestoreValue,
       'deliveryAddress': request.deliveryAddress,
+      if (request.fulfillmentMethod.isPickup) ...{
+        'pickupStoreName': HungrySpotPickup.storeName,
+        'pickupAddress': HungrySpotPickup.address,
+        'pickupInstructions': HungrySpotPickup.instructions,
+      },
       'landmark': request.landmark,
       'deliveryNotes': request.deliveryNotes,
       'paymentMethod': request.paymentMethod,
@@ -104,9 +119,14 @@ class OrderService {
       'total': request.total,
       'etaMinMinutes': etaMinMinutes,
       'etaMaxMinutes': etaMaxMinutes,
-      'estimatedDeliveryAt': Timestamp.fromDate(
-        now.add(const Duration(minutes: 35)),
-      ),
+      if (request.fulfillmentMethod.isPickup)
+        'estimatedReadyAt': Timestamp.fromDate(
+          now.add(const Duration(minutes: 35)),
+        )
+      else
+        'estimatedDeliveryAt': Timestamp.fromDate(
+          now.add(const Duration(minutes: 35)),
+        ),
       'items': request.items
           .map(
             (item) => {
@@ -127,12 +147,27 @@ class OrderService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    batch.set(_firestore.collection('users').doc(user.uid), {
-      'cartItems': const <Map<String, dynamic>>[],
-      'cartUpdatedAt': FieldValue.serverTimestamp(),
+    final userCartUpdate = <String, dynamic>{
+      request.fulfillmentMethod.isPickup
+              ? 'pickupCartItems'
+              : 'deliveryCartItems':
+          const <Map<String, dynamic>>[],
+      request.fulfillmentMethod.isPickup
+              ? 'pickupCartUpdatedAt'
+              : 'deliveryCartUpdatedAt':
+          FieldValue.serverTimestamp(),
       'lastOrderId': orderReference.id,
       'lastOrderAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    if (!request.fulfillmentMethod.isPickup) {
+      userCartUpdate['cartItems'] = const <Map<String, dynamic>>[];
+      userCartUpdate['cartUpdatedAt'] = FieldValue.serverTimestamp();
+    }
+    batch.set(
+      _firestore.collection('users').doc(user.uid),
+      userCartUpdate,
+      SetOptions(merge: true),
+    );
 
     await batch.commit();
 
@@ -143,6 +178,7 @@ class OrderService {
       etaMaxMinutes: etaMaxMinutes,
       deliveryAddress: request.deliveryAddress,
       total: request.total,
+      fulfillmentMethod: request.fulfillmentMethod,
     );
   }
 }

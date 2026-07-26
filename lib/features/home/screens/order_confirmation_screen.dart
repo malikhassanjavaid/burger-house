@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../models/fulfillment_method.dart';
 import '../services/order_service.dart';
 import 'profile_orders_screen.dart';
 
@@ -26,14 +27,20 @@ class OrderConfirmationScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                   child: Column(
                     children: [
-                      _SuccessPanel(orderNumber: order.orderNumber),
+                      _SuccessPanel(
+                        orderNumber: order.orderNumber,
+                        isPickup: order.fulfillmentMethod.isPickup,
+                      ),
                       const SizedBox(height: 14),
                       _EtaCard(
                         minimumMinutes: order.etaMinMinutes,
                         maximumMinutes: order.etaMaxMinutes,
+                        isPickup: order.fulfillmentMethod.isPickup,
                       ),
                       const SizedBox(height: 14),
-                      const _OrderJourneyCard(),
+                      _OrderJourneyCard(
+                        isPickup: order.fulfillmentMethod.isPickup,
+                      ),
                       const SizedBox(height: 14),
                       _OrderSummaryCard(order: order),
                     ],
@@ -101,9 +108,10 @@ class _ConfirmationHeader extends StatelessWidget {
 }
 
 class _SuccessPanel extends StatelessWidget {
-  const _SuccessPanel({required this.orderNumber});
+  const _SuccessPanel({required this.orderNumber, required this.isPickup});
 
   final String orderNumber;
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
@@ -161,10 +169,10 @@ class _SuccessPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Order confirmed!',
+              Text(
+                isPickup ? 'Pickup confirmed!' : 'Order confirmed!',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -172,10 +180,12 @@ class _SuccessPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
-                'Your meal is now with the Hungry Spot kitchen.',
+              Text(
+                isPickup
+                    ? 'We are preparing your meal and will let you know when it is ready to grab.'
+                    : 'Your meal is now with the Hungry Spot kitchen.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Color(0xFFFFE9EC),
                   fontSize: 12,
                   height: 1.4,
@@ -233,10 +243,15 @@ class _DecorativeCircle extends StatelessWidget {
 }
 
 class _EtaCard extends StatelessWidget {
-  const _EtaCard({required this.minimumMinutes, required this.maximumMinutes});
+  const _EtaCard({
+    required this.minimumMinutes,
+    required this.maximumMinutes,
+    required this.isPickup,
+  });
 
   final int minimumMinutes;
   final int maximumMinutes;
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
@@ -261,9 +276,9 @@ class _EtaCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ESTIMATED DELIVERY',
-                  style: TextStyle(
+                Text(
+                  isPickup ? 'ESTIMATED READY TIME' : 'ESTIMATED DELIVERY',
+                  style: const TextStyle(
                     color: AppColors.muted,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w900,
@@ -313,15 +328,17 @@ class _EtaCard extends StatelessWidget {
 }
 
 class _OrderJourneyCard extends StatelessWidget {
-  const _OrderJourneyCard();
+  const _OrderJourneyCard({required this.isPickup});
+
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
-    return const _ConfirmationCard(
+    return _ConfirmationCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Your order journey',
             style: TextStyle(
               color: AppColors.dark,
@@ -331,15 +348,17 @@ class _OrderJourneyCard extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            'We will keep each stage updated for you.',
-            style: TextStyle(
+            isPickup
+                ? 'We will notify you as soon as your meal is ready to collect.'
+                : 'We will keep each stage updated for you.',
+            style: const TextStyle(
               color: AppColors.muted,
               fontSize: 10.5,
               height: 1.4,
             ),
           ),
           SizedBox(height: 19),
-          _OrderProgress(),
+          _OrderProgress(isPickup: isPickup),
         ],
       ),
     );
@@ -357,9 +376,11 @@ class _OrderSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Delivery details',
-            style: TextStyle(
+          Text(
+            order.fulfillmentMethod.isPickup
+                ? 'Pickup details'
+                : 'Delivery details',
+            style: const TextStyle(
               color: AppColors.dark,
               fontSize: 15,
               fontWeight: FontWeight.w900,
@@ -367,9 +388,15 @@ class _OrderSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _ConfirmationDetail(
-            icon: Icons.location_on_outlined,
-            label: 'DELIVERING TO',
-            value: order.deliveryAddress,
+            icon: order.fulfillmentMethod.isPickup
+                ? Icons.storefront_rounded
+                : Icons.location_on_outlined,
+            label: order.fulfillmentMethod.isPickup
+                ? 'PICKUP FROM'
+                : 'DELIVERING TO',
+            value: order.fulfillmentMethod.isPickup
+                ? '${order.pickupStoreName} • ${order.deliveryAddress}'
+                : order.deliveryAddress,
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 15),
@@ -377,7 +404,9 @@ class _OrderSummaryCard extends StatelessWidget {
           ),
           _ConfirmationDetail(
             icon: Icons.payments_outlined,
-            label: 'PAYMENT ON DELIVERY',
+            label: order.fulfillmentMethod.isPickup
+                ? 'PAY AT PICKUP'
+                : 'PAYMENT ON DELIVERY',
             value: formatUsd(order.total),
           ),
         ],
@@ -471,7 +500,9 @@ class _ConfirmationDetail extends StatelessWidget {
 }
 
 class _OrderProgress extends StatelessWidget {
-  const _OrderProgress();
+  const _OrderProgress({required this.isPickup});
+
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
@@ -490,16 +521,16 @@ class _OrderProgress extends StatelessWidget {
             ],
           ),
         ),
-        const Row(
+        Row(
           children: [
-            Expanded(
+            const Expanded(
               child: _ProgressStep(
                 icon: Icons.receipt_long_rounded,
                 label: 'Placed',
                 active: true,
               ),
             ),
-            Expanded(
+            const Expanded(
               child: _ProgressStep(
                 icon: Icons.restaurant_rounded,
                 label: 'Preparing',
@@ -507,8 +538,10 @@ class _OrderProgress extends StatelessWidget {
             ),
             Expanded(
               child: _ProgressStep(
-                icon: Icons.delivery_dining_rounded,
-                label: 'On the way',
+                icon: isPickup
+                    ? Icons.shopping_bag_rounded
+                    : Icons.delivery_dining_rounded,
+                label: isPickup ? 'Ready' : 'On the way',
               ),
             ),
           ],

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -8,10 +8,20 @@ import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../location/models/delivery_location.dart';
 import '../models/cart_item.dart';
+import '../models/fulfillment_method.dart';
 import '../services/order_service.dart';
 import 'order_confirmation_screen.dart';
 
-enum PaymentMethod { cashOnDelivery, card, wallet }
+enum PaymentMethod { cashOnDelivery, card }
+
+extension on PaymentMethod {
+  String valueFor(FulfillmentMethod fulfillmentMethod) {
+    if (fulfillmentMethod.isPickup) return 'card_at_pickup';
+    return this == PaymentMethod.cashOnDelivery
+        ? 'cash_on_delivery'
+        : 'card_on_delivery';
+  }
+}
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({
@@ -21,6 +31,7 @@ class CheckoutScreen extends StatefulWidget {
     this.initialLocation,
     required this.deliveryFee,
     required this.onOrderPlaced,
+    this.fulfillmentMethod = FulfillmentMethod.delivery,
     this.initialDeliveryNotes = '',
     this.serviceFee = 0,
     this.discount = 0,
@@ -32,6 +43,7 @@ class CheckoutScreen extends StatefulWidget {
   final DeliveryLocation? initialLocation;
   final double deliveryFee;
   final VoidCallback onOrderPlaced;
+  final FulfillmentMethod fulfillmentMethod;
   final String initialDeliveryNotes;
   final double serviceFee;
   final double discount;
@@ -46,7 +58,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  final _landmarkController = TextEditingController();
   final _notesController = TextEditingController();
   final _addressFocusNode = FocusNode();
   final _orderService = OrderService();
@@ -64,8 +75,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
     _nameController.text = user?.displayName ?? '';
+    _phoneController.text = user?.phoneNumber ?? '';
     _addressController.text = widget.initialAddress;
     _notesController.text = widget.initialDeliveryNotes;
+    if (widget.fulfillmentMethod.isPickup) {
+      _paymentMethod = PaymentMethod.card;
+    }
   }
 
   @override
@@ -73,24 +88,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
-    _landmarkController.dispose();
     _notesController.dispose();
     _addressFocusNode.dispose();
     super.dispose();
-  }
-
-  void _selectPayment(PaymentMethod method, bool available) {
-    if (!available) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Online payments require a secure payment gateway integration.',
-          ),
-        ),
-      );
-      return;
-    }
-    setState(() => _paymentMethod = method);
   }
 
   Future<void> _placeOrder() async {
@@ -104,10 +104,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           items: widget.items,
           receiverName: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
-          deliveryAddress: _addressController.text.trim(),
-          landmark: _landmarkController.text.trim(),
+          fulfillmentMethod: widget.fulfillmentMethod,
+          deliveryAddress: widget.fulfillmentMethod.isPickup
+              ? '${HungrySpotPickup.storeName}, ${HungrySpotPickup.address}'
+              : _addressController.text.trim(),
+          landmark: '',
           deliveryNotes: _notesController.text.trim(),
-          paymentMethod: 'cash_on_delivery',
+          paymentMethod: _paymentMethod.valueFor(widget.fulfillmentMethod),
           subtotal: _subtotal,
           deliveryFee: widget.deliveryFee,
           serviceFee: widget.serviceFee,
@@ -130,7 +133,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       setState(() => _isPlacingOrder = false);
       final message = error.code == 'permission-denied'
-          ? 'Firestore rules do not allow creating orders yet.'
+          ? 'Firestore rules do not allow this payment option yet.'
           : error.message ?? 'Firebase could not place the order.';
       ScaffoldMessenger.of(
         context,
@@ -148,14 +151,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isPickup = widget.fulfillmentMethod.isPickup;
+
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        titleSpacing: 2,
         title: const Text(
           'Checkout',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: AppColors.dark,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+          ),
         ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            decoration: BoxDecoration(
+              color: isPickup ? const Color(0xFFFFF3D5) : AppColors.blush,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isPickup
+                      ? Icons.storefront_rounded
+                      : Icons.delivery_dining_rounded,
+                  size: 15,
+                  color: isPickup ? const Color(0xFFD68A00) : AppColors.red,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  widget.fulfillmentMethod.label,
+                  style: TextStyle(
+                    color: isPickup ? const Color(0xFFA86C00) : AppColors.red,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -165,88 +207,69 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
                   children: [
-                    const Text(
-                      'Almost there',
-                      style: TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -.5,
-                      ),
+                    _SectionTitle(
+                      title: isPickup
+                          ? 'Pickup this order at'
+                          : 'Deliver this order to',
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Confirm the details below and we will start preparing your order.',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12.5,
-                        height: 1.45,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const _CheckoutHeading(
-                      number: '1',
-                      title: 'Delivery details',
-                      subtitle: 'Your saved location and contact information',
-                    ),
-                    const SizedBox(height: 14),
-                    _CheckoutLocationCard(
+                    const SizedBox(height: 10),
+                    _FulfillmentLocationCard(
+                      fulfillmentMethod: widget.fulfillmentMethod,
                       location: widget.initialLocation,
                       addressController: _addressController,
-                      onEdit: () => _addressFocusNode.requestFocus(),
+                      onEdit: isPickup
+                          ? null
+                          : () => _addressFocusNode.requestFocus(),
                     ),
-                    const SizedBox(height: 14),
-                    _AddressForm(
+                    const SizedBox(height: 22),
+                    const _SectionTitle(title: 'Contact details'),
+                    const SizedBox(height: 10),
+                    _ContactDetailsCard(
                       nameController: _nameController,
                       phoneController: _phoneController,
                       addressController: _addressController,
-                      landmarkController: _landmarkController,
                       notesController: _notesController,
                       addressFocusNode: _addressFocusNode,
+                      isPickup: isPickup,
                     ),
-                    const SizedBox(height: 30),
-                    const _CheckoutHeading(
-                      number: '2',
-                      title: 'Payment',
-                      subtitle: 'Choose how you want to pay',
-                    ),
-                    const SizedBox(height: 14),
-                    _PaymentOption(
-                      title: 'Cash on delivery',
-                      subtitle: 'Pay the rider when your order arrives',
-                      icon: Icons.payments_outlined,
-                      selected: _paymentMethod == PaymentMethod.cashOnDelivery,
-                      available: true,
-                      onTap: () =>
-                          _selectPayment(PaymentMethod.cashOnDelivery, true),
-                    ),
+                    const SizedBox(height: 22),
+                    const _SectionTitle(title: 'Payment'),
                     const SizedBox(height: 10),
-                    _PaymentOption(
-                      title: 'Credit or debit card',
-                      subtitle: 'Secure gateway not connected yet',
-                      icon: Icons.credit_card,
-                      selected: _paymentMethod == PaymentMethod.card,
-                      available: false,
-                      onTap: () => _selectPayment(PaymentMethod.card, false),
-                    ),
+                    if (!isPickup) ...[
+                      _PaymentTile(
+                        icon: Icons.payments_rounded,
+                        title: 'Cash on delivery',
+                        subtitle: 'Pay the rider when your food arrives',
+                        selected:
+                            _paymentMethod == PaymentMethod.cashOnDelivery,
+                        onTap: () => setState(
+                          () => _paymentMethod = PaymentMethod.cashOnDelivery,
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      _PaymentTile(
+                        icon: Icons.credit_card_rounded,
+                        title: 'Card on delivery',
+                        subtitle: 'Pay using the rider’s card machine',
+                        selected: _paymentMethod == PaymentMethod.card,
+                        onTap: () =>
+                            setState(() => _paymentMethod = PaymentMethod.card),
+                      ),
+                    ] else
+                      _PaymentTile(
+                        icon: Icons.credit_card_rounded,
+                        title: 'Card at pickup',
+                        subtitle: 'Pay by card at the Hungry Spot counter',
+                        selected: true,
+                        onTap: () {},
+                      ),
+                    const SizedBox(height: 22),
+                    const _SectionTitle(title: 'Summary'),
                     const SizedBox(height: 10),
-                    _PaymentOption(
-                      title: 'Mobile wallet',
-                      subtitle: 'Easypaisa/JazzCash integration coming later',
-                      icon: Icons.account_balance_wallet_outlined,
-                      selected: _paymentMethod == PaymentMethod.wallet,
-                      available: false,
-                      onTap: () => _selectPayment(PaymentMethod.wallet, false),
-                    ),
-                    const SizedBox(height: 30),
-                    const _CheckoutHeading(
-                      number: '3',
-                      title: 'Order summary',
-                      subtitle: 'Review before placing your order',
-                    ),
-                    const SizedBox(height: 14),
                     _CheckoutSummary(
                       items: widget.items,
                       subtotal: _subtotal,
@@ -254,6 +277,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       serviceFee: widget.serviceFee,
                       discount: widget.discount,
                       total: _total,
+                      isPickup: isPickup,
                     ),
                   ],
                 ),
@@ -261,6 +285,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               _PlaceOrderBar(
                 total: _total,
                 loading: _isPlacingOrder,
+                isPickup: isPickup,
                 onPlaceOrder: _placeOrder,
               ),
             ],
@@ -271,16 +296,182 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
-class _CheckoutLocationCard extends StatelessWidget {
-  const _CheckoutLocationCard({
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: AppColors.dark,
+        fontSize: 15,
+        fontWeight: FontWeight.w900,
+        letterSpacing: -.15,
+      ),
+    );
+  }
+}
+
+class _FulfillmentLocationCard extends StatelessWidget {
+  const _FulfillmentLocationCard({
+    required this.fulfillmentMethod,
     required this.location,
     required this.addressController,
     required this.onEdit,
   });
 
+  final FulfillmentMethod fulfillmentMethod;
   final DeliveryLocation? location;
   final TextEditingController addressController;
-  final VoidCallback onEdit;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPickup = fulfillmentMethod.isPickup;
+
+    return Container(
+      key: ValueKey(
+        isPickup ? 'checkout-pickup-location' : 'checkout-delivery-location',
+      ),
+      height: 132,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF0E4E6)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.dark.withValues(alpha: .055),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(5, 4, 8, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 31,
+                        height: 31,
+                        decoration: BoxDecoration(
+                          color: isPickup
+                              ? const Color(0xFFFFF3D5)
+                              : AppColors.blush,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          isPickup
+                              ? Icons.storefront_rounded
+                              : Icons.location_on_rounded,
+                          color: isPickup
+                              ? const Color(0xFFE09A00)
+                              : AppColors.red,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isPickup
+                              ? HungrySpotPickup.storeName
+                              : (location?.label.trim().isNotEmpty == true
+                                    ? location!.label
+                                    : 'Delivery address'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: addressController,
+                      builder: (context, value, _) {
+                        final address = isPickup
+                            ? HungrySpotPickup.address
+                            : value.text.trim();
+                        return Text(
+                          address.isEmpty
+                              ? 'Add your complete delivery address'
+                              : address,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 10.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (onEdit != null)
+                    InkWell(
+                      onTap: onEdit,
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 3),
+                        child: Text(
+                          'EDIT ADDRESS',
+                          style: TextStyle(
+                            color: AppColors.red,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .25,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const Text(
+                      'MAIN PICKUP COUNTER',
+                      style: TextStyle(
+                        color: Color(0xFFD68A00),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: .25,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 112,
+            height: 112,
+            child: _LocationPreview(
+              location: isPickup ? null : location,
+              isPickup: isPickup,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationPreview extends StatelessWidget {
+  const _LocationPreview({required this.location, required this.isPickup});
+
+  final DeliveryLocation? location;
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
@@ -290,295 +481,134 @@ class _CheckoutLocationCard extends StatelessWidget {
         ? LatLng(latitude, longitude)
         : null;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFF0E5E6)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.dark.withValues(alpha: .06),
-            blurRadius: 22,
-            offset: const Offset(0, 9),
-          ),
-        ],
-      ),
-      child: Column(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(21)),
-            child: SizedBox(
-              height: 150,
-              child: Stack(
-                fit: StackFit.expand,
+          if (point != null)
+            IgnorePointer(
+              child: FlutterMap(
+                options: MapOptions(initialCenter: point, initialZoom: 15.5),
                 children: [
-                  if (point != null)
-                    IgnorePointer(
-                      child: FlutterMap(
-                        options: MapOptions(
-                          initialCenter: point,
-                          initialZoom: 15.5,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.hungryspot.customer',
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: point,
-                                width: 54,
-                                height: 64,
-                                alignment: Alignment.topCenter,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.red,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 4,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.red.withValues(
-                                          alpha: .28,
-                                        ),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.home_rounded,
-                                    color: Colors.white,
-                                    size: 23,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.hungryspot.customer',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: point,
+                        width: 38,
+                        height: 38,
+                        child: const _MapPin(icon: Icons.home_rounded),
                       ),
-                    )
-                  else
-                    const _CheckoutMapPlaceholder(),
+                    ],
+                  ),
+                ],
+              ),
+            )
+          else
+            const ColoredBox(
+              color: Color(0xFFF8EEF0),
+              child: Stack(
+                children: [
                   Positioned(
-                    left: 12,
-                    top: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .94),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black12, blurRadius: 10),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.near_me_rounded,
-                            color: AppColors.red,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            point == null
-                                ? 'DELIVERY LOCATION'
-                                : 'PIN CONFIRMED',
-                            style: const TextStyle(
-                              color: AppColors.dark,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: .35,
-                            ),
-                          ),
-                        ],
-                      ),
+                    left: -15,
+                    top: 17,
+                    child: Icon(
+                      Icons.route_rounded,
+                      color: Color(0x24F23845),
+                      size: 94,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(15, 14, 12, 15),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 39,
-                  height: 39,
-                  decoration: BoxDecoration(
-                    color: AppColors.blush,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.location_on_rounded,
-                    color: AppColors.red,
-                    size: 21,
-                  ),
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: addressController,
-                    builder: (context, value, _) {
-                      final address = value.text.trim();
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            location?.label.trim().isNotEmpty == true
-                                ? location!.label
-                                : 'Delivery address',
-                            style: const TextStyle(
-                              color: AppColors.dark,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            address.isEmpty
-                                ? 'Add a complete address for your rider'
-                                : address,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11.5,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: onEdit,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.red,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 8,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(Icons.edit_location_alt_outlined, size: 17),
-                  label: const Text(
-                    'Edit',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-                  ),
-                ),
-              ],
+          if (point == null)
+            Center(
+              child: _MapPin(
+                icon: isPickup
+                    ? Icons.storefront_rounded
+                    : Icons.location_on_rounded,
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _CheckoutMapPlaceholder extends StatelessWidget {
-  const _CheckoutMapPlaceholder();
+class _MapPin extends StatelessWidget {
+  const _MapPin({required this.icon});
+
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0xFFFFF1F2),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -22,
-            top: -26,
-            child: Icon(
-              Icons.route_rounded,
-              size: 150,
-              color: AppColors.red.withValues(alpha: .07),
-            ),
-          ),
-          Center(
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.red.withValues(alpha: .13),
-                    blurRadius: 20,
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.location_searching_rounded,
-                color: AppColors.red,
-                size: 28,
-              ),
-            ),
-          ),
-        ],
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: AppColors.red,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: const [BoxShadow(color: Color(0x33F23845), blurRadius: 10)],
       ),
+      child: Icon(icon, color: Colors.white, size: 19),
     );
   }
 }
 
-class _AddressForm extends StatelessWidget {
-  const _AddressForm({
+class _ContactDetailsCard extends StatelessWidget {
+  const _ContactDetailsCard({
     required this.nameController,
     required this.phoneController,
     required this.addressController,
-    required this.landmarkController,
     required this.notesController,
     required this.addressFocusNode,
+    required this.isPickup,
   });
 
   final TextEditingController nameController;
   final TextEditingController phoneController;
   final TextEditingController addressController;
-  final TextEditingController landmarkController;
   final TextEditingController notesController;
   final FocusNode addressFocusNode;
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF0E4E6)),
       ),
       child: Column(
         children: [
           TextFormField(
             controller: nameController,
             textCapitalization: TextCapitalization.words,
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
             decoration: const InputDecoration(
-              labelText: 'Receiver name',
-              prefixIcon: Icon(Icons.person_outline),
+              labelText: 'Customer name',
+              prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
             ),
-            validator: (value) => (value ?? '').trim().length < 2
-                ? 'Enter the receiver’s full name'
-                : null,
+            validator: (value) =>
+                (value ?? '').trim().length < 2 ? 'Enter your full name' : null,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextFormField(
             controller: phoneController,
             keyboardType: TextInputType.phone,
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
             decoration: const InputDecoration(
               labelText: 'Phone number',
               hintText: '03XX XXXXXXX',
-              prefixIcon: Icon(Icons.phone_outlined),
+              prefixIcon: Icon(Icons.phone_outlined, size: 20),
             ),
             validator: (value) {
               final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
@@ -587,40 +617,45 @@ class _AddressForm extends StatelessWidget {
                   : null;
             },
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: addressController,
-            focusNode: addressFocusNode,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Complete delivery address',
-              prefixIcon: Icon(Icons.location_on_outlined),
-              alignLabelWithHint: true,
+          if (!isPickup) ...[
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: addressController,
+              focusNode: addressFocusNode,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 2,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Complete delivery address',
+                prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+                alignLabelWithHint: true,
+              ),
+              validator: (value) {
+                final address = (value ?? '').trim();
+                if (address.length < 8 ||
+                    address.toLowerCase().startsWith('set your')) {
+                  return 'Enter a complete delivery address';
+                }
+                return null;
+              },
             ),
-            validator: (value) => (value ?? '').trim().length < 8
-                ? 'Enter a complete delivery address'
-                : null,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: landmarkController,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Nearby landmark (optional)',
-              prefixIcon: Icon(Icons.place_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
+          ],
+          const SizedBox(height: 10),
           TextFormField(
             controller: notesController,
-            maxLength: 150,
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Delivery instructions (optional)',
-              hintText: 'Gate colour, floor, or rider instructions',
-              prefixIcon: Icon(Icons.notes_outlined),
+            maxLength: 150,
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+            decoration: InputDecoration(
+              labelText: isPickup
+                  ? 'Kitchen note (optional)'
+                  : 'Delivery note (optional)',
+              prefixIcon: const Icon(Icons.notes_rounded, size: 20),
               alignLabelWithHint: true,
+              counterText: '',
             ),
           ),
         ],
@@ -629,140 +664,82 @@ class _AddressForm extends StatelessWidget {
   }
 }
 
-class _CheckoutHeading extends StatelessWidget {
-  const _CheckoutHeading({
-    required this.number,
-    required this.title,
-    required this.subtitle,
-  });
-  final String number;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: AppColors.orange,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            number,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        const SizedBox(width: 11),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.dark,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PaymentOption extends StatelessWidget {
-  const _PaymentOption({
-    required this.title,
-    required this.subtitle,
+class _PaymentTile extends StatelessWidget {
+  const _PaymentTile({
     required this.icon,
+    required this.title,
+    required this.subtitle,
     required this.selected,
-    required this.available,
     required this.onTap,
   });
+
+  final IconData icon;
   final String title;
   final String subtitle;
-  final IconData icon;
   final bool selected;
-  final bool available;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFFFFF0E4) : Colors.white,
+      color: selected ? AppColors.blush : Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: selected ? AppColors.orange : const Color(0xFFE9DED5),
+              color: selected ? AppColors.red : const Color(0xFFF0E4E6),
+              width: selected ? 1.4 : 1,
             ),
           ),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE5CE),
-                  borderRadius: BorderRadius.circular(13),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: AppColors.orange),
+                child: Icon(icon, color: AppColors.red, size: 21),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 11),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        color: AppColors.dark,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
                         color: AppColors.muted,
-                        fontSize: 11,
+                        fontSize: 9.8,
+                        height: 1.3,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (!available)
-                const Text(
-                  'SOON',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
-                )
-              else
-                Icon(
-                  selected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                  color: AppColors.orange,
-                ),
+              Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: selected ? AppColors.red : AppColors.muted,
+                size: 21,
+              ),
             ],
           ),
         ),
@@ -779,65 +756,107 @@ class _CheckoutSummary extends StatelessWidget {
     required this.serviceFee,
     required this.discount,
     required this.total,
+    required this.isPickup,
   });
+
   final List<CartItem> items;
   final double subtotal;
   final double deliveryFee;
   final double serviceFee;
   final double discount;
   final double total;
+  final bool isPickup;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF0E4E6)),
       ),
       child: Column(
         children: [
           ...items.map(
             (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 11),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${item.quantity}×',
-                    style: const TextStyle(
-                      color: AppColors.orange,
-                      fontWeight: FontWeight.w900,
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 25),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.blush,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Text(
+                      '${item.quantity}×',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.red,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 9),
                   Expanded(
-                    child: Text(
-                      '${item.menuItem.name} (${item.size})',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.menuItem.name,
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (item.size.trim().isNotEmpty)
+                          Text(
+                            item.size,
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 9.5,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   Text(
                     formatUsd(item.totalPrice),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      color: AppColors.dark,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          const Divider(height: 24),
+          const Divider(height: 20, color: Color(0xFFF0E4E6)),
           _SummaryRow(label: 'Subtotal', value: subtotal),
           const SizedBox(height: 9),
-          _SummaryRow(label: 'Delivery fee', value: deliveryFee),
+          _SummaryRow(
+            label: isPickup ? 'Pickup' : 'Delivery',
+            value: deliveryFee,
+            freeLabel: isPickup ? 'FREE' : null,
+          ),
           if (serviceFee > 0) ...[
             const SizedBox(height: 9),
             _SummaryRow(label: 'Service fee', value: serviceFee),
           ],
           if (discount > 0) ...[
             const SizedBox(height: 9),
-            _SummaryRow(label: 'Coupon discount', value: -discount),
+            _SummaryRow(label: 'Voucher discount', value: -discount),
           ],
-          const Divider(height: 24),
+          const Divider(height: 22, color: Color(0xFFF0E4E6)),
           _SummaryRow(label: 'Total', value: total, emphasized: true),
         ],
       ),
@@ -850,13 +869,19 @@ class _SummaryRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.emphasized = false,
+    this.freeLabel,
   });
+
   final String label;
   final double value;
   final bool emphasized;
+  final String? freeLabel;
 
   @override
   Widget build(BuildContext context) {
+    final valueText =
+        freeLabel ??
+        (value < 0 ? '− ${formatUsd(value.abs())}' : formatUsd(value));
     return Row(
       children: [
         Expanded(
@@ -864,19 +889,20 @@ class _SummaryRow extends StatelessWidget {
             label,
             style: TextStyle(
               color: emphasized ? AppColors.dark : AppColors.muted,
-              fontWeight: emphasized ? FontWeight.w900 : FontWeight.w500,
+              fontSize: emphasized ? 13 : 11,
+              fontWeight: emphasized ? FontWeight.w900 : FontWeight.w600,
             ),
           ),
         ),
         Text(
-          value < 0 ? '− ${formatUsd(value.abs())}' : formatUsd(value),
+          valueText,
           style: TextStyle(
             color: value < 0
-                ? const Color(0xFF58A72E)
+                ? const Color(0xFF43A047)
                 : emphasized
-                ? AppColors.orange
+                ? AppColors.red
                 : AppColors.dark,
-            fontSize: emphasized ? 18 : 14,
+            fontSize: emphasized ? 16 : 11.5,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -889,23 +915,32 @@ class _PlaceOrderBar extends StatelessWidget {
   const _PlaceOrderBar({
     required this.total,
     required this.loading,
+    required this.isPickup,
     required this.onPlaceOrder,
   });
+
   final double total;
   final bool loading;
+  final bool isPickup;
   final VoidCallback onPlaceOrder;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFF0E4E6))),
+      ),
       child: SafeArea(
         top: false,
         child: AppPrimaryButton(
-          label: 'PLACE ORDER • ${formatUsd(total)}',
+          label:
+              '${isPickup ? 'CONFIRM PICKUP' : 'PLACE ORDER'}  •  ${formatUsd(total)}',
           onPressed: onPlaceOrder,
           isLoading: loading,
+          height: 52,
+          borderRadius: 16,
         ),
       ),
     );

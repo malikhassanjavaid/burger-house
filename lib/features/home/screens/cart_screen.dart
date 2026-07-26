@@ -7,6 +7,7 @@ import '../../../core/widgets/app_primary_button.dart';
 import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
+import '../models/fulfillment_method.dart';
 import '../models/menu_item.dart';
 import 'checkout_screen.dart';
 import 'menu_details_screen.dart';
@@ -24,11 +25,13 @@ class CartScreen extends StatefulWidget {
     required this.deliveryAddress,
     required this.onCartChanged,
     this.deliveryLocation,
+    this.fulfillmentMethod = FulfillmentMethod.delivery,
   });
 
   final List<CartItem> items;
   final String deliveryAddress;
   final DeliveryLocation? deliveryLocation;
+  final FulfillmentMethod fulfillmentMethod;
   final ValueChanged<List<CartItem>> onCartChanged;
 
   @override
@@ -46,8 +49,13 @@ class _CartScreenState extends State<CartScreen> {
   double get _subtotal => _items.fold(0, (sum, item) => sum + item.totalPrice);
   double get _serviceFee => _items.isEmpty ? 0 : _subtotal * .05;
   double get _discount => _couponCode == null ? 0 : _subtotal * .10;
+  double get _effectiveDeliveryFee =>
+      widget.fulfillmentMethod.isPickup ? 0 : _deliveryFee;
   double get _total =>
-      _subtotal - _discount + (_items.isEmpty ? 0 : _deliveryFee) + _serviceFee;
+      _subtotal -
+      _discount +
+      (_items.isEmpty ? 0 : _effectiveDeliveryFee) +
+      _serviceFee;
   bool get _meetsMinimum => _subtotal >= _minimumOrder;
   int get _itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
 
@@ -178,14 +186,18 @@ class _CartScreenState extends State<CartScreen> {
               child: SizedBox(width: 42, child: Divider(thickness: 4)),
             ),
             const SizedBox(height: 15),
-            const Text(
-              'Delivery instructions',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            Text(
+              widget.fulfillmentMethod.isPickup
+                  ? 'Pickup instructions'
+                  : 'Delivery instructions',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Help your rider find you and deliver smoothly.',
-              style: TextStyle(color: _cartMuted),
+            Text(
+              widget.fulfillmentMethod.isPickup
+                  ? 'Add a note for the kitchen or pickup counter.'
+                  : 'Help your rider find you and deliver smoothly.',
+              style: const TextStyle(color: _cartMuted),
             ),
             const SizedBox(height: 18),
             TextField(
@@ -291,8 +303,9 @@ class _CartScreenState extends State<CartScreen> {
           items: _items,
           initialAddress: widget.deliveryAddress,
           initialLocation: widget.deliveryLocation,
+          fulfillmentMethod: widget.fulfillmentMethod,
           initialDeliveryNotes: _deliveryNotes,
-          deliveryFee: _deliveryFee,
+          deliveryFee: _effectiveDeliveryFee,
           serviceFee: _serviceFee,
           discount: _discount,
           couponCode: _couponCode,
@@ -337,7 +350,9 @@ class _CartScreenState extends State<CartScreen> {
                       _ActionCard(
                         icon: Icons.edit_note_rounded,
                         title: _deliveryNotes.isEmpty
-                            ? 'Add Delivery Instructions (Optional)'
+                            ? widget.fulfillmentMethod.isPickup
+                                  ? 'Add Pickup Instructions (Optional)'
+                                  : 'Add Delivery Instructions (Optional)'
                             : _deliveryNotes,
                         onTap: _editInstructions,
                       ),
@@ -394,7 +409,8 @@ class _CartScreenState extends State<CartScreen> {
                       const SizedBox(height: 12),
                       _TotalsCard(
                         subtotal: _subtotal,
-                        delivery: _deliveryFee,
+                        delivery: _effectiveDeliveryFee,
+                        isPickup: widget.fulfillmentMethod.isPickup,
                         service: _serviceFee,
                         discount: _discount,
                         total: _total,
@@ -936,12 +952,14 @@ class _TotalsCard extends StatelessWidget {
   const _TotalsCard({
     required this.subtotal,
     required this.delivery,
+    required this.isPickup,
     required this.service,
     required this.discount,
     required this.total,
   });
   final double subtotal;
   final double delivery;
+  final bool isPickup;
   final double service;
   final double discount;
   final double total;
@@ -953,7 +971,10 @@ class _TotalsCard extends StatelessWidget {
       children: [
         _TotalRow(label: 'Sub Total', value: subtotal),
         const SizedBox(height: 13),
-        _TotalRow(label: 'Delivery  ●', value: delivery),
+        _TotalRow(
+          label: isPickup ? 'Pickup from store' : 'Delivery',
+          value: delivery,
+        ),
         const SizedBox(height: 13),
         _TotalRow(label: 'Service Fee  ●', value: service),
         if (discount > 0) ...[

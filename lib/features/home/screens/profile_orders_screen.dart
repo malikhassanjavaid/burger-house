@@ -126,6 +126,7 @@ class _OrderCard extends StatelessWidget {
     final items = (data['items'] as List?) ?? const [];
     final total = (data['total'] as num?) ?? 0;
     final status = (data['status'] as String?) ?? 'placed';
+    final isPickup = data['fulfillmentMethod'] == 'pickup';
     final createdAt =
         (data['createdAt'] ?? data['createdAtClient']) as Timestamp?;
     final etaMin = (data['etaMinMinutes'] as num?)?.toInt() ?? 30;
@@ -182,7 +183,7 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '$itemCount ${itemCount == 1 ? 'item' : 'items'} • ${_formatDate(createdAt)}',
+                      '$itemCount ${itemCount == 1 ? 'item' : 'items'} • ${isPickup ? 'Pickup' : 'Delivery'} • ${_formatDate(createdAt)}',
                       style: const TextStyle(
                         color: profilePageMuted,
                         fontSize: 10.5,
@@ -278,7 +279,16 @@ Future<void> _showOrderDetails(
 }) {
   final items = (data['items'] as List?) ?? const [];
   final total = (data['total'] as num?) ?? 0;
-  final address = (data['deliveryAddress'] as String?) ?? '';
+  final isPickup = data['fulfillmentMethod'] == 'pickup';
+  final savedAddress = (data['deliveryAddress'] as String?) ?? '';
+  final pickupStore = (data['pickupStoreName'] as String?) ?? '';
+  final pickupAddress = (data['pickupAddress'] as String?) ?? '';
+  final address = isPickup
+      ? [
+          pickupStore,
+          pickupAddress,
+        ].where((value) => value.isNotEmpty).join(' • ')
+      : savedAddress;
   final statusValue = (data['status'] as String?) ?? 'placed';
   final etaMin = (data['etaMinMinutes'] as num?)?.toInt() ?? 30;
   final etaMax = (data['etaMaxMinutes'] as num?)?.toInt() ?? 40;
@@ -373,15 +383,19 @@ Future<void> _showOrderDetails(
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.delivery_dining_rounded,
+                    Icon(
+                      isPickup
+                          ? Icons.storefront_rounded
+                          : Icons.delivery_dining_rounded,
                       color: AppColors.red,
                       size: 20,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Estimated delivery in $etaMin–$etaMax minutes',
+                        isPickup
+                            ? 'Estimated ready time: $etaMin–$etaMax minutes'
+                            : 'Estimated delivery in $etaMin–$etaMax minutes',
                         style: const TextStyle(
                           color: profilePageInk,
                           fontSize: 11,
@@ -473,8 +487,10 @@ Future<void> _showOrderDetails(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.location_on_outlined,
+                    Icon(
+                      isPickup
+                          ? Icons.storefront_outlined
+                          : Icons.location_on_outlined,
                       color: profilePageBlue,
                       size: 19,
                     ),

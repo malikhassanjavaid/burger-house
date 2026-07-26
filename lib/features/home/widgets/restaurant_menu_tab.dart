@@ -426,6 +426,10 @@ class RestaurantMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageCacheWidth = compact
+        ? (180 * MediaQuery.devicePixelRatioOf(context)).round()
+        : null;
+
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(23),
@@ -467,6 +471,7 @@ class RestaurantMenuCard extends StatelessWidget {
                             item.displayAssetPath,
                             fit: BoxFit.contain,
                             filterQuality: FilterQuality.high,
+                            cacheWidth: imageCacheWidth,
                             errorBuilder: (_, _, _) => Center(
                               child: Text(
                                 item.emoji,

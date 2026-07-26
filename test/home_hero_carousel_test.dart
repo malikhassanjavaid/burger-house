@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/home/data/sample_menu.dart';
+import 'package:flutter_application_1/features/home/models/fulfillment_method.dart';
 import 'package:flutter_application_1/features/home/models/menu_item.dart';
 import 'package:flutter_application_1/features/home/widgets/home_hero_carousel.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -188,6 +189,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('For the Love of Pizza \u{2764}\u{FE0F}'), findsOneWidget);
     final pizzaCard = find.byKey(const ValueKey('home-pizza-cheese-pizza'));
+
     expect(pizzaCard, findsOneWidget);
     final cardSize = tester.getSize(pizzaCard);
     expect(cardSize.width, closeTo(posterSize.width, .1));
@@ -229,5 +231,49 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+  testWidgets('pickup mode reveals the store pickup poster', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SafeArea(
+            child: HomeHeroCarousel(
+              deals: deals,
+              onDealSelected: (_) {},
+              bestSellerBurgers: bestSellerBurgers,
+              pizzas: pizzas,
+              fulfillmentMethod: FulfillmentMethod.pickup,
+              favourites: const {},
+              onPizzaSelected: (_) {},
+              onFavourite: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('home-pickup-option')), findsOneWidget);
+    final homeList = find.byKey(const PageStorageKey('home-content'));
+    final homeScrollable = find
+        .descendant(of: homeList, matching: find.byType(Scrollable))
+        .first;
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('home-pickup-store-heading')),
+      220,
+      scrollable: homeScrollable,
+    );
+    await tester.pumpAndSettle();
+
+    final pickupPoster = find.byKey(const ValueKey('home-pickup-store-poster'));
+    expect(find.text('Pickup from Store'), findsOneWidget);
+    expect(pickupPoster, findsOneWidget);
+    expect(tester.getSize(pickupPoster).aspectRatio, closeTo(1983 / 793, .03));
+    expect(tester.takeException(), isNull);
   });
 }
