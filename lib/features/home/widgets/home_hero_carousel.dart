@@ -179,7 +179,10 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
           _HeroPageIndicator(selectedIndex: _visibleIndex),
           const SizedBox(height: 22),
           if (widget.deals.isNotEmpty) ...[
-            const _HomeSectionHeading('Featured Deals'),
+            const _HomeSectionHeading(
+              'Featured Deals',
+              key: ValueKey('home-featured-deals-heading'),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: _bestSellerViewportHeight,
@@ -191,7 +194,10 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             const SizedBox(height: 26),
           ],
           if (widget.bestSellerBurgers.isNotEmpty) ...[
-            const _HomeSectionHeading('Best Seller'),
+            const _HomeSectionHeading(
+              'Best Seller',
+              key: ValueKey('home-best-seller-heading'),
+            ),
             const SizedBox(height: 12),
             _HomeMenuRow(
               items: widget.bestSellerBurgers,
@@ -203,7 +209,10 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             const SizedBox(height: 26),
           ],
           if (widget.pizzas.isNotEmpty) ...[
-            const _HomeSectionHeading('For the Love of Pizza \u{2764}\u{FE0F}'),
+            const _HomeSectionHeading(
+              'For the Love of Pizza \u{2764}\u{FE0F}',
+              key: ValueKey('home-pizza-heading'),
+            ),
             const SizedBox(height: 12),
             _HomeMenuRow(
               items: widget.pizzas,
@@ -214,7 +223,10 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
           ],
           if (widget.topPicks.isNotEmpty) ...[
             const SizedBox(height: 26),
-            const _HomeSectionHeading('Top Picks'),
+            const _HomeSectionHeading(
+              'Top Picks',
+              key: ValueKey('home-top-picks-heading'),
+            ),
             const SizedBox(height: 12),
             _HomeMenuRow(
               items: widget.topPicks,
@@ -251,7 +263,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
 }
 
 class _HomeSectionHeading extends StatelessWidget {
-  const _HomeSectionHeading(this.label);
+  const _HomeSectionHeading(this.label, {super.key});
 
   final String label;
 
