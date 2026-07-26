@@ -10,6 +10,15 @@ void main() {
         (item) => item.id == 'wow-pizza-deal' || item.id == 'wow-burger-deal',
       )
       .toList(growable: false);
+  const bestSellerBurgerIds = [
+    'classic-smash',
+    'fish-burger',
+    'cheese-burger',
+    'grilled-burger',
+  ];
+  final bestSellerBurgers = bestSellerBurgerIds
+      .map((id) => sampleMenu.firstWhere((item) => item.id == id))
+      .toList(growable: false);
   final pizzas = sampleMenu
       .where((item) => item.category == 'Pizzas')
       .toList(growable: false);
@@ -32,6 +41,7 @@ void main() {
             child: HomeHeroCarousel(
               deals: deals,
               onDealSelected: (_) {},
+              bestSellerBurgers: bestSellerBurgers,
               pizzas: pizzas,
               favourites: const {},
               onPizzaSelected: (_) {},
@@ -77,6 +87,7 @@ void main() {
             child: HomeHeroCarousel(
               deals: deals,
               onDealSelected: (deal) => selectedDeal = deal,
+              bestSellerBurgers: bestSellerBurgers,
               pizzas: pizzas,
               favourites: const {},
               onPizzaSelected: (_) {},
@@ -88,7 +99,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Best Sellers \u{1F4A5}'), findsOneWidget);
+    expect(find.text('Featured Deals'), findsOneWidget);
     expect(find.text('VIEW ALL'), findsNothing);
 
     final pizzaPoster = find.byKey(
@@ -121,6 +132,7 @@ void main() {
             child: HomeHeroCarousel(
               deals: deals,
               onDealSelected: (_) {},
+              bestSellerBurgers: bestSellerBurgers,
               pizzas: pizzas,
               topPicks: topPicks,
               favourites: const {},
@@ -133,12 +145,50 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('For the Love of Pizza \u{2764}\u{FE0F}'), findsOneWidget);
-    final pizzaCard = find.byKey(const ValueKey('home-pizza-cheese-pizza'));
-    expect(pizzaCard, findsOneWidget);
+    final homeList = find.byKey(const PageStorageKey('home-content'));
+    final homeScrollable = find
+        .descendant(of: homeList, matching: find.byType(Scrollable))
+        .first;
     final poster = find.byKey(const ValueKey('deal-poster-wow-pizza-deal'));
     expect(poster, findsOneWidget);
     final posterSize = tester.getSize(poster);
+
+    await tester.scrollUntilVisible(
+      find.text('Best Seller'),
+      240,
+      scrollable: homeScrollable,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Best Seller'), findsOneWidget);
+
+    for (final id in bestSellerBurgerIds.take(3)) {
+      expect(find.byKey(ValueKey('home-best-seller-$id')), findsOneWidget);
+    }
+
+    final classicSmash = find.byKey(
+      const ValueKey('home-best-seller-classic-smash'),
+    );
+    await tester.tap(classicSmash);
+    await tester.pump();
+    expect(selectedPizza?.id, 'classic-smash');
+
+    final bestSellerList = find.byKey(const ValueKey('home-best-seller-list'));
+    await tester.drag(bestSellerList, const Offset(-320, 0));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('home-best-seller-grilled-burger')),
+      findsOneWidget,
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('For the Love of Pizza \u{2764}\u{FE0F}'),
+      240,
+      scrollable: homeScrollable,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('For the Love of Pizza \u{2764}\u{FE0F}'), findsOneWidget);
+    final pizzaCard = find.byKey(const ValueKey('home-pizza-cheese-pizza'));
+    expect(pizzaCard, findsOneWidget);
     final cardSize = tester.getSize(pizzaCard);
     expect(cardSize.width, closeTo(posterSize.width, .1));
     expect(cardSize.height, closeTo(cardSize.width / .68, .1));

@@ -20,6 +20,7 @@ class HomeHeroCarousel extends StatefulWidget {
   const HomeHeroCarousel({
     required this.deals,
     required this.onDealSelected,
+    required this.bestSellerBurgers,
     required this.pizzas,
     this.topPicks = const [],
     required this.favourites,
@@ -31,6 +32,7 @@ class HomeHeroCarousel extends StatefulWidget {
   final List<MenuItem> deals;
   final ValueChanged<MenuItem> onDealSelected;
 
+  final List<MenuItem> bestSellerBurgers;
   final List<MenuItem> pizzas;
   final List<MenuItem> topPicks;
   final Set<String> favourites;
@@ -180,7 +182,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 18),
               child: Text(
-                'Best Sellers \u{1F4A5}',
+                'Featured Deals',
                 style: TextStyle(
                   color: AppColors.dark,
                   fontSize: 16,
@@ -196,6 +198,29 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel>
                 deals: widget.deals,
                 onDealSelected: widget.onDealSelected,
               ),
+            ),
+            const SizedBox(height: 26),
+          ],
+          if (widget.bestSellerBurgers.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                'Best Seller',
+                style: TextStyle(
+                  color: AppColors.dark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _HomePizzaRow(
+              pizzas: widget.bestSellerBurgers,
+              keyPrefix: 'home-best-seller',
+              favourites: widget.favourites,
+              onPizzaSelected: widget.onPizzaSelected,
+              onFavourite: widget.onFavourite,
             ),
             const SizedBox(height: 26),
           ],
@@ -351,6 +376,7 @@ class _HomePizzaRow extends StatelessWidget {
         return SizedBox(
           height: cardHeight,
           child: ListView.separated(
+            key: ValueKey('$keyPrefix-list'),
             padding: const EdgeInsets.symmetric(horizontal: 18),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),

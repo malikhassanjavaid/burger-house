@@ -313,6 +313,15 @@ class _HomeScreenState extends State<HomeScreen> {
           (item) => item.id == 'wow-pizza-deal' || item.id == 'wow-burger-deal',
         )
         .toList(growable: false);
+    const bestSellerBurgerIds = [
+      'classic-smash',
+      'fish-burger',
+      'cheese-burger',
+      'grilled-burger',
+    ];
+    final homeBestSellerBurgers = bestSellerBurgerIds
+        .map((id) => sampleMenu.firstWhere((item) => item.id == id))
+        .toList(growable: false);
     final homePizzas = sampleMenu
         .where((item) => item.category == 'Pizzas')
         .toList(growable: false);
@@ -323,6 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
       0: HomeHeroCarousel(
         deals: homeDeals,
         onDealSelected: _addDealAndOpenCart,
+        bestSellerBurgers: homeBestSellerBurgers,
         pizzas: homePizzas,
         topPicks: homeTopPicks,
         favourites: _favourites,
