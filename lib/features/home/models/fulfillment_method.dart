@@ -15,8 +15,9 @@ extension FulfillmentMethodDetails on FulfillmentMethod {
 }
 
 abstract final class HungrySpotPickup {
-  static const storeName = 'Hungry Spot Main Store';
-  static const address = 'Main pickup counter';
+  static const storeName = 'Civil Lines';
+  static const address = 'Hungry Spot Civil Lines pickup counter';
+  static const menuHours = 'Serving Regular Menu: 11:00 - 23:59';
   static const instructions =
       'Show your order number at the counter when your meal is ready.';
 }
