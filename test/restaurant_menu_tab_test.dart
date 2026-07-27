@@ -4,7 +4,7 @@ import 'package:flutter_application_1/features/home/widgets/restaurant_menu_tab.
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('menu defaults to burgers and switches categories', (
+  testWidgets('menu groups all categories in homepage-sized rows', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -45,15 +45,24 @@ void main() {
 
     expect(find.text('Categories'), findsOneWidget);
     expect(find.text('Burgers'), findsOneWidget);
+    expect(find.text('Pizzas'), findsOneWidget);
     expect(find.text('Classic Smash'), findsOneWidget);
-    expect(find.text('Classic Cheese Pizza'), findsNothing);
+    expect(find.text('Classic Cheese Pizza'), findsOneWidget);
+
+    final burgerCard = find.byKey(const ValueKey('menu-burgers-classic-smash'));
+    final burgerCardSize = tester.getSize(burgerCard);
+    expect(burgerCardSize.width / burgerCardSize.height, closeTo(.68, .01));
 
     await tester.tap(find.text('Pizza'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Pizzas'), findsOneWidget);
+    final pizzaCard = find.byKey(const ValueKey('menu-pizzas-cheese-pizza'));
+    expect(
+      tester.getTopLeft(pizzaCard).dy,
+      lessThan(tester.getTopLeft(burgerCard).dy),
+    );
+    expect(find.text('Classic Smash'), findsOneWidget);
     expect(find.text('Classic Cheese Pizza'), findsOneWidget);
-    expect(find.text('Classic Smash'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
