@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -48,9 +50,19 @@ class RestaurantMenuTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final searching = searchText.trim().isNotEmpty;
-    final visibleItems = searching
-        ? items
-        : items.where((item) => item.category == selectedCategory).toList();
+    final orderedCategories = <String>[
+      selectedCategory,
+      ...categories.where((category) => category != selectedCategory),
+    ];
+    final categorySections = orderedCategories
+        .map(
+          (category) => MapEntry(
+            category,
+            items.where((item) => item.category == category).toList(),
+          ),
+        )
+        .where((section) => section.value.isNotEmpty)
+        .toList();
 
     return ColoredBox(
       color: _menuBackground,
@@ -135,67 +147,7 @@ class RestaurantMenuTab extends StatelessWidget {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 22, 18, 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          searching ? 'Search results' : selectedCategory,
-                          style: const TextStyle(
-                            color: AppColors.dark,
-                            fontSize: 23,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -.5,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          searching
-                              ? 'Matches for "${searchText.trim()}"'
-                              : _categoryDescription(selectedCategory),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _menuMuted,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _menuBorder),
-                    ),
-                    child: Text(
-                      '${visibleItems.length} '
-                      '${visibleItems.length == 1 ? 'item' : 'items'}',
-                      style: const TextStyle(
-                        color: _menuMuted,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (visibleItems.isEmpty)
+          if (searching && items.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: _NoMenuMatches(
@@ -206,27 +158,32 @@ class RestaurantMenuTab extends StatelessWidget {
                 },
               ),
             )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 112),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: .57,
-                ),
-                delegate: SliverChildBuilderDelegate((_, index) {
-                  final item = visibleItems[index];
-                  return RestaurantMenuCard(
-                    item: item,
-                    favourite: favourites.contains(item.id),
-                    onTap: () => onOpenItem(item),
-                    onFavourite: () => onFavourite(item),
-                  );
-                }, childCount: visibleItems.length),
+          else if (searching)
+            SliverToBoxAdapter(
+              child: _MenuHorizontalSection(
+                title: 'Search results',
+                description: 'Matches for "${searchText.trim()}"',
+                rowKey: 'menu-search-results',
+                items: items,
+                favourites: favourites,
+                onOpenItem: onOpenItem,
+                onFavourite: onFavourite,
               ),
-            ),
+            )
+          else
+            for (final section in categorySections)
+              SliverToBoxAdapter(
+                child: _MenuHorizontalSection(
+                  title: section.key,
+                  description: _categoryDescription(section.key),
+                  rowKey: 'menu-${section.key.toLowerCase()}',
+                  items: section.value,
+                  favourites: favourites,
+                  onOpenItem: onOpenItem,
+                  onFavourite: onFavourite,
+                ),
+              ),
+          const SliverToBoxAdapter(child: SizedBox(height: 112)),
         ],
       ),
     );
@@ -256,6 +213,124 @@ class RestaurantMenuTab extends StatelessWidget {
       'Desserts' => 'A sweet finish to your Hungry Spot order',
       _ => 'More food, more value, one easy order',
     };
+  }
+}
+
+const _compactCardPosterAspectRatio = 942 / 1672;
+const _compactCardViewportHeight = 252.0;
+
+double _compactMenuCardWidth(double availableWidth) {
+  final targetWidth = math.min(availableWidth * .37, 140.0);
+  final availableHeight = _compactCardViewportHeight - 20;
+  return math.min(targetWidth, availableHeight * _compactCardPosterAspectRatio);
+}
+
+class _MenuHorizontalSection extends StatelessWidget {
+  const _MenuHorizontalSection({
+    required this.title,
+    required this.description,
+    required this.rowKey,
+    required this.items,
+    required this.favourites,
+    required this.onOpenItem,
+    required this.onFavourite,
+  });
+
+  final String title;
+  final String description;
+  final String rowKey;
+  final List<MenuItem> items;
+  final Set<String> favourites;
+  final ValueChanged<MenuItem> onOpenItem;
+  final ValueChanged<MenuItem> onFavourite;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = _compactMenuCardWidth(constraints.maxWidth);
+        final cardHeight = cardWidth / .68;
+
+        return Column(
+          key: ValueKey('$rowKey-section'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 24, 18, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -.35,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _menuMuted,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                    style: const TextStyle(
+                      color: _menuMuted,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: cardHeight,
+              child: ListView.separated(
+                key: PageStorageKey<String>(rowKey),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                scrollDirection: Axis.horizontal,
+                primary: false,
+                physics: const ClampingScrollPhysics(),
+                itemCount: items.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return RepaintBoundary(
+                    child: SizedBox(
+                      key: ValueKey('$rowKey-${item.id}'),
+                      width: cardWidth,
+                      child: RestaurantMenuCard(
+                        item: item,
+                        favourite: favourites.contains(item.id),
+                        onTap: () => onOpenItem(item),
+                        onFavourite: () => onFavourite(item),
+                        compact: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -429,6 +504,14 @@ class RestaurantMenuCard extends StatelessWidget {
     final imageCacheWidth = compact
         ? (180 * MediaQuery.devicePixelRatioOf(context)).round()
         : null;
+    final artwork = Image.asset(
+      item.displayAssetPath,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      cacheWidth: imageCacheWidth,
+      errorBuilder: (_, _, _) =>
+          Center(child: Text(item.emoji, style: const TextStyle(fontSize: 66))),
+    );
 
     return Material(
       color: Colors.white,
@@ -457,7 +540,7 @@ class RestaurantMenuCard extends StatelessWidget {
                 child: Container(
                   margin: EdgeInsets.all(compact ? 6 : 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FA),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(compact ? 15 : 18),
                   ),
                   child: Stack(
@@ -465,21 +548,9 @@ class RestaurantMenuCard extends StatelessWidget {
                     children: [
                       Padding(
                         padding: EdgeInsets.all(compact ? 7 : 9),
-                        child: Hero(
-                          tag: 'menu-art-${item.id}',
-                          child: Image.asset(
-                            item.displayAssetPath,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                            cacheWidth: imageCacheWidth,
-                            errorBuilder: (_, _, _) => Center(
-                              child: Text(
-                                item.emoji,
-                                style: const TextStyle(fontSize: 66),
-                              ),
-                            ),
-                          ),
-                        ),
+                        child: compact
+                            ? artwork
+                            : Hero(tag: 'menu-art-${item.id}', child: artwork),
                       ),
                       Positioned(
                         top: compact ? 5 : 7,
