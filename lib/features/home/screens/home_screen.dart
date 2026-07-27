@@ -1116,9 +1116,7 @@ class _MinimalNavItem extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
+                    Container(
                       width: 38,
                       height: 32,
                       decoration: BoxDecoration(
@@ -1162,8 +1160,7 @@ class _MinimalNavItem extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 3),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 220),
+                DefaultTextStyle(
                   style: TextStyle(
                     color: selected ? AppColors.red : const Color(0xFF746C70),
                     fontSize: 10.5,
