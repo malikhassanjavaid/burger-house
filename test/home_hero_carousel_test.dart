@@ -173,12 +173,27 @@ void main() {
     await tester.pump();
     expect(selectedPizza?.id, 'classic-smash');
 
-    final bestSellerList = find.byKey(const ValueKey('home-best-seller-list'));
+    final bestSellerList = find.byKey(
+      const PageStorageKey<String>('home-best-seller-list'),
+    );
     await tester.drag(bestSellerList, const Offset(-320, 0));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('home-best-seller-grilled-burger')),
       findsOneWidget,
+    );
+    final bestSellerScrollable = find
+        .descendant(of: bestSellerList, matching: find.byType(Scrollable))
+        .first;
+    final horizontalOffsetBeforeHeroAdvance = tester
+        .state<ScrollableState>(bestSellerScrollable)
+        .position
+        .pixels;
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(
+      tester.state<ScrollableState>(bestSellerScrollable).position.pixels,
+      horizontalOffsetBeforeHeroAdvance,
     );
 
     await tester.scrollUntilVisible(
@@ -232,7 +247,9 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
-  testWidgets('pickup mode reveals the store pickup poster', (tester) async {
+  testWidgets('compact selector and pickup poster appear in delivery mode', (
+    tester,
+  ) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 1000);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -247,7 +264,7 @@ void main() {
               onDealSelected: (_) {},
               bestSellerBurgers: bestSellerBurgers,
               pizzas: pizzas,
-              fulfillmentMethod: FulfillmentMethod.pickup,
+              fulfillmentMethod: FulfillmentMethod.delivery,
               favourites: const {},
               onPizzaSelected: (_) {},
               onFavourite: (_) {},
@@ -258,7 +275,12 @@ void main() {
     );
     await tester.pump();
 
+    expect(find.byKey(const ValueKey('home-delivery-option')), findsOneWidget);
     expect(find.byKey(const ValueKey('home-pickup-option')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('home-fulfillment-selector'))),
+      const Size(166, 36),
+    );
     final homeList = find.byKey(const PageStorageKey('home-content'));
     final homeScrollable = find
         .descendant(of: homeList, matching: find.byType(Scrollable))
