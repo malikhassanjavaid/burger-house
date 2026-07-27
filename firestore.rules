@@ -19,7 +19,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.customerId == request.auth.uid
         && request.resource.data.status == 'placed'
-        && request.resource.data.paymentMethod in ['cash_on_delivery', 'card_on_delivery', 'card_at_pickup']
+        && request.resource.data.paymentMethod in ['cash_on_delivery', 'cash_at_pickup', 'card_payment', 'card_on_delivery', 'card_at_pickup']
         && request.resource.data.paymentStatus == 'pending'
         && request.resource.data.orderNumber is string
         && request.resource.data.customerEmail is string
