@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/currency.dart';
-import '../../../core/widgets/app_primary_button.dart';
 import '../models/fulfillment_method.dart';
 import '../services/order_service.dart';
 import 'profile_orders_screen.dart';
+
+const _confirmationBg = Color(0xFFF4FAFE);
+const _confirmationRed = Color(0xFFF23845);
+const _confirmationInk = Color(0xFF15161C);
+const _confirmationMuted = Color(0xFF858C98);
+const _confirmationLine = Color(0xFFDDE7ED);
 
 class OrderConfirmationScreen extends StatelessWidget {
   const OrderConfirmationScreen({super.key, required this.order});
@@ -14,49 +17,122 @@ class OrderConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPickup = order.fulfillmentMethod.isPickup;
+
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F9FC),
-        body: SafeArea(
-          child: Column(
-            children: [
-              _ConfirmationHeader(onClose: () => Navigator.pop(context)),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                  child: Column(
-                    children: [
-                      _SuccessPanel(
-                        orderNumber: order.orderNumber,
-                        isPickup: order.fulfillmentMethod.isPickup,
-                      ),
-                      const SizedBox(height: 14),
-                      _EtaCard(
-                        minimumMinutes: order.etaMinMinutes,
-                        maximumMinutes: order.etaMaxMinutes,
-                        isPickup: order.fulfillmentMethod.isPickup,
-                      ),
-                      const SizedBox(height: 14),
-                      _OrderJourneyCard(
-                        isPickup: order.fulfillmentMethod.isPickup,
-                      ),
-                      const SizedBox(height: 14),
-                      _OrderSummaryCard(order: order),
-                    ],
-                  ),
+        backgroundColor: _confirmationBg,
+        body: Column(
+          children: [
+            _OrderNumberHeader(
+              orderNumber: order.orderNumber,
+              isPickup: isPickup,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                child: Column(
+                  children: [
+                    _OrderPlacedCard(isPickup: isPickup),
+                    const SizedBox(height: 14),
+                    _OrderStatusCard(order: order),
+                  ],
                 ),
               ),
-              _ConfirmationActions(
-                onViewOrders: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ProfileOrdersScreen(),
+            ),
+            _ConfirmationActions(
+              onViewOrder: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileOrdersScreen(),
+                  ),
+                );
+              },
+              onBackHome: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderNumberHeader extends StatelessWidget {
+  const _OrderNumberHeader({required this.orderNumber, required this.isPickup});
+
+  final String orderNumber;
+  final bool isPickup;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: SizedBox(
+        height: 88,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'ORDER NUMBER',
+                      style: TextStyle(
+                        color: _confirmationMuted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .8,
+                      ),
                     ),
-                  );
-                },
-                onBackHome: () => Navigator.pop(context),
+                    const SizedBox(height: 5),
+                    Text(
+                      orderNumber,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _confirmationInk,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE9EB),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: _confirmationRed,
+                      size: 15,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isPickup ? 'PICKUP PLACED' : 'ORDER PLACED',
+                      style: const TextStyle(
+                        color: _confirmationRed,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: .35,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -66,51 +142,9 @@ class OrderConfirmationScreen extends StatelessWidget {
   }
 }
 
-class _ConfirmationHeader extends StatelessWidget {
-  const _ConfirmationHeader({required this.onClose});
+class _OrderPlacedCard extends StatelessWidget {
+  const _OrderPlacedCard({required this.isPickup});
 
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 14, 12),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'ORDER CONFIRMATION',
-              style: TextStyle(
-                color: AppColors.dark,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: .7,
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Back to home',
-            onPressed: onClose,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.dark,
-              fixedSize: const Size(42, 42),
-              side: const BorderSide(color: Color(0xFFE2E9EE)),
-              shadowColor: const Color(0x18304A5C),
-              elevation: 2,
-            ),
-            icon: const Icon(Icons.close_rounded, size: 21),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SuccessPanel extends StatelessWidget {
-  const _SuccessPanel({required this.orderNumber, required this.isPickup});
-
-  final String orderNumber;
   final bool isPickup;
 
   @override
@@ -118,104 +152,54 @@ class _SuccessPanel extends StatelessWidget {
     return Container(
       key: const ValueKey('confirmation-success-panel'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 24, 22, 23),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFF4A55), AppColors.redDark],
-        ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        boxShadow: const [
           BoxShadow(
-            color: AppColors.red.withValues(alpha: .22),
-            blurRadius: 24,
-            offset: const Offset(0, 11),
+            color: Color(0x160C3955),
+            blurRadius: 17,
+            offset: Offset(0, 8),
           ),
         ],
       ),
-      child: Stack(
+      child: Row(
         children: [
-          const Positioned(
-            right: -32,
-            top: -40,
-            child: _DecorativeCircle(size: 132, opacity: .08),
+          const _StatusArtwork(
+            assetPath: 'assets/images/order_status_receipt.png',
+            size: 70,
+            zoom: 1.65,
+            active: true,
           ),
-          const Positioned(
-            left: -52,
-            bottom: -72,
-            child: _DecorativeCircle(size: 150, opacity: .06),
-          ),
-          Column(
-            children: [
-              Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.redDark.withValues(alpha: .22),
-                      blurRadius: 16,
-                      offset: const Offset(0, 7),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: AppColors.red,
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                isPickup ? 'Pickup confirmed!' : 'Order confirmed!',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -.3,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                isPickup
-                    ? 'We are preparing your meal and will let you know when it is ready to grab.'
-                    : 'Your meal is now with the Hungry Spot kitchen.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFE9EC),
-                  fontSize: 12,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 15),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 9,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .15),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: .25),
-                  ),
-                ),
-                child: Text(
-                  'ORDER  $orderNumber',
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isPickup ? 'Pickup confirmed!' : 'Order confirmed!',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
+                    color: _confirmationInk,
+                    fontSize: 19,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: .65,
+                    letterSpacing: -.3,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 7),
+                Text(
+                  isPickup
+                      ? 'Your order is with our kitchen. We will notify you when it is ready.'
+                      : 'Your order is with our kitchen. We will keep every stage updated.',
+                  style: const TextStyle(
+                    color: _confirmationMuted,
+                    fontSize: 11,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -223,434 +207,324 @@ class _SuccessPanel extends StatelessWidget {
   }
 }
 
-class _DecorativeCircle extends StatelessWidget {
-  const _DecorativeCircle({required this.size, required this.opacity});
+class _OrderStatusCard extends StatelessWidget {
+  const _OrderStatusCard({required this.order});
 
+  final PlacedOrder order;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPickup = order.fulfillmentMethod.isPickup;
+    final steps = <_StatusData>[
+      const _StatusData(
+        title: 'Placed',
+        subtitle: 'We received your order',
+        assetPath: 'assets/images/order_status_receipt.png',
+        zoom: 1.7,
+        active: true,
+      ),
+      const _StatusData(
+        title: 'Preparing',
+        subtitle: 'The kitchen will prepare your meal',
+        assetPath: 'assets/images/order_status_preparing.png',
+        zoom: 1.7,
+      ),
+      _StatusData(
+        title: 'Estimated time',
+        subtitle: '${order.etaMinMinutes}-${order.etaMaxMinutes} min',
+        assetPath: 'assets/images/order_status_clock.png',
+        zoom: 1.65,
+      ),
+      _StatusData(
+        title: isPickup ? 'Ready for pickup' : 'On the way',
+        subtitle: isPickup
+            ? 'Collect your meal from Hungry Spot'
+            : 'Your rider will head to your location',
+        assetPath: isPickup
+            ? 'assets/images/order_status_receipt.png'
+            : 'assets/images/order_status_rider.png',
+        zoom: isPickup ? 1.7 : 1.75,
+      ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(17, 18, 17, 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x160C3955),
+            blurRadius: 17,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Order status',
+            style: TextStyle(
+              color: _confirmationInk,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Track the progress of your meal',
+            style: TextStyle(
+              color: _confirmationMuted,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 18),
+          ...List.generate(
+            steps.length,
+            (index) => _StatusStep(
+              data: steps[index],
+              isLast: index == steps.length - 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusData {
+  const _StatusData({
+    required this.title,
+    required this.subtitle,
+    required this.assetPath,
+    required this.zoom,
+    this.active = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final String assetPath;
+  final double zoom;
+  final bool active;
+}
+
+class _StatusStep extends StatelessWidget {
+  const _StatusStep({required this.data, required this.isLast});
+
+  final _StatusData data;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 58,
+            child: Column(
+              children: [
+                _StatusArtwork(
+                  assetPath: data.assetPath,
+                  size: 52,
+                  zoom: data.zoom,
+                  active: data.active,
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 5),
+                      color: data.active ? _confirmationRed : _confirmationLine,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(top: 7, bottom: isLast ? 9 : 24),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          data.title,
+                          style: TextStyle(
+                            color: data.active
+                                ? _confirmationInk
+                                : const Color(0xFF6E7680),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          data.subtitle,
+                          style: const TextStyle(
+                            color: _confirmationMuted,
+                            fontSize: 10.5,
+                            height: 1.3,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (data.active)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE9EB),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'CURRENT',
+                        style: TextStyle(
+                          color: _confirmationRed,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .3,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusArtwork extends StatelessWidget {
+  const _StatusArtwork({
+    required this.assetPath,
+    required this.size,
+    required this.zoom,
+    required this.active,
+  });
+
+  final String assetPath;
   final double size;
-  final double opacity;
+  final double zoom;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: opacity),
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
-class _EtaCard extends StatelessWidget {
-  const _EtaCard({
-    required this.minimumMinutes,
-    required this.maximumMinutes,
-    required this.isPickup,
-  });
-
-  final int minimumMinutes;
-  final int maximumMinutes;
-  final bool isPickup;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ConfirmationCard(
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.blush,
-              borderRadius: BorderRadius.circular(17),
-            ),
-            child: const Icon(
-              Icons.schedule_rounded,
-              color: AppColors.red,
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isPickup ? 'ESTIMATED READY TIME' : 'ESTIMATED DELIVERY',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .65,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$minimumMinutes-$maximumMinutes min',
-                  style: const TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 25,
-                    height: 1,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF8EF),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.circle, color: Color(0xFF27A85C), size: 7),
-                SizedBox(width: 5),
-                Text(
-                  'ON TIME',
-                  style: TextStyle(
-                    color: Color(0xFF20884B),
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OrderJourneyCard extends StatelessWidget {
-  const _OrderJourneyCard({required this.isPickup});
-
-  final bool isPickup;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ConfirmationCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Your order journey',
-            style: TextStyle(
-              color: AppColors.dark,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            isPickup
-                ? 'We will notify you as soon as your meal is ready to collect.'
-                : 'We will keep each stage updated for you.',
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 10.5,
-              height: 1.4,
-            ),
-          ),
-          SizedBox(height: 19),
-          _OrderProgress(isPickup: isPickup),
-        ],
-      ),
-    );
-  }
-}
-
-class _OrderSummaryCard extends StatelessWidget {
-  const _OrderSummaryCard({required this.order});
-
-  final PlacedOrder order;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ConfirmationCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            order.fulfillmentMethod.isPickup
-                ? 'Pickup details'
-                : 'Delivery details',
-            style: const TextStyle(
-              color: AppColors.dark,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _ConfirmationDetail(
-            icon: order.fulfillmentMethod.isPickup
-                ? Icons.storefront_rounded
-                : Icons.location_on_outlined,
-            label: order.fulfillmentMethod.isPickup
-                ? 'PICKUP FROM'
-                : 'DELIVERING TO',
-            value: order.fulfillmentMethod.isPickup
-                ? '${order.pickupStoreName} • ${order.deliveryAddress}'
-                : order.deliveryAddress,
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 15),
-            child: Divider(height: 1, color: Color(0xFFE8EDF1)),
-          ),
-          _ConfirmationDetail(
-            icon: Icons.payments_outlined,
-            label: order.fulfillmentMethod.isPickup
-                ? 'PAY AT PICKUP'
-                : 'PAYMENT ON DELIVERY',
-            value: formatUsd(order.total),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ConfirmationCard extends StatelessWidget {
-  const _ConfirmationCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: const Color(0xFFE2E9EE)),
+        borderRadius: BorderRadius.circular(size * .27),
+        border: Border.all(
+          color: active ? _confirmationRed : const Color(0xFFE0E7EC),
+          width: active ? 2 : 1,
+        ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0D304A5C),
-            blurRadius: 18,
-            offset: Offset(0, 7),
+            color: Color(0x120C3955),
+            blurRadius: 9,
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      child: child,
-    );
-  }
-}
-
-class _ConfirmationDetail extends StatelessWidget {
-  const _ConfirmationDetail({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.blush,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: AppColors.red, size: 19),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: AppColors.dark,
-                  fontSize: 12.5,
-                  height: 1.35,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * .22),
+        child: Transform.scale(
+          scale: zoom,
+          child: Image.asset(
+            assetPath,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
+            cacheWidth: 180,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _OrderProgress extends StatelessWidget {
-  const _OrderProgress({required this.isPickup});
-
-  final bool isPickup;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          left: 42,
-          right: 42,
-          top: 20,
-          child: Row(
-            children: [
-              Expanded(child: Container(height: 2, color: AppColors.red)),
-              Expanded(
-                child: Container(height: 2, color: const Color(0xFFE0E6EA)),
-              ),
-            ],
-          ),
-        ),
-        Row(
-          children: [
-            const Expanded(
-              child: _ProgressStep(
-                icon: Icons.receipt_long_rounded,
-                label: 'Placed',
-                active: true,
-              ),
-            ),
-            const Expanded(
-              child: _ProgressStep(
-                icon: Icons.restaurant_rounded,
-                label: 'Preparing',
-              ),
-            ),
-            Expanded(
-              child: _ProgressStep(
-                icon: isPickup
-                    ? Icons.shopping_bag_rounded
-                    : Icons.delivery_dining_rounded,
-                label: isPickup ? 'Ready' : 'On the way',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ProgressStep extends StatelessWidget {
-  const _ProgressStep({
-    required this.icon,
-    required this.label,
-    this.active = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? AppColors.red : const Color(0xFFABB6BE);
-    return Column(
-      children: [
-        Container(
-          width: 41,
-          height: 41,
-          decoration: BoxDecoration(
-            color: active ? AppColors.red : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: active ? AppColors.red : const Color(0xFFD9E0E5),
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x12304A5C),
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Icon(icon, color: active ? Colors.white : color, size: 18),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: active ? AppColors.dark : AppColors.muted,
-            fontSize: 9.5,
-            fontWeight: active ? FontWeight.w900 : FontWeight.w700,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
 
 class _ConfirmationActions extends StatelessWidget {
   const _ConfirmationActions({
-    required this.onViewOrders,
+    required this.onViewOrder,
     required this.onBackHome,
   });
 
-  final VoidCallback onViewOrders;
+  final VoidCallback onViewOrder;
   final VoidCallback onBackHome;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE3E9ED))),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x12304A5C),
-            blurRadius: 18,
-            offset: Offset(0, -6),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppPrimaryButton(
-            label: 'VIEW MY ORDERS',
-            icon: Icons.receipt_long_outlined,
-            height: 50,
-            onPressed: onViewOrders,
-          ),
-          const SizedBox(height: 4),
-          TextButton(
-            onPressed: onBackHome,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.dark,
-              minimumSize: const Size.fromHeight(38),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text(
-              'BACK TO HOME',
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w900,
-                letterSpacing: .2,
+      color: _confirmationBg,
+      padding: const EdgeInsets.fromLTRB(15, 12, 15, 12),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: onBackHome,
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: _confirmationInk,
+                    side: const BorderSide(color: Color(0xFFDCE5EA)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                  ),
+                  child: const Text(
+                    'BACK HOME',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 52,
+                child: FilledButton(
+                  onPressed: onViewOrder,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _confirmationRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                  ),
+                  child: const Text(
+                    'VIEW MY ORDER',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
