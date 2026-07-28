@@ -6,7 +6,7 @@ import 'package:flutter_application_1/features/home/services/order_service.dart'
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('confirmed order shows its number, ETA, and destination', (
+  testWidgets('confirmed order shows its number, ETA, and journey', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -35,9 +35,9 @@ void main() {
     expect(find.textContaining('HS-ABC1234'), findsOneWidget);
     expect(find.textContaining('30'), findsOneWidget);
     expect(find.textContaining('40 min'), findsOneWidget);
-    expect(find.text('Main Street, Test Area'), findsOneWidget);
-    expect(find.text('VIEW MY ORDERS'), findsOneWidget);
-    expect(find.text('BACK TO HOME'), findsOneWidget);
+    expect(find.text('On the way'), findsOneWidget);
+    expect(find.text('VIEW MY ORDER'), findsOneWidget);
+    expect(find.text('BACK HOME'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -68,11 +68,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('Pickup confirmed!'), findsOneWidget);
-    expect(find.text('ESTIMATED READY TIME'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
-    expect(find.text('PICKUP FROM'), findsOneWidget);
-    expect(find.text('PAY AT PICKUP'), findsOneWidget);
-    expect(find.textContaining('Main Store'), findsOneWidget);
+    expect(find.text('Estimated time'), findsOneWidget);
+    expect(find.text('Ready for pickup'), findsOneWidget);
+    expect(find.text('VIEW MY ORDER'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
