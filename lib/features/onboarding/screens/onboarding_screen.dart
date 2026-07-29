@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/onboarding_preferences.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_loader.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, this.onCompleted});
@@ -429,15 +430,16 @@ class _OnboardingContinueButton extends StatelessWidget {
           ),
         ),
         icon: loading
-            ? SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: foreground,
-                ),
-              )
+            ? const SizedBox.shrink()
             : const Icon(Icons.arrow_forward_rounded, size: 18),
-        label: Text(loading ? 'PLEASE WAIT' : 'CONTINUE'),
+        label: loading
+            ? AppLoader(
+                size: 18,
+                strokeWidth: 2.2,
+                color: foreground,
+                trackColor: foreground.withValues(alpha: .24),
+              )
+            : const Text('CONTINUE'),
       ),
     );
   }
