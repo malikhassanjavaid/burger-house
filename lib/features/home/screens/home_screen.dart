@@ -6,6 +6,7 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/app_loader.dart';
 import '../../auth/services/auth_service.dart';
 import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
@@ -549,45 +550,9 @@ class _CustomerStateLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0xFFF4FAFE),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 62,
-              height: 62,
-              padding: const EdgeInsets.all(17),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x1247657A),
-                    blurRadius: 18,
-                    offset: Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: const CircularProgressIndicator(
-                color: AppColors.red,
-                strokeWidth: 3,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'RESTORING YOUR HUNGRY SPOT',
-              style: TextStyle(
-                color: AppColors.dark,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w900,
-                letterSpacing: .7,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return const ColoredBox(
+      color: Color(0xFFF4FAFE),
+      child: Center(child: AppLoader(size: 42)),
     );
   }
 }
