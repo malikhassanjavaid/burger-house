@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/app_loader.dart';
 import '../../auth/services/auth_service.dart';
 import '../../location/models/delivery_location.dart';
 import '../../location/screens/location_setup_screen.dart';
@@ -69,9 +70,7 @@ class _ProfileAddressScreenState extends State<ProfileAddressScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.red),
-                  )
+                ? const Center(child: AppLoader())
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 34),
                     children: [
