@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/app_loader.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/widgets/auth_loading_overlay.dart';
 import '../models/delivery_location.dart';
@@ -462,33 +463,7 @@ class _LocationMap extends StatelessWidget {
             Positioned.fill(
               child: ColoredBox(
                 color: Colors.white70,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 13,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Finding your location...',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                child: const Center(child: AppLoader(size: 34)),
               ),
             ),
           if (error != null && !loading)
