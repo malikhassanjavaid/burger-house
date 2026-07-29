@@ -67,6 +67,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/confirmed_order_chef.png
+    - assets/images/order_confirmed_reference.png
     - assets/images/bottom_hero.png
     - assets/images/onboarding/
 

@@ -6,7 +6,7 @@ import 'package:flutter_application_1/features/home/services/order_service.dart'
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('confirmed order shows its number, ETA, and journey', (
+  testWidgets('delivery confirmation shows clean status and ETA flow', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -33,17 +33,21 @@ void main() {
 
     expect(find.text('Order confirmed!'), findsOneWidget);
     expect(find.textContaining('HS-ABC1234'), findsOneWidget);
-    expect(find.textContaining('30'), findsOneWidget);
-    expect(find.textContaining('40 min'), findsOneWidget);
+    expect(find.text('Paid'), findsOneWidget);
+    expect(find.text('Preparing'), findsOneWidget);
     expect(find.text('On the way'), findsOneWidget);
-    expect(find.text('VIEW MY ORDER'), findsOneWidget);
-    expect(find.text('BACK HOME'), findsOneWidget);
+    expect(find.text('Estimated delivery time'), findsOneWidget);
+    expect(find.text('30–40 min'), findsOneWidget);
+    expect(find.text('Order Details'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('confirmation-success-panel')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('pickup confirmation shows ready-to-collect journey', (
-    tester,
-  ) async {
+  testWidgets('pickup confirmation ends with ready status', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -68,9 +72,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('Pickup confirmed!'), findsOneWidget);
-    expect(find.text('Estimated time'), findsOneWidget);
-    expect(find.text('Ready for pickup'), findsOneWidget);
-    expect(find.text('VIEW MY ORDER'), findsOneWidget);
+    expect(find.text('Estimated pickup time'), findsOneWidget);
+    expect(find.text('Ready'), findsOneWidget);
+    expect(find.text('On the way'), findsNothing);
+    expect(find.text('Order Details'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
