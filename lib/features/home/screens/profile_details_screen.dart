@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/app_loader.dart';
 import '../../auth/services/auth_service.dart';
 import '../widgets/profile_page_header.dart';
 
@@ -118,9 +119,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.red),
-                  )
+                ? const Center(child: AppLoader())
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 34),
                     children: [
