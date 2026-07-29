@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_loader.dart';
 import '../widgets/profile_page_header.dart';
 
 class ProfileOrdersScreen extends StatelessWidget {
@@ -42,11 +43,7 @@ class ProfileOrdersScreen extends StatelessWidget {
                         );
                       }
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.red,
-                          ),
-                        );
+                        return const Center(child: AppLoader());
                       }
 
                       final documents = [...?snapshot.data?.docs]
