@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'app_loader.dart';
 
 /// The single primary action button used across Hungry Spot.
 ///
@@ -52,12 +53,11 @@ class AppPrimaryButton extends StatelessWidget {
       button = FilledButton(
         onPressed: null,
         style: style,
-        child: const SizedBox.square(
-          dimension: 20,
-          child: CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 2.2,
-          ),
+        child: const AppLoader(
+          size: 20,
+          strokeWidth: 2.2,
+          color: Colors.white,
+          trackColor: Color(0x4DFFFFFF),
         ),
       );
     } else if (icon != null) {
