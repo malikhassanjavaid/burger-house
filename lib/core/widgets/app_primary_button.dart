@@ -18,6 +18,7 @@ class AppPrimaryButton extends StatelessWidget {
     this.fullWidth = true,
     this.height = 54,
     this.borderRadius = 14,
+    this.backgroundColor,
   });
 
   final String label;
@@ -27,14 +28,16 @@ class AppPrimaryButton extends StatelessWidget {
   final bool fullWidth;
   final double height;
   final double borderRadius;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     final effectiveOnPressed = isLoading ? null : onPressed;
+    final buttonColor = backgroundColor ?? AppColors.red;
     final style = FilledButton.styleFrom(
-      backgroundColor: AppColors.red,
+      backgroundColor: buttonColor,
       foregroundColor: Colors.white,
-      disabledBackgroundColor: AppColors.red.withValues(alpha: .56),
+      disabledBackgroundColor: buttonColor.withValues(alpha: .56),
       disabledForegroundColor: Colors.white,
       elevation: 0,
       padding: const EdgeInsets.symmetric(horizontal: 20),
