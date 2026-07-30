@@ -42,10 +42,10 @@ class OrderConfirmationScreen extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   physics: const BouncingScrollPhysics(),
                   children: [
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     const _ConfirmationArtwork(),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 2, 20, 24),
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
                       child: Column(
                         children: [
                           Text(
@@ -53,34 +53,34 @@ class OrderConfirmationScreen extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: AppColors.dark,
-                              fontSize: 28,
+                              fontSize: 22,
                               height: 1.05,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: -.7,
+                              letterSpacing: -.45,
                             ),
                           ),
-                          const SizedBox(height: 9),
+                          const SizedBox(height: 5),
                           const Text(
                             'Thanks for your order. We’ve received it.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: _secondaryText,
-                              fontSize: 13,
-                              height: 1.35,
+                              fontSize: 10.5,
+                              height: 1.3,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 7),
                           _OrderIdPill(orderNumber: order.orderNumber),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 8),
                           _OrderStatusCard(isPickup: isPickup),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 7),
                           _EstimatedTimeBanner(
                             minimumMinutes: order.etaMinMinutes,
                             maximumMinutes: order.etaMaxMinutes,
                             isPickup: isPickup,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 7),
                           _OrderLinksCard(
                             isPickup: isPickup,
                             onOpenOrder: openOrder,
@@ -128,7 +128,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   size: 30,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 7),
               const Text(
                 'Hungry Spot Support',
                 style: TextStyle(
@@ -143,11 +143,11 @@ class OrderConfirmationScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _secondaryText,
-                  fontSize: 13,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -177,45 +177,21 @@ class OrderConfirmationScreen extends StatelessWidget {
 class _ConfirmationArtwork extends StatelessWidget {
   const _ConfirmationArtwork();
 
-  static const double _sourceWidth = 862;
-  static const double _sourceHeight = 1825;
-  static const double _cropTop = 74;
-  static const double _cropBottom = 482;
-
   @override
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
       label: 'Hungry Spot chef confirming the order',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final scale = width / _sourceWidth;
-          final cropHeight = (_cropBottom - _cropTop) * scale;
-
-          return SizedBox(
-            width: width,
-            height: cropHeight,
-            child: ClipRect(
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  Positioned(
-                    left: 0,
-                    top: -_cropTop * scale,
-                    width: width,
-                    height: _sourceHeight * scale,
-                    child: Image.asset(
-                      'assets/images/order_confirmed_reference.png',
-                      fit: BoxFit.fill,
-                      filterQuality: FilterQuality.high,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      child: SizedBox(
+        width: double.infinity,
+        height: 125,
+        child: Image.asset(
+          'assets/images/confirmed_order_chef.png',
+          fit: BoxFit.contain,
+          alignment: Alignment.bottomCenter,
+          filterQuality: FilterQuality.high,
+          cacheWidth: (390 * MediaQuery.devicePixelRatioOf(context)).round(),
+        ),
       ),
     );
   }
@@ -230,12 +206,12 @@ class _OrderIdPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: const Color(0xFFF0F1F4),
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: () => Clipboard.setData(ClipboardData(text: orderNumber)),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(15, 9, 12, 9),
+          padding: const EdgeInsets.fromLTRB(12, 6, 10, 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -243,7 +219,7 @@ class _OrderIdPill extends StatelessWidget {
                 'Order ID: ',
                 style: TextStyle(
                   color: _secondaryText,
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -253,14 +229,14 @@ class _OrderIdPill extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.red,
-                    fontSize: 12.5,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w900,
                     letterSpacing: .15,
                   ),
                 ),
               ),
-              const SizedBox(width: 9),
-              const Icon(Icons.copy_rounded, color: _secondaryText, size: 16),
+              const SizedBox(width: 6),
+              const Icon(Icons.copy_rounded, color: _secondaryText, size: 14),
             ],
           ),
         ),
@@ -280,16 +256,16 @@ class _OrderStatusCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(15, 18, 15, 16),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _softBorder),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0C202B42),
-            blurRadius: 24,
-            offset: Offset(0, 9),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -336,8 +312,8 @@ class _StatusConnector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 3,
-        margin: const EdgeInsets.only(top: 21),
+        height: 2,
+        margin: const EdgeInsets.only(top: 17),
         decoration: BoxDecoration(
           color: active ? AppColors.red : const Color(0xFFE0E2E6),
           borderRadius: BorderRadius.circular(20),
@@ -368,8 +344,8 @@ class _StatusStep extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 46,
-          height: 46,
+          width: 38,
+          height: 38,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: active ? AppColors.red : const Color(0xFFE6E7EA),
@@ -377,7 +353,7 @@ class _StatusStep extends StatelessWidget {
             border: active
                 ? Border.all(
                     color: AppColors.red.withValues(alpha: .14),
-                    width: 7,
+                    width: 5,
                     strokeAlign: BorderSide.strokeAlignOutside,
                   )
                 : null,
@@ -385,24 +361,24 @@ class _StatusStep extends StatelessWidget {
                 ? [
                     BoxShadow(
                       color: AppColors.red.withValues(alpha: .24),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      blurRadius: 11,
+                      offset: const Offset(0, 4),
                     ),
                   ]
                 : null,
           ),
           child: active
-              ? const Icon(Icons.check_rounded, color: Colors.white, size: 26)
+              ? const Icon(Icons.check_rounded, color: Colors.white, size: 21)
               : Text(
                   '$number',
                   style: const TextStyle(
                     color: _secondaryText,
-                    fontSize: 14,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
         ),
-        const SizedBox(height: 13),
+        const SizedBox(height: 8),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -410,12 +386,12 @@ class _StatusStep extends StatelessWidget {
             maxLines: 1,
             style: const TextStyle(
               color: AppColors.dark,
-              fontSize: 12,
+              fontSize: 8.8,
               fontWeight: FontWeight.w900,
             ),
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 3),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -423,15 +399,15 @@ class _StatusStep extends StatelessWidget {
             maxLines: 1,
             style: const TextStyle(
               color: _secondaryText,
-              fontSize: 10.5,
+              fontSize: 8.8,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
         if (footer != null) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: const Color(0xFFE5F8E7),
               borderRadius: BorderRadius.circular(10),
@@ -440,7 +416,7 @@ class _StatusStep extends StatelessWidget {
               footer!,
               style: const TextStyle(
                 color: Color(0xFF2AA440),
-                fontSize: 8.5,
+                fontSize: 7.5,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -466,10 +442,10 @@ class _EstimatedTimeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 132,
+      height: 98,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(23),
+        borderRadius: BorderRadius.circular(19),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -478,33 +454,33 @@ class _EstimatedTimeBanner extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: Color(0x2410192A),
-            blurRadius: 24,
-            offset: Offset(0, 10),
+            blurRadius: 16,
+            offset: Offset(0, 7),
           ),
         ],
       ),
       child: Stack(
         children: [
           Positioned(
-            right: -20,
-            bottom: -18,
+            right: -16,
+            bottom: -14,
             child: Opacity(
               opacity: .95,
               child: Image.asset(
                 'assets/images/beefburger-cutout.png',
-                width: 150,
-                height: 125,
+                width: 112,
+                height: 92,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
               ),
             ),
           ),
           Positioned(
-            left: 18,
-            top: 28,
+            left: 13,
+            top: 25,
             child: Container(
-              width: 65,
-              height: 65,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: AppColors.red.withValues(alpha: .22),
                 shape: BoxShape.circle,
@@ -512,13 +488,13 @@ class _EstimatedTimeBanner extends StatelessWidget {
               child: const Icon(
                 Icons.timer_outlined,
                 color: Colors.white,
-                size: 37,
+                size: 27,
               ),
             ),
           ),
           Positioned.fill(
-            left: 98,
-            right: 95,
+            left: 72,
+            right: 70,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,11 +507,11 @@ class _EstimatedTimeBanner extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFB8BFCC),
-                    fontSize: 10.5,
+                    fontSize: 8.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
@@ -544,14 +520,14 @@ class _EstimatedTimeBanner extends StatelessWidget {
                     maxLines: 1,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 27,
+                      fontSize: 21,
                       height: 1,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: -.6,
+                      letterSpacing: -.35,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   isPickup
                       ? 'We’ll notify you when your order is ready.'
@@ -560,8 +536,8 @@ class _EstimatedTimeBanner extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFD7DAE1),
-                    fontSize: 9.5,
-                    height: 1.25,
+                    fontSize: 8.2,
+                    height: 1.15,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -591,13 +567,13 @@ class _OrderLinksCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _softBorder),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0B202B42),
-            blurRadius: 24,
-            offset: Offset(0, 9),
+            blurRadius: 15,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -637,7 +613,7 @@ class _CardDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 18),
+      padding: EdgeInsets.symmetric(horizontal: 14),
       child: Divider(height: 1, thickness: 1, color: _softBorder),
     );
   }
@@ -662,21 +638,21 @@ class _OrderLink extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 13, 16, 13),
+          padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: AppColors.red.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, color: AppColors.red, size: 23),
+                child: Icon(icon, color: AppColors.red, size: 19),
               ),
-              const SizedBox(width: 13),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -685,18 +661,18 @@ class _OrderLink extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         color: AppColors.dark,
-                        fontSize: 13,
+                        fontSize: 11.2,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _secondaryText,
-                        fontSize: 10.5,
+                        fontSize: 8.8,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -706,7 +682,7 @@ class _OrderLink extends StatelessWidget {
               const Icon(
                 Icons.chevron_right_rounded,
                 color: _secondaryText,
-                size: 24,
+                size: 20,
               ),
             ],
           ),
@@ -725,17 +701,17 @@ class _BottomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.all(9),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 7),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _softBorder),
         boxShadow: const [
           BoxShadow(
             color: Color(0x18202B42),
-            blurRadius: 26,
-            offset: Offset(0, 8),
+            blurRadius: 18,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -744,7 +720,7 @@ class _BottomActions extends StatelessWidget {
           Expanded(
             flex: 5,
             child: SizedBox(
-              height: 51,
+              height: 44,
               child: OutlinedButton.icon(
                 onPressed: onHome,
                 style: OutlinedButton.styleFrom(
@@ -752,29 +728,29 @@ class _BottomActions extends StatelessWidget {
                   backgroundColor: Colors.white,
                   side: const BorderSide(color: _softBorder),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(17),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                icon: const Icon(Icons.home_outlined, size: 22),
+                icon: const Icon(Icons.home_outlined, size: 18),
                 label: const Text(
                   'Home',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           Expanded(
             flex: 7,
             child: SizedBox(
-              height: 51,
+              height: 44,
               child: FilledButton(
                 onPressed: onTrackOrder,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.red,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(17),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   elevation: 7,
                   shadowColor: AppColors.red.withValues(alpha: .35),
@@ -782,20 +758,20 @@ class _BottomActions extends StatelessWidget {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.receipt_long_rounded, size: 20),
-                    SizedBox(width: 8),
+                    Icon(Icons.receipt_long_rounded, size: 17),
+                    SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         'Track Order',
                         maxLines: 1,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
-                    SizedBox(width: 7),
-                    Icon(Icons.arrow_forward_rounded, size: 21),
+                    SizedBox(width: 5),
+                    Icon(Icons.arrow_forward_rounded, size: 18),
                   ],
                 ),
               ),
