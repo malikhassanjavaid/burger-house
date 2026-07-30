@@ -20,6 +20,13 @@ const _checkoutBg = Color(0xFFF4FAFE);
 const _checkoutRed = Color(0xFFF23845);
 const _checkoutInk = Color(0xFF15161C);
 const _checkoutMuted = Color(0xFF858C98);
+const _softBorder = Color(0xFFE5E7EB);
+const _deliveryGreen = Color(0xFF53A92C);
+const _deliveryTint = Color(0xFFF0F8E9);
+const _phoneBlue = Color(0xFF2C86E5);
+const _phoneTint = Color(0xFFEBF4FF);
+const _paymentPurple = Color(0xFF9552E8);
+const _paymentTint = Color(0xFFF5EEFF);
 
 extension on PaymentMethod {
   String valueFor(FulfillmentMethod fulfillmentMethod) {
@@ -338,12 +345,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: ListView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 28),
+                  padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
                   children: [
                     const _CheckoutHeroBanner(),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: _CheckoutLocationSection(
                         fulfillmentMethod: widget.fulfillmentMethod,
                         location: _deliveryLocation,
@@ -353,9 +360,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             : _editDeliveryLocation,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: _ContactDetailsSection(
                         phoneController: _phoneController,
                         loading: _isLoadingProfile,
@@ -364,9 +371,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             setState(() => _savePhoneToAccount = value),
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: _PaymentMethodSelector(
                         fulfillmentMethod: widget.fulfillmentMethod,
                         value: _paymentMethod,
@@ -374,7 +381,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             setState(() => _paymentMethod = method),
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),
@@ -403,38 +410,38 @@ class _CheckoutHeader extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 15, 18, 13),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 7),
         child: SizedBox(
-          height: 58,
+          height: 44,
           child: Row(
             children: [
               Material(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                elevation: 7,
+                borderRadius: BorderRadius.circular(14),
+                elevation: 5,
                 shadowColor: const Color(0x1F304A5C),
                 child: InkWell(
                   onTap: onBack,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(14),
                   child: const SizedBox.square(
-                    dimension: 54,
+                    dimension: 42,
                     child: Icon(
                       Icons.arrow_back_ios_new_rounded,
                       color: _checkoutRed,
-                      size: 23,
+                      size: 19,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 22),
+              const SizedBox(width: 16),
               const Text(
                 'Checkout',
                 style: TextStyle(
                   color: _checkoutInk,
-                  fontSize: 27,
+                  fontSize: 22,
                   height: 1,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: -.6,
+                  letterSpacing: -.4,
                 ),
               ),
             ],
@@ -448,45 +455,144 @@ class _CheckoutHeader extends StatelessWidget {
 class _CheckoutHeroBanner extends StatelessWidget {
   const _CheckoutHeroBanner();
 
-  static const _sourceWidth = 851.0;
-  static const _sourceHeight = 2048.0;
-  static const _cropTop = 260.0;
-  static const _cropBottom = 731.0;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Semantics(
+        image: true,
+        label: 'Almost there. Review your details and place your order.',
+        child: Container(
+          height: 142,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x18304A5C),
+                blurRadius: 18,
+                offset: Offset(0, 7),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Row(
+            children: [
+              Expanded(
+                flex: 43,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 14, 2, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: 'Almost '),
+                            TextSpan(
+                              text: 'there!',
+                              style: TextStyle(color: _checkoutRed),
+                            ),
+                          ],
+                        ),
+                        style: TextStyle(
+                          color: _checkoutInk,
+                          fontSize: 19,
+                          height: 1.05,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.35,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      const Text(
+                        'Review your details and place your order',
+                        maxLines: 2,
+                        style: TextStyle(
+                          color: _checkoutInk,
+                          fontSize: 9.6,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          _HeroFeature(
+                            icon: Icons.verified_user_outlined,
+                            label: 'Secure',
+                          ),
+                          const SizedBox(width: 6),
+                          _HeroFeature(icon: Icons.bolt_rounded, label: 'Fast'),
+                          const SizedBox(width: 6),
+                          _HeroFeature(
+                            icon: Icons.workspace_premium_outlined,
+                            label: 'Quality',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 57,
+                child: SizedBox.expand(
+                  child: Image.asset(
+                    'assets/images/checkout_hero_hd.png',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.centerRight,
+                    filterQuality: FilterQuality.high,
+                    cacheWidth: (460 * MediaQuery.devicePixelRatioOf(context))
+                        .round(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroFeature extends StatelessWidget {
+  const _HeroFeature({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final scale = width / _sourceWidth;
-        final cropHeight = (_cropBottom - _cropTop) * scale;
-        return Semantics(
-          image: true,
-          label: 'Almost there. Review your details and place your order.',
-          child: SizedBox(
-            width: width,
-            height: cropHeight,
-            child: ClipRect(
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  Positioned(
-                    left: 0,
-                    top: -_cropTop * scale,
-                    width: width,
-                    height: _sourceHeight * scale,
-                    child: Image.asset(
-                      'assets/images/checkout_reference.png',
-                      fit: BoxFit.fill,
-                      filterQuality: FilterQuality.high,
-                    ),
-                  ),
-                ],
-              ),
+    final (accentColor, backgroundColor) = switch (icon) {
+      Icons.verified_user_outlined => (_deliveryGreen, _deliveryTint),
+      Icons.bolt_rounded => (_checkoutRed, const Color(0xFFFFF0F2)),
+      _ => (_phoneBlue, _phoneTint),
+    };
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: accentColor, size: 13),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(
+              color: _checkoutInk,
+              fontSize: 6.8,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
@@ -567,19 +673,23 @@ class _CheckoutLocationRow extends StatelessWidget {
       label: semanticsLabel,
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        elevation: 8,
+        borderRadius: BorderRadius.circular(20),
+        elevation: 5,
         shadowColor: const Color(0x1F304A5C),
         child: InkWell(
           onTap: onChangeLocation,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            constraints: const BoxConstraints(minHeight: 137),
-            padding: const EdgeInsets.fromLTRB(16, 17, 15, 17),
+            constraints: const BoxConstraints(minHeight: 102),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             child: Row(
               children: [
-                _CheckoutIconTile(icon: icon),
-                const SizedBox(width: 17),
+                _CheckoutIconTile(
+                  icon: icon,
+                  accentColor: _deliveryGreen,
+                  backgroundColor: _deliveryTint,
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,49 +698,51 @@ class _CheckoutLocationRow extends StatelessWidget {
                       Text(
                         eyebrow,
                         style: const TextStyle(
-                          color: _checkoutRed,
-                          fontSize: 10.5,
+                          color: _deliveryGreen,
+                          fontSize: 8.5,
                           fontWeight: FontWeight.w900,
                           letterSpacing: .35,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 3),
                       Text(
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: _checkoutInk,
-                          fontSize: 16.5,
+                          fontSize: 13.5,
                           height: 1,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: _checkoutMuted,
-                          fontSize: 12.2,
-                          height: 1.35,
+                          fontSize: 9.8,
+                          height: 1.2,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 5),
                       _CheckoutActionPill(
                         label: actionLabel,
                         icon: Icons.location_on_outlined,
+                        accentColor: _deliveryGreen,
+                        backgroundColor: _deliveryTint,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 6),
                 const Icon(
                   Icons.arrow_forward_ios_rounded,
                   color: _checkoutInk,
-                  size: 20,
+                  size: 17,
                 ),
               ],
             ),
@@ -642,50 +754,64 @@ class _CheckoutLocationRow extends StatelessWidget {
 }
 
 class _CheckoutIconTile extends StatelessWidget {
-  const _CheckoutIconTile({required this.icon, this.child});
+  const _CheckoutIconTile({
+    required this.icon,
+    this.child,
+    this.accentColor = _checkoutRed,
+    this.backgroundColor = const Color(0xFFFFF0F2),
+  });
 
   final IconData icon;
   final Widget? child;
+  final Color accentColor;
+  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 58,
-      height: 58,
+      width: 46,
+      height: 46,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0F2),
-        borderRadius: BorderRadius.circular(18),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: child ?? Icon(icon, color: _checkoutRed, size: 31),
+      child: child ?? Icon(icon, color: accentColor, size: 25),
     );
   }
 }
 
 class _CheckoutActionPill extends StatelessWidget {
-  const _CheckoutActionPill({required this.label, required this.icon});
+  const _CheckoutActionPill({
+    required this.label,
+    required this.icon,
+    this.accentColor = _checkoutRed,
+    this.backgroundColor = const Color(0xFFFFF0F2),
+  });
 
   final String label;
   final IconData icon;
+  final Color accentColor;
+  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0F2),
-        borderRadius: BorderRadius.circular(22),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: _checkoutRed, size: 16),
-          const SizedBox(width: 7),
+          Icon(icon, color: accentColor, size: 13),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
-              color: _checkoutRed,
-              fontSize: 11.2,
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 9.2,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -829,26 +955,17 @@ class _PhoneNumberSelector extends StatelessWidget {
   Future<_PhoneEntryResult?> _showPhoneSheet(BuildContext context) async {
     final initialDigits = _nationalDigits(controller.text);
     var phoneDigits = initialDigits.length == 10 ? initialDigits : '';
-
     String? errorText;
     var shouldSave = saveToAccount;
 
-    final result = await showModalBottomSheet<_PhoneEntryResult>(
+    return showModalBottomSheet<_PhoneEntryResult>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x66000000),
       isScrollControlled: true,
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final screenHeight = MediaQuery.sizeOf(context).height;
-          final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-          final sheetHeight = keyboardInset > 0
-              ? (screenHeight * .55).clamp(390.0, 480.0)
-              : (screenHeight * .76).clamp(520.0, 650.0);
-
           void save() {
             if (!_isValid(phoneDigits)) {
               setSheetState(
@@ -867,191 +984,205 @@ class _PhoneNumberSelector extends StatelessWidget {
           return AnimatedPadding(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOut,
-            padding: EdgeInsets.only(bottom: keyboardInset),
-            child: SizedBox(
-              height: sheetHeight,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 14, 24, 22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IconButton(
-                      tooltip: 'Close',
-                      onPressed: () => Navigator.of(sheetContext).pop(),
-                      padding: EdgeInsets.zero,
-                      alignment: Alignment.centerLeft,
-                      iconSize: 32,
-                      icon: const Icon(Icons.close_rounded),
-                      color: AppColors.dark,
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'Phone number',
-                      style: TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 27,
-                        height: 1,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -.5,
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(child: _CheckoutSheetHandle()),
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Phone number',
+                                  style: TextStyle(
+                                    color: AppColors.dark,
+                                    fontSize: 19,
+                                    height: 1,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -.3,
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  'Add a number so the rider can contact you.',
+                                  style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 9.8,
+                                    height: 1.3,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _CheckoutSheetCloseButton(
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                            accentColor: _phoneBlue,
+                            backgroundColor: _phoneTint,
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 22),
-                    const Text(
-                      'Please supply a phone number so the courier can contact you.',
-                      style: TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 12,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(width: 100, child: _DialCodeField()),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: '* ',
-                                      style: TextStyle(color: AppColors.red),
-                                    ),
-                                    TextSpan(text: 'Phone number'),
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(width: 86, child: _DialCodeField()),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '* ',
+                                        style: TextStyle(color: _phoneBlue),
+                                      ),
+                                      TextSpan(text: 'Phone number'),
+                                    ],
+                                  ),
+                                  style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                TextFormField(
+                                  initialValue: phoneDigits,
+                                  autofocus: true,
+                                  keyboardType: TextInputType.phone,
+                                  textInputAction: TextInputAction.done,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(10),
                                   ],
+                                  style: const TextStyle(
+                                    color: AppColors.dark,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: .25,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: '5551234567',
+                                    hintStyle: const TextStyle(
+                                      color: Color(0xFFADB1B8),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    errorText: errorText,
+                                    errorStyle: const TextStyle(
+                                      fontSize: 8.3,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    filled: true,
+                                    fillColor: _phoneTint,
+                                    counterText: '',
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 13,
+                                    ),
+                                    border: _phoneFieldBorder(_softBorder),
+                                    enabledBorder: _phoneFieldBorder(
+                                      _softBorder,
+                                    ),
+                                    focusedBorder: _phoneFieldBorder(
+                                      _phoneBlue,
+                                      width: 1.4,
+                                    ),
+                                    errorBorder: _phoneFieldBorder(
+                                      AppColors.red,
+                                    ),
+                                    focusedErrorBorder: _phoneFieldBorder(
+                                      AppColors.red,
+                                      width: 1.4,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    phoneDigits = value;
+                                    if (errorText != null) {
+                                      setSheetState(() => errorText = null);
+                                    }
+                                  },
+                                  onFieldSubmitted: (_) => save(),
                                 ),
-                                style: TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 7),
-                              TextFormField(
-                                initialValue: phoneDigits,
-                                autofocus: true,
-                                keyboardType: TextInputType.phone,
-                                textInputAction: TextInputAction.done,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(10),
-                                ],
-                                style: const TextStyle(
-                                  color: AppColors.dark,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: .3,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Phone number',
-                                  hintStyle: const TextStyle(
-                                    color: Color(0xFF9A9DA3),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  errorText: errorText,
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  counterText: '',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 16,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(9),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF696C70),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Material(
+                        color: _phoneTint,
+                        borderRadius: BorderRadius.circular(13),
+                        child: InkWell(
+                          onTap: () =>
+                              setSheetState(() => shouldSave = !shouldSave),
+                          borderRadius: BorderRadius.circular(13),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 5, 10, 5),
+                            child: Row(
+                              children: [
+                                Transform.scale(
+                                  scale: .86,
+                                  child: Checkbox(
+                                    value: shouldSave,
+                                    onChanged: (value) => setSheetState(
+                                      () => shouldSave = value ?? false,
                                     ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(9),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF696C70),
+                                    activeColor: _phoneBlue,
+                                    checkColor: Colors.white,
+                                    side: const BorderSide(
+                                      color: Color(0xFFADB1B8),
                                     ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(9),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.red,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(9),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.red,
-                                    ),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(9),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.red,
-                                      width: 1.5,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
                                 ),
-                                onChanged: (value) {
-                                  phoneDigits = value;
-                                  if (errorText != null) {
-                                    setSheetState(() => errorText = null);
-                                  }
-                                },
-                                onFieldSubmitted: (_) => save(),
-                              ),
-                            ],
+                                const Expanded(
+                                  child: Text(
+                                    'Save this number to my account',
+                                    style: TextStyle(
+                                      color: AppColors.dark,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    InkWell(
-                      onTap: () =>
-                          setSheetState(() => shouldSave = !shouldSave),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          children: [
-                            Checkbox(
-                              value: shouldSave,
-                              onChanged: (value) => setSheetState(
-                                () => shouldSave = value ?? false,
-                              ),
-                              activeColor: AppColors.red,
-                              checkColor: Colors.white,
-                              side: const BorderSide(color: Color(0xFF898D93)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                            ),
-                            const SizedBox(width: 3),
-                            const Expanded(
-                              child: Text(
-                                'Save this number to my account',
-                                style: TextStyle(
-                                  color: AppColors.dark,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    AppPrimaryButton(
-                      label: 'SAVE',
-                      onPressed: save,
-                      height: 54,
-                      borderRadius: 27,
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      AppPrimaryButton(
+                        label: 'SAVE NUMBER',
+                        onPressed: save,
+                        height: 46,
+                        borderRadius: 14,
+                        backgroundColor: _phoneBlue,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1059,7 +1190,13 @@ class _PhoneNumberSelector extends StatelessWidget {
         },
       ),
     );
-    return result;
+  }
+
+  static OutlineInputBorder _phoneFieldBorder(Color color, {double width = 1}) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: color, width: width),
+    );
   }
 
   @override
@@ -1076,8 +1213,8 @@ class _PhoneNumberSelector extends StatelessWidget {
           children: [
             Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              elevation: 8,
+              borderRadius: BorderRadius.circular(20),
+              elevation: 5,
               shadowColor: const Color(0x1F304A5C),
               child: InkWell(
                 onTap: loading
@@ -1090,12 +1227,12 @@ class _PhoneNumberSelector extends StatelessWidget {
                         field.validate();
                         onSavePreferenceChanged(result.saveToAccount);
                       },
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 116),
-                  padding: const EdgeInsets.fromLTRB(16, 17, 15, 17),
+                  constraints: const BoxConstraints(minHeight: 92),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     border: showError
                         ? Border.all(color: _checkoutRed, width: 1.1)
                         : null,
@@ -1104,11 +1241,17 @@ class _PhoneNumberSelector extends StatelessWidget {
                     children: [
                       _CheckoutIconTile(
                         icon: Icons.phone_android_rounded,
+                        accentColor: _phoneBlue,
+                        backgroundColor: _phoneTint,
                         child: loading
-                            ? const AppLoader(size: 25, strokeWidth: 2.3)
+                            ? const AppLoader(
+                                size: 21,
+                                strokeWidth: 2.3,
+                                color: _phoneBlue,
+                              )
                             : null,
                       ),
-                      const SizedBox(width: 17),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1118,11 +1261,11 @@ class _PhoneNumberSelector extends StatelessWidget {
                               'Contact phone number',
                               style: TextStyle(
                                 color: _checkoutInk,
-                                fontSize: 15.5,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 3),
                             Text(
                               hasNumber
                                   ? field.value!
@@ -1131,12 +1274,12 @@ class _PhoneNumberSelector extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: _checkoutMuted,
-                                fontSize: 11.8,
-                                height: 1.3,
+                                fontSize: 9.8,
+                                height: 1.2,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 5),
                             _CheckoutActionPill(
                               label: hasNumber
                                   ? 'Change phone number'
@@ -1144,17 +1287,19 @@ class _PhoneNumberSelector extends StatelessWidget {
                               icon: hasNumber
                                   ? Icons.edit_outlined
                                   : Icons.add_rounded,
+                              accentColor: _phoneBlue,
+                              backgroundColor: _phoneTint,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 6),
                       Icon(
                         showError
                             ? Icons.report_rounded
                             : Icons.arrow_forward_ios_rounded,
                         color: showError ? _checkoutRed : _checkoutInk,
-                        size: showError ? 23 : 20,
+                        size: showError ? 19 : 17,
                       ),
                     ],
                   ),
@@ -1162,14 +1307,14 @@ class _PhoneNumberSelector extends StatelessWidget {
               ),
             ),
             if (field.errorText != null) ...[
-              const SizedBox(height: 7),
+              const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.only(left: 6),
                 child: Text(
                   field.errorText!,
                   style: const TextStyle(
                     color: _checkoutRed,
-                    fontSize: 10.5,
+                    fontSize: 9,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1194,18 +1339,18 @@ class _DialCodeField extends StatelessWidget {
           'Dial code',
           style: TextStyle(
             color: AppColors.muted,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w600,
+            fontSize: 8.5,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 4),
         Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 13),
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 11),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: const Color(0xFF696C70)),
+            color: _phoneTint,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFCFE4FA)),
           ),
           child: const Row(
             children: [
@@ -1214,20 +1359,64 @@ class _DialCodeField extends StatelessWidget {
                   '+1',
                   style: TextStyle(
                     color: AppColors.dark,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
               Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: AppColors.dark,
-                size: 23,
+                color: _phoneBlue,
+                size: 19,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CheckoutSheetHandle extends StatelessWidget {
+  const _CheckoutSheetHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 4,
+      decoration: BoxDecoration(
+        color: const Color(0xFFD8DBE0),
+        borderRadius: BorderRadius.circular(20),
+      ),
+    );
+  }
+}
+
+class _CheckoutSheetCloseButton extends StatelessWidget {
+  const _CheckoutSheetCloseButton({
+    required this.onPressed,
+    this.accentColor = _checkoutRed,
+    this.backgroundColor = const Color(0xFFFFF0F2),
+  });
+
+  final VoidCallback onPressed;
+  final Color accentColor;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(11),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(11),
+        child: SizedBox.square(
+          dimension: 34,
+          child: Icon(Icons.close_rounded, color: accentColor, size: 19),
+        ),
+      ),
     );
   }
 }
@@ -1261,80 +1450,82 @@ class _PaymentMethodSelector extends StatelessWidget {
     };
   }
 
-  String _assetFor(PaymentMethod method) {
-    return switch (method) {
-      PaymentMethod.cashOnDelivery => 'assets/images/payment_cash_option.png',
-      PaymentMethod.card => 'assets/images/payment_card_option.png',
-    };
-  }
-
   Future<PaymentMethod?> _showOptions(
     BuildContext context,
     PaymentMethod? current,
   ) {
     return showModalBottomSheet<PaymentMethod>(
       context: context,
-      backgroundColor: Colors.white,
-      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x66000000),
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 2, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      builder: (sheetContext) => DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Select payment method',
-                        style: TextStyle(
-                          color: AppColors.dark,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -.2,
-                        ),
+                const Center(child: _CheckoutSheetHandle()),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Payment method',
+                            style: TextStyle(
+                              color: AppColors.dark,
+                              fontSize: 19,
+                              height: 1,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -.3,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Choose how you would like to pay.',
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 9.8,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Choose how you would like to pay',
-                        style: TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    _CheckoutSheetCloseButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      accentColor: _paymentPurple,
+                      backgroundColor: _paymentTint,
+                    ),
+                  ],
                 ),
-                IconButton(
-                  tooltip: 'Close',
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                  icon: const Icon(Icons.close_rounded),
-                  color: AppColors.dark,
+                const SizedBox(height: 13),
+                ...PaymentMethod.values.map(
+                  (method) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _PaymentMethodSheetOption(
+                      method: method,
+                      title: _labelFor(method),
+                      subtitle: _subtitleFor(method),
+                      selected: current == method,
+                      onTap: () => Navigator.of(sheetContext).pop(method),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
-            ...PaymentMethod.values.map(
-              (method) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _PaymentMethodSheetOption(
-                  assetPath: _assetFor(method),
-                  title: _labelFor(method),
-                  subtitle: _subtitleFor(method),
-                  selected: current == method,
-                  onTap: () => Navigator.of(sheetContext).pop(method),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1355,8 +1546,8 @@ class _PaymentMethodSelector extends StatelessWidget {
           children: [
             Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              elevation: 8,
+              borderRadius: BorderRadius.circular(20),
+              elevation: 5,
               shadowColor: const Color(0x1F304A5C),
               child: InkWell(
                 onTap: () async {
@@ -1365,12 +1556,12 @@ class _PaymentMethodSelector extends StatelessWidget {
                   field.didChange(selected);
                   onChanged(selected);
                 },
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 116),
-                  padding: const EdgeInsets.fromLTRB(16, 17, 15, 17),
+                  constraints: const BoxConstraints(minHeight: 92),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     border: hasError
                         ? Border.all(color: _checkoutRed, width: 1.1)
                         : null,
@@ -1379,18 +1570,16 @@ class _PaymentMethodSelector extends StatelessWidget {
                     children: [
                       _CheckoutIconTile(
                         icon: Icons.account_balance_wallet_outlined,
+                        accentColor: _paymentPurple,
+                        backgroundColor: _paymentTint,
                         child: selectedMethod == null
                             ? null
-                            : Padding(
-                                padding: const EdgeInsets.all(7),
-                                child: Image.asset(
-                                  _assetFor(selectedMethod),
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                ),
+                            : _PaymentMethodIcon(
+                                method: selectedMethod,
+                                compact: true,
                               ),
                       ),
-                      const SizedBox(width: 17),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1400,11 +1589,11 @@ class _PaymentMethodSelector extends StatelessWidget {
                               'Payment method',
                               style: TextStyle(
                                 color: _checkoutInk,
-                                fontSize: 15.5,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 3),
                             Text(
                               selectedMethod == null
                                   ? 'Select your preferred payment method'
@@ -1413,11 +1602,11 @@ class _PaymentMethodSelector extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: _checkoutMuted,
-                                fontSize: 11.8,
+                                fontSize: 9.8,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 5),
                             _CheckoutActionPill(
                               label: selectedMethod == null
                                   ? 'Select payment method'
@@ -1425,17 +1614,19 @@ class _PaymentMethodSelector extends StatelessWidget {
                               icon: selectedMethod == null
                                   ? Icons.add_rounded
                                   : Icons.edit_outlined,
+                              accentColor: _paymentPurple,
+                              backgroundColor: _paymentTint,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 6),
                       Icon(
                         hasError
                             ? Icons.report_rounded
                             : Icons.arrow_forward_ios_rounded,
                         color: hasError ? _checkoutRed : _checkoutInk,
-                        size: hasError ? 23 : 20,
+                        size: hasError ? 19 : 17,
                       ),
                     ],
                   ),
@@ -1443,14 +1634,14 @@ class _PaymentMethodSelector extends StatelessWidget {
               ),
             ),
             if (field.errorText != null) ...[
-              const SizedBox(height: 7),
+              const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.only(left: 6),
                 child: Text(
                   field.errorText!,
                   style: const TextStyle(
                     color: _checkoutRed,
-                    fontSize: 10.5,
+                    fontSize: 9,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1465,14 +1656,14 @@ class _PaymentMethodSelector extends StatelessWidget {
 
 class _PaymentMethodSheetOption extends StatelessWidget {
   const _PaymentMethodSheetOption({
-    required this.assetPath,
+    required this.method,
     required this.title,
     required this.subtitle,
     required this.selected,
     required this.onTap,
   });
 
-  final String assetPath;
+  final PaymentMethod method;
   final String title;
   final String subtitle;
   final bool selected;
@@ -1481,27 +1672,34 @@ class _PaymentMethodSheetOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.blush : const Color(0xFFF7F8FA),
-      borderRadius: BorderRadius.circular(18),
+      color: selected ? _paymentTint : Colors.white,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(12),
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? const Color(0xFFF2B7BD) : Colors.transparent,
+              color: selected ? _paymentPurple : _softBorder,
+              width: selected ? 1.35 : 1,
             ),
+            boxShadow: selected
+                ? const [
+                    BoxShadow(
+                      color: Color(0x269552E8),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
-              _PaymentOptionArtwork(
-                assetPath: assetPath,
-                width: 56,
-                height: 46,
-              ),
-              const SizedBox(width: 13),
+              _PaymentMethodIcon(method: method),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1510,30 +1708,36 @@ class _PaymentMethodSheetOption extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         color: AppColors.dark,
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.muted,
-                        fontSize: 10,
-                        height: 1.25,
+                        fontSize: 8.8,
+                        height: 1.2,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                selected
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_off_rounded,
-                color: selected ? AppColors.red : const Color(0xFFB9BEC6),
-                size: 22,
+              const SizedBox(width: 7),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: Icon(
+                  selected
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_off_rounded,
+                  key: ValueKey(selected),
+                  color: selected ? _paymentPurple : const Color(0xFFB9BEC6),
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -1543,32 +1747,28 @@ class _PaymentMethodSheetOption extends StatelessWidget {
   }
 }
 
-class _PaymentOptionArtwork extends StatelessWidget {
-  const _PaymentOptionArtwork({
-    required this.assetPath,
-    required this.width,
-    required this.height,
-  });
+class _PaymentMethodIcon extends StatelessWidget {
+  const _PaymentMethodIcon({required this.method, this.compact = false});
 
-  final String assetPath;
-  final double width;
-  final double height;
+  final PaymentMethod method;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        width: width,
-        height: height,
-        child: Image.asset(
-          assetPath,
-          fit: BoxFit.cover,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.high,
-          cacheWidth: (width * 2 * MediaQuery.devicePixelRatioOf(context))
-              .round(),
-        ),
+    final size = compact ? 32.0 : 42.0;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: _paymentTint,
+        borderRadius: BorderRadius.circular(compact ? 10 : 12),
+      ),
+      child: Icon(
+        method == PaymentMethod.cashOnDelivery
+            ? Icons.payments_outlined
+            : Icons.credit_card_rounded,
+        color: _paymentPurple,
+        size: compact ? 18 : 22,
       ),
     );
   }
@@ -1593,23 +1793,23 @@ class _PlaceOrderBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: _checkoutBg,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      padding: const EdgeInsets.fromLTRB(12, 5, 12, 7),
       child: SafeArea(
         top: false,
         child: Material(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          elevation: 10,
+          borderRadius: BorderRadius.circular(20),
+          elevation: 6,
           shadowColor: const Color(0x26304A5C),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 13, 14, 10),
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
                     const _CheckoutIconTile(icon: Icons.receipt_long_outlined),
-                    const SizedBox(width: 13),
+                    const SizedBox(width: 9),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1618,26 +1818,26 @@ class _PlaceOrderBar extends StatelessWidget {
                             '$itemCount ITEM${itemCount == 1 ? '' : 'S'}',
                             style: const TextStyle(
                               color: _checkoutMuted,
-                              fontSize: 10.5,
+                              fontSize: 8.8,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             formatUsd(total),
                             style: const TextStyle(
                               color: _checkoutInk,
-                              fontSize: 21,
+                              fontSize: 18,
                               height: 1,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 3),
                           const Text(
                             'Inclusive of taxes',
                             style: TextStyle(
                               color: _checkoutMuted,
-                              fontSize: 9.5,
+                              fontSize: 8.2,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1646,33 +1846,33 @@ class _PlaceOrderBar extends StatelessWidget {
                     ),
                     Container(
                       width: 1,
-                      height: 52,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      height: 42,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
                       color: const Color(0xFFE8EAED),
                     ),
                     ConstrainedBox(
                       constraints: const BoxConstraints(
-                        minWidth: 125,
-                        maxWidth: 154,
+                        minWidth: 116,
+                        maxWidth: 142,
                       ),
                       child: SizedBox(
-                        height: 54,
+                        height: 46,
                         child: FilledButton(
                           onPressed: loading ? null : onPlaceOrder,
                           style: FilledButton.styleFrom(
                             backgroundColor: _checkoutRed,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor: const Color(0xFFF7A0A7),
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             elevation: 5,
                             shadowColor: const Color(0x55F23845),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: loading
                               ? const AppLoader(
-                                  size: 19,
+                                  size: 17,
                                   strokeWidth: 2.2,
                                   color: Colors.white,
                                   trackColor: Color(0x4DFFFFFF),
@@ -1690,15 +1890,15 @@ class _PlaceOrderBar extends StatelessWidget {
                                         overflow: TextOverflow.fade,
                                         softWrap: false,
                                         style: const TextStyle(
-                                          fontSize: 11.5,
+                                          fontSize: 10.2,
                                           fontWeight: FontWeight.w900,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 6),
                                     const Icon(
                                       Icons.arrow_forward_rounded,
-                                      size: 22,
+                                      size: 19,
                                     ),
                                   ],
                                 ),
@@ -1707,21 +1907,21 @@ class _PlaceOrderBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 9),
+                const SizedBox(height: 5),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.verified_user_rounded,
                       color: Color(0xFF68C965),
-                      size: 16,
+                      size: 13,
                     ),
-                    SizedBox(width: 7),
+                    SizedBox(width: 5),
                     Text(
                       'Safe & secure payments',
                       style: TextStyle(
                         color: _checkoutMuted,
-                        fontSize: 10.5,
+                        fontSize: 8.8,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
