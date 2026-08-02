@@ -55,6 +55,10 @@ void main() {
     await tester.pump();
 
     expect(find.bySemanticsLabel('Promotion 1 of 3'), findsOneWidget);
+    final firstHeroImage = tester.widget<Image>(
+      find.byKey(const ValueKey('home-hero-banner-0')),
+    );
+    expect(firstHeroImage.fit, BoxFit.cover);
     expect(tester.takeException(), isNull);
 
     final homeList = find.byKey(const PageStorageKey('home-content'));
@@ -241,7 +245,7 @@ void main() {
     await tester.ensureVisible(bottomBanner);
     await tester.pumpAndSettle();
     expect(bottomBanner, findsOneWidget);
-    expect(tester.getSize(bottomBanner).aspectRatio, closeTo(1776 / 887, .01));
+    expect(tester.getSize(bottomBanner).aspectRatio, closeTo(2048 / 683, .01));
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -279,7 +283,7 @@ void main() {
     expect(find.byKey(const ValueKey('home-pickup-option')), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('home-fulfillment-selector'))),
-      const Size(166, 36),
+      const Size(324, 46),
     );
     final homeList = find.byKey(const PageStorageKey('home-content'));
     final homeScrollable = find
