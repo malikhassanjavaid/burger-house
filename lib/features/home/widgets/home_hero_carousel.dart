@@ -29,6 +29,10 @@ class HomeHeroCarousel extends StatefulWidget {
     required this.favourites,
     required this.onPizzaSelected,
     required this.onFavourite,
+    this.customerName = 'Customer',
+    this.deliveryLabel = 'Deliver to Home',
+    this.onNotificationTap,
+    this.onLocationTap,
     super.key,
   });
 
@@ -43,10 +47,19 @@ class HomeHeroCarousel extends StatefulWidget {
   final ValueChanged<FulfillmentMethod>? onFulfillmentChanged;
   final ValueChanged<MenuItem> onPizzaSelected;
   final ValueChanged<MenuItem> onFavourite;
+  final String customerName;
+  final String deliveryLabel;
+  final VoidCallback? onNotificationTap;
+  final VoidCallback? onLocationTap;
   static const bannerAssets = [
-    'assets/images/home_hero_1.png',
-    'assets/images/home_hero_2.png',
-    'assets/images/home_hero_3.png',
+    'assets/images/home_hero_1_mobile_v2.png',
+    'assets/images/home_hero_2_mobile_v2.png',
+    'assets/images/home_hero_3_mobile_v2.png',
+  ];
+  static const bannerBackgroundColors = [
+    Color(0xFF180506),
+    Color(0xFFFFCB08),
+    Color(0xFFE20702),
   ];
 
   @override
@@ -68,14 +81,21 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
         padding: const EdgeInsets.only(bottom: 116),
         physics: const ClampingScrollPhysics(),
         children: [
-          const SizedBox(height: 18),
-          Center(
+          _HomeHeader(
+            customerName: widget.customerName,
+            deliveryLabel: widget.deliveryLabel,
+            onNotificationTap: widget.onNotificationTap,
+            onLocationTap: widget.onLocationTap,
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: _FulfillmentSelector(
               selected: widget.fulfillmentMethod,
               onChanged: widget.onFulfillmentChanged,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           _AutoRotatingHeroBanner(imageCacheWidth: imageCacheWidth),
           const SizedBox(height: 22),
           if (widget.deals.isNotEmpty) ...[
@@ -182,14 +202,153 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
               label: 'Hungry Spot fast delivery banner',
               child: AspectRatio(
                 key: const ValueKey('home-bottom-banner'),
-                aspectRatio: 1776 / 887,
+                aspectRatio: 2048 / 683,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                   child: Image.asset(
-                    'assets/images/bottom_hero.png',
-                    fit: BoxFit.contain,
+                    'assets/images/homepage_footer.png',
+                    fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,
                     cacheWidth: imageCacheWidth,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({
+    required this.customerName,
+    required this.deliveryLabel,
+    required this.onNotificationTap,
+    required this.onLocationTap,
+  });
+
+  final String customerName;
+  final String deliveryLabel;
+  final VoidCallback? onNotificationTap;
+  final VoidCallback? onLocationTap;
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 18, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$_greeting, $customerName 👋',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.dark,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onLocationTap,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 1,
+                        vertical: 2,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.location_on_rounded,
+                            size: 16,
+                            color: AppColors.red,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              deliveryLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.dark,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (onLocationTap != null) ...[
+                            const SizedBox(width: 2),
+                            const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 16,
+                              color: Color(0xFF7A7E87),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Semantics(
+            button: true,
+            label: 'Open first order offer',
+            child: Material(
+              color: Colors.white,
+              shape: const CircleBorder(),
+              elevation: 2,
+              shadowColor: AppColors.dark.withValues(alpha: .15),
+              child: InkWell(
+                key: const ValueKey('home-notification-button'),
+                customBorder: const CircleBorder(),
+                onTap: onNotificationTap,
+                child: SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(
+                        Icons.notifications_none_rounded,
+                        size: 22,
+                        color: AppColors.dark,
+                      ),
+                      Positioned(
+                        right: 9,
+                        top: 8,
+                        child: Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: AppColors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.2),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -275,33 +434,48 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           child: AspectRatio(
-            aspectRatio: 2.25,
+            aspectRatio: 1.8,
             child: PageView.builder(
               controller: _controller,
               physics: const ClampingScrollPhysics(),
               onPageChanged: _handlePageChanged,
               itemBuilder: (context, page) {
-                final asset = HomeHeroCarousel
-                    .bannerAssets[page % HomeHeroCarousel.bannerAssets.length];
+                final bannerIndex = page % HomeHeroCarousel.bannerAssets.length;
+                final asset = HomeHeroCarousel.bannerAssets[bannerIndex];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Semantics(
                     image: true,
-                    label:
-                        'Hungry Spot promotion ${page % HomeHeroCarousel.bannerAssets.length + 1}',
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: RepaintBoundary(
-                        child: Image.asset(
-                          asset,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                          gaplessPlayback: true,
-                          cacheWidth: widget.imageCacheWidth,
+                    label: 'Hungry Spot promotion ${bannerIndex + 1}',
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: HomeHeroCarousel
+                            .bannerBackgroundColors[bannerIndex],
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.dark.withValues(alpha: .11),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: RepaintBoundary(
+                          child: Image.asset(
+                            asset,
+                            key: ValueKey('home-hero-banner-$bannerIndex'),
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                            filterQuality: FilterQuality.high,
+                            gaplessPlayback: true,
+                            cacheWidth: widget.imageCacheWidth,
+                          ),
                         ),
                       ),
                     ),
@@ -311,7 +485,7 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
             ),
           ),
         ),
-        const SizedBox(height: 13),
+        const SizedBox(height: 10),
         _HeroPageIndicator(selectedIndex: _visibleIndex),
       ],
     );
@@ -326,37 +500,32 @@ class _FulfillmentSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       key: const ValueKey('home-fulfillment-selector'),
-      width: 166,
-      height: 36,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF0E7E8)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.dark.withValues(alpha: .08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      width: double.infinity,
+      height: 46,
       child: Row(
-        children: FulfillmentMethod.values
-            .map(
-              (method) => Expanded(
-                child: _FulfillmentOption(
-                  method: method,
-                  selected: selected == method,
-                  onTap: selected == method
-                      ? null
-                      : () => onChanged?.call(method),
+        children: [
+          for (
+            var index = 0;
+            index < FulfillmentMethod.values.length;
+            index++
+          ) ...[
+            if (index > 0) const SizedBox(width: 10),
+            Expanded(
+              child: _FulfillmentOption(
+                key: ValueKey(
+                  'home-${FulfillmentMethod.values[index].firestoreValue}-option',
                 ),
+                method: FulfillmentMethod.values[index],
+                selected: selected == FulfillmentMethod.values[index],
+                onTap: selected == FulfillmentMethod.values[index]
+                    ? null
+                    : () => onChanged?.call(FulfillmentMethod.values[index]),
               ),
-            )
-            .toList(growable: false),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -367,6 +536,7 @@ class _FulfillmentOption extends StatelessWidget {
     required this.method,
     required this.selected,
     required this.onTap,
+    super.key,
   });
 
   final FulfillmentMethod method;
@@ -379,32 +549,50 @@ class _FulfillmentOption extends StatelessWidget {
       selected: selected,
       button: true,
       label: '${method.label} order mode',
-      child: GestureDetector(
-        key: ValueKey('home-${method.firestoreValue}-option'),
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.red : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AppColors.red.withValues(alpha: .18),
-                      blurRadius: 7,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            method.label,
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.dark,
-              fontSize: 9.5,
-              height: 1,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? AppColors.red : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: selected ? AppColors.red : const Color(0xFFEDE7E8),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (selected ? AppColors.red : AppColors.dark).withValues(
+                    alpha: selected ? .18 : .07,
+                  ),
+                  blurRadius: selected ? 12 : 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  method.isPickup
+                      ? Icons.shopping_bag_outlined
+                      : Icons.delivery_dining_rounded,
+                  size: 17,
+                  color: selected ? Colors.white : AppColors.dark,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  method.label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : AppColors.dark,
+                    fontSize: 11.5,
+                    height: 1,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -426,7 +614,7 @@ class _HomeSectionHeading extends StatelessWidget {
         label,
         style: const TextStyle(
           color: AppColors.dark,
-          fontSize: 16,
+          fontSize: 15,
           fontWeight: FontWeight.w700,
           letterSpacing: -.2,
         ),
