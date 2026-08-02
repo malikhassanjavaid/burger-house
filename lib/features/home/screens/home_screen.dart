@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -54,38 +55,72 @@ class _HomeScreenState extends State<HomeScreen> {
   String _address = 'Set your delivery address';
   int _selectedTab = 0;
   bool _restoringCustomerState = true;
+  static bool _offerShownThisSession = false;
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadDeliveryLocation());
     unawaited(_restoreCustomerState());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_showStartupDialogs());
+    });
+  }
+
+  Future<void> _showStartupDialogs() async {
+    if (!mounted) return;
     if (widget.showNewAccountWelcome) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final firstName = (widget.welcomeName ?? '').trim().split(' ').first;
-        showGeneralDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          barrierLabel: 'Welcome to Hungry Spot',
-          barrierColor: Colors.black.withValues(alpha: .58),
-          transitionDuration: const Duration(milliseconds: 380),
-          pageBuilder: (_, _, _) =>
-              _NewCustomerWelcomeDialog(firstName: firstName),
-          transitionBuilder: (_, animation, _, child) {
-            final curved = CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutBack,
-              reverseCurve: Curves.easeInCubic,
-            );
-            return FadeTransition(
-              opacity: animation,
-              child: ScaleTransition(scale: curved, child: child),
-            );
-          },
-        );
-      });
+      final firstName = (widget.welcomeName ?? '').trim().split(' ').first;
+      await showGeneralDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierLabel: 'Welcome to Hungry Spot',
+        barrierColor: Colors.black.withValues(alpha: .58),
+        transitionDuration: const Duration(milliseconds: 380),
+        pageBuilder: (_, _, _) =>
+            _NewCustomerWelcomeDialog(firstName: firstName),
+        transitionBuilder: (_, animation, _, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutBack,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(scale: curved, child: child),
+          );
+        },
+      );
     }
+
+    if (!mounted || _offerShownThisSession) return;
+    _offerShownThisSession = true;
+    await _showFirstOrderOffer();
+  }
+
+  Future<void> _showFirstOrderOffer() {
+    return showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close first order offer',
+      barrierColor: Colors.black.withValues(alpha: .64),
+      transitionDuration: const Duration(milliseconds: 240),
+      pageBuilder: (_, _, _) => const _FirstOrderOfferDialog(),
+      transitionBuilder: (_, animation, _, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: .92, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _loadDeliveryLocation() async {
@@ -127,6 +162,28 @@ class _HomeScreenState extends State<HomeScreen> {
     0,
     (totalCount, item) => totalCount + item.quantity,
   );
+
+  String get _customerFirstName {
+    final suppliedName = (widget.welcomeName ?? '').trim();
+    final displayName = (_authService.currentUser?.displayName ?? '').trim();
+    final emailName = (_authService.currentUser?.email ?? '')
+        .split('@')
+        .first
+        .trim();
+    final name = suppliedName.isNotEmpty
+        ? suppliedName
+        : displayName.isNotEmpty
+        ? displayName
+        : emailName;
+    if (name.isEmpty) return 'Customer';
+    return name.split(RegExp(r'\s+')).first;
+  }
+
+  String get _homeLocationLabel {
+    if (_fulfillmentMethod.isPickup) return 'Pickup from Hungry Spot';
+    final savedLabel = (_deliveryLocation?.label ?? '').trim();
+    return 'Deliver to ${savedLabel.isEmpty ? 'Home' : savedLabel}';
+  }
 
   List<MenuItem> get _filteredItems {
     final query = _searchText.toLowerCase();
@@ -366,6 +423,12 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _fulfillmentMethod = method);
         },
         onFavourite: _toggleFavourite,
+        customerName: _customerFirstName,
+        deliveryLabel: _homeLocationLabel,
+        onNotificationTap: _showFirstOrderOffer,
+        onLocationTap: _fulfillmentMethod.isPickup
+            ? null
+            : () => unawaited(_openProfileAddress()),
       ),
       2: RestaurantMenuTab(
         controller: _searchController,
@@ -391,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpenItem: _openDetails,
         onFavourite: _toggleFavourite,
         onAdd: _addQuickItem,
-        onBrowse: () => setState(() => _selectedTab = 0),
+        onBrowse: () => setState(() => _selectedTab = 2),
       ),
       4: ProfileTab(
         onDetails: _openProfileDetails,
@@ -425,6 +488,83 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FirstOrderOfferDialog extends StatelessWidget {
+  const _FirstOrderOfferDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const posterAspectRatio = 803 / 1559;
+          final posterWidth = math.min(
+            300.0,
+            math.min(
+              constraints.maxWidth * .86,
+              constraints.maxHeight * posterAspectRatio * .82,
+            ),
+          );
+          final cacheWidth =
+              (posterWidth * MediaQuery.devicePixelRatioOf(context)).round();
+
+          return Center(
+            child: Material(
+              color: Colors.transparent,
+              child: SizedBox(
+                width: posterWidth,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Semantics(
+                      image: true,
+                      label: 'Ten percent off your first Hungry Spot order',
+                      child: Image.asset(
+                        'assets/images/first_order_offer_v2.png',
+                        width: posterWidth,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                        cacheWidth: cacheWidth,
+                      ),
+                    ),
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Semantics(
+                        button: true,
+                        label: 'Close offer',
+                        child: Material(
+                          color: const Color(0xD922252A),
+                          shape: const CircleBorder(),
+                          elevation: 3,
+                          child: InkWell(
+                            key: const ValueKey('first-order-offer-close'),
+                            customBorder: const CircleBorder(),
+                            onTap: () => Navigator.pop(context),
+                            child: const SizedBox(
+                              width: 34,
+                              height: 34,
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -581,15 +721,16 @@ class _SavedTab extends StatelessWidget {
     }
 
     return ColoredBox(
-      color: AppColors.cream,
+      color: const Color(0xFFFFFBFB),
       child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(child: _SavedHeader(count: items.length)),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(18, 0, 18, 120),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
             sliver: SliverList.separated(
               itemCount: items.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (_, index) {
                 final item = items[index];
                 return _SavedFoodCard(
@@ -602,6 +743,8 @@ class _SavedTab extends StatelessWidget {
               },
             ),
           ),
+          SliverToBoxAdapter(child: _SavedExploreBanner(onTap: onBrowse)),
+          const SliverToBoxAdapter(child: SizedBox(height: 110)),
         ],
       ),
     );
@@ -616,24 +759,28 @@ class _SavedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: AppColors.blush,
-              borderRadius: BorderRadius.circular(15),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFF2F3), Color(0xFFFFE5E9)],
+              ),
+              borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
             child: const Icon(
               Icons.bookmark_rounded,
               color: AppColors.red,
-              size: 24,
+              size: 25,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -642,17 +789,18 @@ class _SavedHeader extends StatelessWidget {
                   'Saved meals',
                   style: TextStyle(
                     color: AppColors.dark,
-                    fontSize: 24,
+                    fontSize: 22,
+                    height: 1,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: -.35,
+                    letterSpacing: -.4,
                   ),
                 ),
-                SizedBox(height: 3),
+                SizedBox(height: 5),
                 Text(
                   'Your Hungry Spot favourites',
                   style: TextStyle(
                     color: AppColors.muted,
-                    fontSize: 11.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -664,23 +812,36 @@ class _SavedHeader extends StatelessWidget {
               key: const ValueKey('saved-count-chip'),
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               decoration: BoxDecoration(
-                color: AppColors.red,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF50018), AppColors.red],
+                ),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.red.withValues(alpha: .2),
+                    color: AppColors.red.withValues(alpha: .18),
                     blurRadius: 12,
                     offset: const Offset(0, 5),
                   ),
                 ],
               ),
-              child: Text(
-                '$count ${count == 1 ? 'item' : 'items'}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.favorite_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$count ${count == 1 ? 'item' : 'items'}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -697,25 +858,26 @@ class _SavedEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.cream,
+      color: const Color(0xFFFFFBFB),
       child: Column(
         children: [
           const _SavedHeader(),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final imageSize = (constraints.maxWidth * .61)
-                    .clamp(200.0, 260.0)
+                final imageSize = (constraints.maxWidth * .56)
+                    .clamp(180.0, 235.0)
                     .toDouble();
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 110),
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 105),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight: (constraints.maxHeight - 62)
+                      minHeight: (constraints.maxHeight - 70)
                           .clamp(0.0, double.infinity)
                           .toDouble(),
                     ),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
                           width: imageSize,
@@ -724,12 +886,15 @@ class _SavedEmptyState extends StatelessWidget {
                             alignment: Alignment.center,
                             children: [
                               Container(
-                                width: imageSize * .8,
-                                height: imageSize * .8,
+                                width: imageSize * .78,
+                                height: imageSize * .78,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: RadialGradient(
-                                    colors: [AppColors.blush, AppColors.cream],
+                                    colors: [
+                                      AppColors.blush,
+                                      Color(0xFFFFFBFB),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -743,35 +908,36 @@ class _SavedEmptyState extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 12),
                         const Text(
                           'Nothing saved yet',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.dark,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w900,
                             letterSpacing: -.35,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         const Text(
                           'Tap the bookmark on any meal to keep your favourites close.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.muted,
-                            fontSize: 12.5,
-                            height: 1.5,
+                            fontSize: 12,
+                            height: 1.45,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 22),
                         ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 320),
+                          constraints: const BoxConstraints(maxWidth: 300),
                           child: AppPrimaryButton(
                             label: 'Explore Menu',
-                            height: 50,
-                            borderRadius: 15,
+                            icon: Icons.arrow_forward_rounded,
+                            height: 46,
+                            borderRadius: 14,
                             onPressed: onBrowse,
                           ),
                         ),
@@ -803,165 +969,339 @@ class _SavedFoodCard extends StatelessWidget {
   final VoidCallback onFavourite;
   final VoidCallback onAdd;
 
+  int get _reviewCount {
+    final seed = item.id.codeUnits.fold<int>(0, (sum, value) => sum + value);
+    return 72 + seed % 79;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          height: 164,
-          padding: const EdgeInsets.all(11),
-          decoration: BoxDecoration(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 350;
+        final imageWidth = narrow ? 104.0 : 120.0;
+
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0xFFFFDCE1)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.red.withValues(alpha: .07),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+            child: Container(
+              height: narrow ? 174 : 180,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFFFD9DE)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.red.withValues(alpha: .065),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 112,
-                height: 142,
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: AppColors.blush,
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                child: Hero(
-                  tag: 'saved-${item.id}',
-                  child: Image.asset(
-                    item.displayAssetPath,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (_, _, _) => Center(
-                      child: Text(
-                        item.emoji,
-                        style: const TextStyle(fontSize: 54),
+              child: Stack(
+                children: [
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(21),
+                        ),
+                        child: Container(
+                          width: imageWidth,
+                          height: double.infinity,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFFFFF5F6), Color(0xFFFFE8EB)],
+                            ),
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Positioned(
+                                top: -28,
+                                left: -28,
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red.withValues(alpha: .84),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Hero(
+                                  tag: 'saved-${item.id}',
+                                  child: Image.asset(
+                                    item.displayAssetPath,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                    errorBuilder: (_, _, _) => Center(
+                                      child: Text(
+                                        item.emoji,
+                                        style: const TextStyle(fontSize: 50),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            narrow ? 10 : 12,
+                            11,
+                            10,
+                            10,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(right: 38),
+                                child: Text(
+                                  item.category.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppColors.red,
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: .35,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 34),
+                                child: Text(
+                                  item.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppColors.dark,
+                                    fontSize: narrow ? 12.5 : 13.5,
+                                    height: 1.1,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: narrow ? 9.2 : 9.8,
+                                  height: 1.32,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Color(0xFFFFB800),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '${item.rating}',
+                                    style: const TextStyle(
+                                      color: AppColors.dark,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Container(
+                                    width: 1,
+                                    height: 13,
+                                    color: const Color(0xFFD8D2D4),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Expanded(
+                                    child: Text(
+                                      '$_reviewCount+ reviews',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: AppColors.muted,
+                                        fontSize: 8.8,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              Row(
+                                children: [
+                                  Text(
+                                    formatUsd(item.price),
+                                    style: TextStyle(
+                                      color: AppColors.red,
+                                      fontSize: narrow ? 14 : 15.5,
+                                      height: 1,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -.25,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Expanded(
+                                    child: AppPrimaryButton(
+                                      label: narrow ? 'Add' : 'Add to cart',
+                                      icon: Icons.shopping_cart_outlined,
+                                      onPressed: onAdd,
+                                      height: 35,
+                                      borderRadius: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Material(
+                      color: Colors.white,
+                      shape: const CircleBorder(),
+                      elevation: 2,
+                      shadowColor: AppColors.red,
+                      child: InkWell(
+                        onTap: onFavourite,
+                        customBorder: const CircleBorder(),
+                        child: SizedBox(
+                          width: 34,
+                          height: 34,
+                          child: Icon(
+                            favourite
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: AppColors.red,
+                            size: 19,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.dark,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: onFavourite,
-                          borderRadius: BorderRadius.circular(11),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppColors.blush,
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              favourite
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              color: AppColors.red,
-                              size: 19,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.blush,
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      child: Text(
-                        item.category.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.redDark,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 10.5,
-                        height: 1.3,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Color(0xFFFFB400),
-                          size: 15,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${item.rating}',
-                          style: const TextStyle(
-                            color: AppColors.dark,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          formatUsd(item.price),
-                          style: const TextStyle(
-                            color: AppColors.red,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    AppPrimaryButton(
-                      label: 'Add to cart',
-                      onPressed: onAdd,
-                      height: 36,
-                      borderRadius: 12,
-                    ),
-                  ],
-                ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SavedExploreBanner extends StatelessWidget {
+  const _SavedExploreBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Ink(
+            height: 88,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFFFFF2F3), Color(0xFFFFE8EB)],
               ),
-            ],
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFFFD9DE)),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 98,
+                  child: Image.asset(
+                    'assets/images/empty_saved_illustration.png',
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
+                ),
+                const Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Craving something else?',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.dark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Explore the menu and find your next favourite meal.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 9.8,
+                          height: 1.3,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 42,
+                  height: 42,
+                  margin: const EdgeInsets.only(right: 13),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.red.withValues(alpha: .1),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppColors.red,
+                    size: 22,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
