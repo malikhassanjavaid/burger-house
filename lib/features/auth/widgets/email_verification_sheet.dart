@@ -65,20 +65,16 @@ class EmailVerificationSheet extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF242426),
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+              style: AppTypography.sectionTitle.copyWith(
+                color: const Color(0xFF242426),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF6E6E73),
-                fontSize: 13,
-                height: 1.45,
+              style: AppTypography.body.copyWith(
+                color: const Color(0xFF6E6E73),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -94,9 +90,8 @@ class EmailVerificationSheet extends StatelessWidget {
                 email,
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF242426),
-                  fontSize: 13,
+                style: AppTypography.label.copyWith(
+                  color: const Color(0xFF242426),
                   fontWeight: FontWeight.w700,
                 ),
               ),

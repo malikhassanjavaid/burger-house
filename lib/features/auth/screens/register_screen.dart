@@ -97,11 +97,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       message: 'Creating your account...',
       child: AuthFormShell(
         headline: 'Create your\naccount',
-        topSpacing: 38,
-        headlineFontSize: 23,
-        headlineFontWeight: FontWeight.w500,
-        logoSize: 210,
-        logoContentScale: 1.24,
+        topSpacing: 18,
+        headlineFontSize: 25,
+        headlineFontWeight: FontWeight.w700,
+        logoSize: 150,
+        logoContentScale: 1.08,
         bottomAction: AuthPrimaryButton(
           label: 'SIGN UP',
           icon: Icons.person_add_alt_1_rounded,
@@ -122,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? 'Enter your name' : null,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 11),
               AuthTextField(
                 controller: _email,
                 label: 'Email',
@@ -133,7 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ? null
                     : 'Use a valid @gmail.com address',
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 11),
               AuthTextField(
                 controller: _phone,
                 label: 'Phone number',
@@ -143,9 +143,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 validator: (v) =>
                     (v ?? '').length < 7 ? 'Enter a valid phone number' : null,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 11),
               PasswordField(controller: _password),
-              const SizedBox(height: 26),
+              const SizedBox(height: 18),
               AuthFooterPrompt(
                 message: 'Already a member?',
                 actionLabel: 'Log in',
