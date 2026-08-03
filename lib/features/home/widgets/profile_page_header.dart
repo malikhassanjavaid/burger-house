@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-const profilePageBackground = Color(0xFFF4FAFE);
+import '../../../core/theme/app_theme.dart';
+
+const profilePageBackground = Colors.white;
 const profilePageInk = Color(0xFF15161C);
 const profilePageMuted = Color(0xFF858C98);
 const profilePageBlue = Color(0xFF1597E5);
@@ -42,10 +44,8 @@ class ProfilePageHeader extends StatelessWidget {
               const SizedBox(width: 15),
               Text(
                 title,
-                style: const TextStyle(
+                style: AppTypography.pageHeader.copyWith(
                   color: profilePageInk,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
                   letterSpacing: -.2,
                 ),
               ),

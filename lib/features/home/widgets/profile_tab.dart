@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_primary_button.dart';
 
-const _profileBackground = Color(0xFFF4FAFE);
+const _profileBackground = Colors.white;
 const _profileInk = Color(0xFF15161C);
 const _profileMuted = Color(0xFF858C98);
 
@@ -26,12 +26,10 @@ class ProfileTab extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 44, 20, 190),
         children: [
-          const Text(
+          Text(
             'MY ACCOUNT',
-            style: TextStyle(
+            style: AppTypography.screenTitle.copyWith(
               color: AppColors.red,
-              fontSize: 27,
-              fontWeight: FontWeight.w900,
               letterSpacing: -.7,
             ),
           ),
@@ -97,7 +95,7 @@ class ProfileLogoutBar extends StatelessWidget {
                 style: TextStyle(
                   color: _profileInk,
                   fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 7),
@@ -128,7 +126,7 @@ class ProfileLogoutBar extends StatelessWidget {
                         'CANCEL',
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -204,8 +202,8 @@ class _ProfileMenuTile extends StatelessWidget {
                     title,
                     style: const TextStyle(
                       color: _profileInk,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: -.15,
                     ),
                   ),

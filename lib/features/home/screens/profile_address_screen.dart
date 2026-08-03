@@ -79,7 +79,7 @@ class _ProfileAddressScreenState extends State<ProfileAddressScreen> {
                         style: TextStyle(
                           color: profilePageInk,
                           fontSize: 15,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 7),
@@ -87,7 +87,7 @@ class _ProfileAddressScreenState extends State<ProfileAddressScreen> {
                         'Your rider will use this address for every delivery.',
                         style: TextStyle(
                           color: profilePageMuted,
-                          fontSize: 11.5,
+                          fontSize: 12,
                           height: 1.45,
                         ),
                       ),
@@ -160,7 +160,7 @@ class _SavedAddressCard extends StatelessWidget {
                       style: const TextStyle(
                         color: profilePageInk,
                         fontSize: 13,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -180,7 +180,7 @@ class _SavedAddressCard extends StatelessWidget {
                 style: TextButton.styleFrom(foregroundColor: AppColors.red),
                 child: const Text(
                   'EDIT',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -232,7 +232,7 @@ class _SavedAddressCard extends StatelessWidget {
                     'Precise map location saved',
                     style: TextStyle(
                       color: profilePageBlue,
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -281,7 +281,7 @@ class _EmptyAddressCard extends StatelessWidget {
             style: TextStyle(
               color: profilePageInk,
               fontSize: 15,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 7),

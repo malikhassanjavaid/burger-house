@@ -128,7 +128,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                         style: TextStyle(
                           color: profilePageInk,
                           fontSize: 15,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 7),
@@ -136,7 +136,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                         'Keep your contact information accurate for smooth deliveries.',
                         style: TextStyle(
                           color: profilePageMuted,
-                          fontSize: 11.5,
+                          fontSize: 12,
                           height: 1.45,
                         ),
                       ),
@@ -164,7 +164,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                                 style: const TextStyle(
                                   color: AppColors.red,
                                   fontSize: 36,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -290,7 +290,7 @@ class _ProfileField extends StatelessWidget {
       ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: profilePageMuted, fontSize: 11.5),
+        labelStyle: const TextStyle(color: profilePageMuted, fontSize: 12),
         prefixIcon: Icon(icon, color: profilePageMuted, size: 19),
         filled: true,
         fillColor: readOnly ? const Color(0xFFF0F4F7) : Colors.white,
