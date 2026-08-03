@@ -4,7 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../models/menu_item.dart';
 
-const _searchBackground = Color(0xFFF4F8FC);
+const _searchBackground = Colors.white;
 const _searchFieldBackground = Color(0xFFF0F5FA);
 const _searchMuted = Color(0xFF677283);
 
@@ -112,14 +112,7 @@ class MenuSearchTab extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 19, 20, 13),
                 child: Row(
                   children: [
-                    const Text(
-                      'Your picks',
-                      style: TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                    const Text('Your picks', style: AppTypography.sectionTitle),
                     const Spacer(),
                     Text(
                       '${items.length} ${items.length == 1 ? 'item' : 'items'}',
@@ -303,7 +296,7 @@ class _FilterPill extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 14,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 ),
               ),
             ],
@@ -331,7 +324,7 @@ class _SearchPrompt extends StatelessWidget {
             style: TextStyle(
               color: Colors.black,
               fontSize: 24,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               letterSpacing: -.45,
             ),
           ),
@@ -478,7 +471,7 @@ class _NoSearchResults extends StatelessWidget {
             style: TextStyle(
               color: Colors.black,
               fontSize: 22,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 10),
@@ -497,7 +490,7 @@ class _NoSearchResults extends StatelessWidget {
             style: TextButton.styleFrom(foregroundColor: AppColors.red),
             child: const Text(
               'Clear search',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -580,7 +573,7 @@ class _SearchResultCard extends StatelessWidget {
                             style: const TextStyle(
                               color: AppColors.dark,
                               fontSize: 14,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -608,7 +601,7 @@ class _SearchResultCard extends StatelessWidget {
                           item.category,
                           style: const TextStyle(
                             color: _searchMuted,
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -622,7 +615,7 @@ class _SearchResultCard extends StatelessWidget {
                           '${item.rating}',
                           style: const TextStyle(
                             color: _searchMuted,
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -633,10 +626,7 @@ class _SearchResultCard extends StatelessWidget {
                       item.description,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _searchMuted,
-                        fontSize: 10.5,
-                      ),
+                      style: const TextStyle(color: _searchMuted, fontSize: 11),
                     ),
                     const Spacer(),
                     Row(
@@ -646,7 +636,7 @@ class _SearchResultCard extends StatelessWidget {
                           style: const TextStyle(
                             color: AppColors.dark,
                             fontSize: 15,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const Spacer(),
@@ -668,7 +658,7 @@ class _SearchResultCard extends StatelessWidget {
                               'Add',
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),

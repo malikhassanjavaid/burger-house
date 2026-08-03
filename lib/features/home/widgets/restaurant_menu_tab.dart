@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../models/menu_item.dart';
 
-const _menuBackground = Color(0xFFF4F8FC);
+const _menuBackground = Colors.white;
 const _menuBorder = Color(0xFFE4EAF0);
 const _menuMuted = Color(0xFF737D8B);
 
@@ -89,12 +89,7 @@ class RestaurantMenuTab extends StatelessWidget {
                   const Expanded(
                     child: Text(
                       'Categories',
-                      style: TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -.3,
-                      ),
+                      style: AppTypography.sectionTitle,
                     ),
                   ),
                   if (searching)
@@ -111,7 +106,7 @@ class RestaurantMenuTab extends StatelessWidget {
                         'Clear search',
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -266,10 +261,7 @@ class _MenuHorizontalSection extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            color: AppColors.dark,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
+                          style: AppTypography.sectionTitle.copyWith(
                             letterSpacing: -.35,
                           ),
                         ),
@@ -280,7 +272,7 @@ class _MenuHorizontalSection extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: _menuMuted,
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -292,8 +284,8 @@ class _MenuHorizontalSection extends StatelessWidget {
                     '${items.length} ${items.length == 1 ? 'item' : 'items'}',
                     style: const TextStyle(
                       color: _menuMuted,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -473,7 +465,7 @@ class _MenuCategory extends StatelessWidget {
               style: TextStyle(
                 color: selected ? AppColors.red : AppColors.dark,
                 fontSize: 12,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ],
@@ -599,7 +591,7 @@ class RestaurantMenuCard extends StatelessWidget {
                           color: AppColors.dark,
                           fontSize: compact ? 12.5 : 15.5,
                           height: compact ? 1.08 : 1.12,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: -.25,
                         ),
                       ),
@@ -632,7 +624,7 @@ class RestaurantMenuCard extends StatelessWidget {
                               style: TextStyle(
                                 color: AppColors.dark,
                                 fontSize: compact ? 14.5 : 18,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w700,
                                 letterSpacing: -.4,
                               ),
                             ),
@@ -667,7 +659,7 @@ class RestaurantMenuCard extends StatelessWidget {
                                   'VIEW',
                                   style: TextStyle(
                                     fontSize: compact ? 8 : 9,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                     letterSpacing: .25,
                                   ),
                                 ),
@@ -726,7 +718,7 @@ class _NoMenuMatches extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.dark,
                 fontSize: 18,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 7),
@@ -746,7 +738,7 @@ class _NoMenuMatches extends StatelessWidget {
               style: TextButton.styleFrom(foregroundColor: AppColors.red),
               child: const Text(
                 'Browse burgers',
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ],

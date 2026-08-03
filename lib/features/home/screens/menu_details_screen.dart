@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 import '../../../core/utils/currency.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 
-const _pageBlue = Color(0xFFF4FAFE);
+const _pageBlue = Colors.white;
 const _accentRed = Color(0xFFF23845);
 const _accentBlue = Color(0xFF1597E5);
 const _accentGold = Color(0xFFF5A313);
@@ -409,7 +411,7 @@ class _DealContentsSection extends StatelessWidget {
                         style: TextStyle(
                           color: _softText,
                           fontSize: 9,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 1.1,
                         ),
                       ),
@@ -421,7 +423,7 @@ class _DealContentsSection extends StatelessWidget {
                         style: const TextStyle(
                           color: _ink,
                           fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -443,7 +445,7 @@ class _DealContentsSection extends StatelessWidget {
                       style: const TextStyle(
                         color: Color(0xFF247A42),
                         fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         height: 1.25,
                       ),
                     ),
@@ -496,11 +498,7 @@ class _DealContentsSection extends StatelessWidget {
           const SizedBox(height: 28),
           const Text(
             "What's inside your meal",
-            style: TextStyle(
-              color: _ink,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
+            style: AppTypography.sectionTitle,
           ),
           const SizedBox(height: 6),
           const Text(
@@ -550,7 +548,7 @@ class _DealContentsSection extends StatelessWidget {
                           style: const TextStyle(
                             color: _ink,
                             fontSize: 14,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 5),
@@ -580,7 +578,7 @@ class _DealContentsSection extends StatelessWidget {
                       style: const TextStyle(
                         color: _accentRed,
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -632,7 +630,7 @@ class _DealChoiceSelector extends StatelessWidget {
         style: const TextStyle(
           color: _ink,
           fontSize: 16,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
       ),
       const SizedBox(height: 4),
@@ -702,7 +700,7 @@ class _DealChoiceSelector extends StatelessWidget {
                               fontSize: 11,
                               height: 1.15,
                               fontWeight: active
-                                  ? FontWeight.w800
+                                  ? FontWeight.w700
                                   : FontWeight.w600,
                             ),
                           ),
@@ -942,12 +940,10 @@ class _ProductSummary extends StatelessWidget {
         children: [
           Text(
             item.name,
-            style: const TextStyle(
+            style: AppTypography.pageHeader.copyWith(
               color: _ink,
-              fontSize: 23,
               height: 1.08,
               letterSpacing: -.7,
-              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 9),
@@ -964,11 +960,7 @@ class _ProductSummary extends StatelessWidget {
           const SizedBox(height: 7),
           Text(
             formatUsd(price),
-            style: const TextStyle(
-              color: _ink,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTypography.price.copyWith(color: _ink),
           ),
         ],
       ),
