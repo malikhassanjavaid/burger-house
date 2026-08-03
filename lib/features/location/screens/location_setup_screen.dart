@@ -182,7 +182,7 @@ class _LocationSetupScreenState extends State<LocationSetupScreen> {
         loading: _saving,
         message: 'Saving your delivery location...',
         child: Scaffold(
-          backgroundColor: const Color(0xFFFFF9F4),
+          backgroundColor: Colors.white,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -209,22 +209,17 @@ class _LocationSetupScreenState extends State<LocationSetupScreen> {
                   widget.firstTime
                       ? 'Where should we deliver?'
                       : 'Update your delivery spot',
-                  style: const TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    height: 1.1,
-                  ),
+                  style: AppTypography.screenTitle,
                 ),
                 const SizedBox(height: 8),
                 const Text(
                   'Add clear details so your rider can find you quickly.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 15),
+                  style: AppTypography.body,
                 ),
                 const SizedBox(height: 22),
                 const Text(
                   'Save this place as',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                  style: AppTypography.bodyMedium,
                 ),
                 const SizedBox(height: 10),
                 Row(

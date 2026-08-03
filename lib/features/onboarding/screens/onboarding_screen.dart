@@ -19,12 +19,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _page = 0;
   bool _finishing = false;
 
-  static const _yellow = Color(0xFFFFC400);
-
   static const _pages = [
     _OnboardingPageData(
-      background: AppColors.red,
-      progressColor: Colors.white,
+      background: Colors.white,
+      progressColor: AppColors.dark,
       eyebrow: 'FRESHLY MADE',
       title: 'Good food,\nmade for your moment.',
       body:
@@ -34,7 +32,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       imageLabel: 'Happy customer holding a fresh pizza',
     ),
     _OnboardingPageData(
-      background: _yellow,
+      background: Colors.white,
       progressColor: AppColors.dark,
       eyebrow: 'MADE YOUR WAY',
       title: 'Every bite,\nmade your way.',
@@ -45,8 +43,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       imageLabel: 'Freshly prepared cheeseburger',
     ),
     _OnboardingPageData(
-      background: AppColors.red,
-      progressColor: Colors.white,
+      background: Colors.white,
+      progressColor: AppColors.dark,
       eyebrow: 'FAST TO YOUR DOOR',
       title: 'Your next craving,\none tap away.',
       body:
@@ -211,7 +209,7 @@ class _OnboardingHeader extends StatelessWidget {
                 ),
                 child: const Text(
                   'Skip',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -339,8 +337,8 @@ class _OnboardingBottomPanel extends StatelessWidget {
                   data.eyebrow,
                   style: TextStyle(
                     color: data.progressColor.withValues(alpha: .76),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 1.35,
                   ),
                 ),
@@ -356,7 +354,7 @@ class _OnboardingBottomPanel extends StatelessWidget {
                         color: data.progressColor,
                         fontSize: compact ? 27 : 31,
                         height: 1.02,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: -.85,
                       ),
                     ),
@@ -378,7 +376,6 @@ class _OnboardingBottomPanel extends StatelessWidget {
           SizedBox(height: compact ? 16 : 20),
           _OnboardingContinueButton(
             key: const ValueKey('onboarding-continue'),
-            pageBackground: data.background,
             height: compact ? 49 : 52,
             loading: loading,
             onPressed: onContinue,
@@ -392,22 +389,19 @@ class _OnboardingBottomPanel extends StatelessWidget {
 class _OnboardingContinueButton extends StatelessWidget {
   const _OnboardingContinueButton({
     super.key,
-    required this.pageBackground,
     required this.height,
     required this.loading,
     required this.onPressed,
   });
 
-  final Color pageBackground;
   final double height;
   final bool loading;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final yellowPage = pageBackground == _OnboardingScreenState._yellow;
-    final background = yellowPage ? AppColors.dark : Colors.white;
-    final foreground = yellowPage ? Colors.white : AppColors.red;
+    const background = AppColors.red;
+    const foreground = Colors.white;
 
     return SizedBox(
       width: double.infinity,
@@ -425,7 +419,7 @@ class _OnboardingContinueButton extends StatelessWidget {
           ),
           textStyle: const TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
             letterSpacing: .4,
           ),
         ),
