@@ -44,11 +44,7 @@ class AppPrimaryButton extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadius),
       ),
-      textStyle: const TextStyle(
-        fontSize: 12.5,
-        fontWeight: FontWeight.w900,
-        letterSpacing: .2,
-      ),
+      textStyle: AppTypography.button,
     );
 
     final Widget button;
