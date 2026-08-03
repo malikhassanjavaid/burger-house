@@ -16,7 +16,7 @@ import 'order_confirmation_screen.dart';
 
 enum PaymentMethod { cashOnDelivery, card }
 
-const _checkoutBg = Color(0xFFF4FAFE);
+const _checkoutBg = Colors.white;
 const _checkoutRed = Color(0xFFF23845);
 const _checkoutInk = Color(0xFF15161C);
 const _checkoutMuted = Color(0xFF858C98);
@@ -167,7 +167,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: TextStyle(
                   color: AppColors.dark,
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 5),
@@ -196,7 +196,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           style: TextStyle(
                             color: AppColors.dark,
                             fontSize: 13,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         SizedBox(height: 4),
@@ -204,7 +204,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           HungrySpotPickup.menuHours,
                           style: TextStyle(
                             color: AppColors.muted,
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -223,7 +223,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 'More Hungry Spot pickup locations are coming soon.',
                 style: TextStyle(
                   color: AppColors.muted,
-                  fontSize: 9.5,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -434,13 +434,10 @@ class _CheckoutHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              const Text(
+              Text(
                 'Checkout',
-                style: TextStyle(
+                style: AppTypography.pageHeader.copyWith(
                   color: _checkoutInk,
-                  fontSize: 22,
-                  height: 1,
-                  fontWeight: FontWeight.w900,
                   letterSpacing: -.4,
                 ),
               ),
@@ -499,7 +496,7 @@ class _CheckoutHeroBanner extends StatelessWidget {
                           color: _checkoutInk,
                           fontSize: 19,
                           height: 1.05,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: -.35,
                         ),
                       ),
@@ -509,7 +506,7 @@ class _CheckoutHeroBanner extends StatelessWidget {
                         maxLines: 2,
                         style: TextStyle(
                           color: _checkoutInk,
-                          fontSize: 9.6,
+                          fontSize: 10,
                           height: 1.35,
                           fontWeight: FontWeight.w600,
                         ),
@@ -587,8 +584,8 @@ class _HeroFeature extends StatelessWidget {
             maxLines: 1,
             style: const TextStyle(
               color: _checkoutInk,
-              fontSize: 6.8,
-              fontWeight: FontWeight.w800,
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -699,8 +696,8 @@ class _CheckoutLocationRow extends StatelessWidget {
                         eyebrow,
                         style: const TextStyle(
                           color: _deliveryGreen,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: .35,
                         ),
                       ),
@@ -711,9 +708,9 @@ class _CheckoutLocationRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: _checkoutInk,
-                          fontSize: 13.5,
+                          fontSize: 14,
                           height: 1,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -723,7 +720,7 @@ class _CheckoutLocationRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: _checkoutMuted,
-                          fontSize: 9.8,
+                          fontSize: 10,
                           height: 1.2,
                           fontWeight: FontWeight.w500,
                         ),
@@ -811,8 +808,8 @@ class _CheckoutActionPill extends StatelessWidget {
             label,
             style: TextStyle(
               color: accentColor,
-              fontSize: 9.2,
-              fontWeight: FontWeight.w800,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -1015,7 +1012,7 @@ class _PhoneNumberSelector extends StatelessWidget {
                                     color: AppColors.dark,
                                     fontSize: 19,
                                     height: 1,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                     letterSpacing: -.3,
                                   ),
                                 ),
@@ -1024,7 +1021,7 @@ class _PhoneNumberSelector extends StatelessWidget {
                                   'Add a number so the rider can contact you.',
                                   style: TextStyle(
                                     color: AppColors.muted,
-                                    fontSize: 9.8,
+                                    fontSize: 10,
                                     height: 1.3,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1061,7 +1058,7 @@ class _PhoneNumberSelector extends StatelessWidget {
                                   ),
                                   style: TextStyle(
                                     color: AppColors.muted,
-                                    fontSize: 8.5,
+                                    fontSize: 9,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -1078,19 +1075,19 @@ class _PhoneNumberSelector extends StatelessWidget {
                                   style: const TextStyle(
                                     color: AppColors.dark,
                                     fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     letterSpacing: .25,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: '5551234567',
                                     hintStyle: const TextStyle(
                                       color: Color(0xFFADB1B8),
-                                      fontSize: 10.5,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     errorText: errorText,
                                     errorStyle: const TextStyle(
-                                      fontSize: 8.3,
+                                      fontSize: 9,
                                       fontWeight: FontWeight.w700,
                                     ),
                                     filled: true,
@@ -1163,7 +1160,7 @@ class _PhoneNumberSelector extends StatelessWidget {
                                     'Save this number to my account',
                                     style: TextStyle(
                                       color: AppColors.dark,
-                                      fontSize: 10.5,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -1261,8 +1258,8 @@ class _PhoneNumberSelector extends StatelessWidget {
                               'Contact phone number',
                               style: TextStyle(
                                 color: _checkoutInk,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 3),
@@ -1274,7 +1271,7 @@ class _PhoneNumberSelector extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: _checkoutMuted,
-                                fontSize: 9.8,
+                                fontSize: 10,
                                 height: 1.2,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1339,7 +1336,7 @@ class _DialCodeField extends StatelessWidget {
           'Dial code',
           style: TextStyle(
             color: AppColors.muted,
-            fontSize: 8.5,
+            fontSize: 9,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1360,7 +1357,7 @@ class _DialCodeField extends StatelessWidget {
                   style: TextStyle(
                     color: AppColors.dark,
                     fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -1487,7 +1484,7 @@ class _PaymentMethodSelector extends StatelessWidget {
                               color: AppColors.dark,
                               fontSize: 19,
                               height: 1,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: -.3,
                             ),
                           ),
@@ -1496,7 +1493,7 @@ class _PaymentMethodSelector extends StatelessWidget {
                             'Choose how you would like to pay.',
                             style: TextStyle(
                               color: AppColors.muted,
-                              fontSize: 9.8,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1589,8 +1586,8 @@ class _PaymentMethodSelector extends StatelessWidget {
                               'Payment method',
                               style: TextStyle(
                                 color: _checkoutInk,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 3),
@@ -1602,7 +1599,7 @@ class _PaymentMethodSelector extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: _checkoutMuted,
-                                fontSize: 9.8,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1709,7 +1706,7 @@ class _PaymentMethodSheetOption extends StatelessWidget {
                       style: const TextStyle(
                         color: AppColors.dark,
                         fontSize: 12,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1719,7 +1716,7 @@ class _PaymentMethodSheetOption extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.muted,
-                        fontSize: 8.8,
+                        fontSize: 9,
                         height: 1.2,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1818,7 +1815,7 @@ class _PlaceOrderBar extends StatelessWidget {
                             '$itemCount ITEM${itemCount == 1 ? '' : 'S'}',
                             style: const TextStyle(
                               color: _checkoutMuted,
-                              fontSize: 8.8,
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1829,7 +1826,7 @@ class _PlaceOrderBar extends StatelessWidget {
                               color: _checkoutInk,
                               fontSize: 18,
                               height: 1,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -1837,7 +1834,7 @@ class _PlaceOrderBar extends StatelessWidget {
                             'Inclusive of taxes',
                             style: TextStyle(
                               color: _checkoutMuted,
-                              fontSize: 8.2,
+                              fontSize: 9,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1890,8 +1887,8 @@ class _PlaceOrderBar extends StatelessWidget {
                                         overflow: TextOverflow.fade,
                                         softWrap: false,
                                         style: const TextStyle(
-                                          fontSize: 10.2,
-                                          fontWeight: FontWeight.w900,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ),
@@ -1921,7 +1918,7 @@ class _PlaceOrderBar extends StatelessWidget {
                       'Safe & secure payments',
                       style: TextStyle(
                         color: _checkoutMuted,
-                        fontSize: 8.8,
+                        fontSize: 9,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
