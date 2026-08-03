@@ -6,7 +6,7 @@ import '../models/fulfillment_method.dart';
 import '../services/order_service.dart';
 import 'profile_orders_screen.dart';
 
-const _pageBackground = Color(0xFFF8F9FC);
+const _pageBackground = Colors.white;
 const _softBorder = Color(0xFFEBEDF2);
 const _secondaryText = Color(0xFF777B88);
 
@@ -51,11 +51,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                           Text(
                             isPickup ? 'Pickup confirmed!' : 'Order confirmed!',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.dark,
-                              fontSize: 22,
-                              height: 1.05,
-                              fontWeight: FontWeight.w900,
+                            style: AppTypography.pageHeader.copyWith(
                               letterSpacing: -.45,
                             ),
                           ),
@@ -65,7 +61,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: _secondaryText,
-                              fontSize: 10.5,
+                              fontSize: 11,
                               height: 1.3,
                               fontWeight: FontWeight.w600,
                             ),
@@ -134,7 +130,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                 style: TextStyle(
                   color: AppColors.dark,
                   fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 7),
@@ -143,7 +139,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _secondaryText,
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -162,7 +158,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   icon: const Icon(Icons.check_rounded),
                   label: const Text(
                     'GOT IT',
-                    style: TextStyle(fontWeight: FontWeight.w900),
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -220,7 +216,7 @@ class _OrderIdPill extends StatelessWidget {
                 style: TextStyle(
                   color: _secondaryText,
                   fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               Flexible(
@@ -229,8 +225,8 @@ class _OrderIdPill extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.red,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: .15,
                   ),
                 ),
@@ -373,8 +369,8 @@ class _StatusStep extends StatelessWidget {
                   '$number',
                   style: const TextStyle(
                     color: _secondaryText,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
         ),
@@ -386,8 +382,8 @@ class _StatusStep extends StatelessWidget {
             maxLines: 1,
             style: const TextStyle(
               color: AppColors.dark,
-              fontSize: 8.8,
-              fontWeight: FontWeight.w900,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -399,7 +395,7 @@ class _StatusStep extends StatelessWidget {
             maxLines: 1,
             style: const TextStyle(
               color: _secondaryText,
-              fontSize: 8.8,
+              fontSize: 9,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -416,8 +412,8 @@ class _StatusStep extends StatelessWidget {
               footer!,
               style: const TextStyle(
                 color: Color(0xFF2AA440),
-                fontSize: 7.5,
-                fontWeight: FontWeight.w900,
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -507,7 +503,7 @@ class _EstimatedTimeBanner extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFB8BFCC),
-                    fontSize: 8.5,
+                    fontSize: 9,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -522,7 +518,7 @@ class _EstimatedTimeBanner extends StatelessWidget {
                       color: Colors.white,
                       fontSize: 21,
                       height: 1,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: -.35,
                     ),
                   ),
@@ -536,7 +532,7 @@ class _EstimatedTimeBanner extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFD7DAE1),
-                    fontSize: 8.2,
+                    fontSize: 9,
                     height: 1.15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -661,8 +657,8 @@ class _OrderLink extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         color: AppColors.dark,
-                        fontSize: 11.2,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -672,7 +668,7 @@ class _OrderLink extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _secondaryText,
-                        fontSize: 8.8,
+                        fontSize: 9,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -734,7 +730,7 @@ class _BottomActions extends StatelessWidget {
                 icon: const Icon(Icons.home_outlined, size: 18),
                 label: const Text(
                   'Home',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -766,7 +762,7 @@ class _BottomActions extends StatelessWidget {
                         maxLines: 1,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

@@ -97,7 +97,7 @@ class ProfileOrdersScreen extends StatelessWidget {
                                   color: profilePageInk,
                                   fontSize: 13,
                                   letterSpacing: .3,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             );
@@ -168,7 +168,7 @@ class _OrdersOverview extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 3),
@@ -176,7 +176,7 @@ class _OrdersOverview extends StatelessWidget {
                   'Track active meals and revisit past orders.',
                   style: TextStyle(
                     color: Color(0xFFBFC3CE),
-                    fontSize: 9.5,
+                    fontSize: 10,
                     height: 1.35,
                     fontWeight: FontWeight.w500,
                   ),
@@ -193,7 +193,7 @@ class _OrdersOverview extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 21,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               Text(
@@ -201,7 +201,7 @@ class _OrdersOverview extends StatelessWidget {
                 style: const TextStyle(
                   color: Color(0xFFFF8A93),
                   fontSize: 9,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -291,7 +291,7 @@ class _OrderCard extends StatelessWidget {
                                 style: const TextStyle(
                                   color: profilePageInk,
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -301,7 +301,7 @@ class _OrderCard extends StatelessWidget {
                               style: const TextStyle(
                                 color: profilePageInk,
                                 fontSize: 14,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -313,7 +313,7 @@ class _OrderCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: profilePageMuted,
-                            fontSize: 9.5,
+                            fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -338,8 +338,8 @@ class _OrderCard extends StatelessWidget {
                             status.label,
                             style: TextStyle(
                               color: status.color,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -351,7 +351,7 @@ class _OrderCard extends StatelessWidget {
                               : 'Step ${stage + 1} of 4',
                           style: const TextStyle(
                             color: profilePageMuted,
-                            fontSize: 8.5,
+                            fontSize: 9,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -392,7 +392,7 @@ class _OrderCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: profilePageMuted,
-                              fontSize: 8.8,
+                              fontSize: 9,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -402,8 +402,8 @@ class _OrderCard extends StatelessWidget {
                           'View details',
                           style: TextStyle(
                             color: AppColors.red,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(width: 2),
@@ -596,7 +596,7 @@ Future<void> _showOrderDetails(
                                     style: TextStyle(
                                       color: profilePageInk,
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w900,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -616,7 +616,7 @@ Future<void> _showOrderDetails(
                               style: const TextStyle(
                                 color: AppColors.red,
                                 fontSize: 18,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -699,9 +699,9 @@ class _OrderDetailHero extends StatelessWidget {
                       'ORDER TRACKING',
                       style: TextStyle(
                         color: Color(0xFFC9CDD5),
-                        fontSize: 8.5,
+                        fontSize: 9,
                         letterSpacing: .8,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -710,7 +710,7 @@ class _OrderDetailHero extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -731,7 +731,7 @@ class _OrderDetailHero extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 8,
                     letterSpacing: .4,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -792,9 +792,9 @@ class _HeroMeta extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Color(0xFFB9BEC9),
-              fontSize: 7.5,
+              fontSize: 8,
               letterSpacing: .55,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 3),
@@ -804,8 +804,8 @@ class _HeroMeta extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -863,7 +863,7 @@ class _OrderTimeline extends StatelessWidget {
             style: TextStyle(
               color: profilePageInk,
               fontSize: 12,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 15),
@@ -906,8 +906,8 @@ class _OrderTimeline extends StatelessWidget {
                   'This order was cancelled.',
                   style: TextStyle(
                     color: AppColors.red,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -960,9 +960,9 @@ class _TimelineStep extends StatelessWidget {
           maxLines: 2,
           style: TextStyle(
             color: isActive ? profilePageInk : profilePageMuted,
-            fontSize: 7.8,
+            fontSize: 8,
             height: 1.2,
-            fontWeight: isCurrent ? FontWeight.w900 : FontWeight.w700,
+            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w700,
           ),
         ),
       ],
@@ -1008,7 +1008,7 @@ class _DetailSection extends StatelessWidget {
                   style: const TextStyle(
                     color: profilePageInk,
                     fontSize: 12,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -1027,7 +1027,7 @@ class _DetailSection extends StatelessWidget {
                     style: const TextStyle(
                       color: AppColors.red,
                       fontSize: 8,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -1098,7 +1098,7 @@ class _OrderItemTile extends StatelessWidget {
                 style: const TextStyle(
                   color: profilePageInk,
                   fontSize: 11,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1108,7 +1108,7 @@ class _OrderItemTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: profilePageMuted,
-                  fontSize: 8.8,
+                  fontSize: 9,
                   height: 1.3,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1125,7 +1125,7 @@ class _OrderItemTile extends StatelessWidget {
               style: const TextStyle(
                 color: profilePageInk,
                 fontSize: 11,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 5),
@@ -1133,8 +1133,8 @@ class _OrderItemTile extends StatelessWidget {
               'Qty $quantity',
               style: const TextStyle(
                 color: AppColors.red,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w800,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -1182,9 +1182,9 @@ class _InfoRow extends StatelessWidget {
                   label.toUpperCase(),
                   style: const TextStyle(
                     color: profilePageMuted,
-                    fontSize: 7.5,
+                    fontSize: 8,
                     letterSpacing: .45,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1192,7 +1192,7 @@ class _InfoRow extends StatelessWidget {
                   value,
                   style: const TextStyle(
                     color: profilePageInk,
-                    fontSize: 9.5,
+                    fontSize: 10,
                     height: 1.35,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1228,7 +1228,7 @@ class _PriceRow extends StatelessWidget {
               label,
               style: const TextStyle(
                 color: profilePageMuted,
-                fontSize: 9.5,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1237,8 +1237,8 @@ class _PriceRow extends StatelessWidget {
             isDiscount ? '-${formatUsd(value.abs())}' : formatUsd(value),
             style: TextStyle(
               color: isDiscount ? const Color(0xFF24A765) : profilePageInk,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w800,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -1432,7 +1432,7 @@ class _OrdersMessage extends StatelessWidget {
               style: const TextStyle(
                 color: profilePageInk,
                 fontSize: 17,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 7),
@@ -1441,7 +1441,7 @@ class _OrdersMessage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: profilePageMuted,
-                fontSize: 11.5,
+                fontSize: 12,
                 height: 1.45,
               ),
             ),
