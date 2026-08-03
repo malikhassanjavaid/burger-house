@@ -23,11 +23,11 @@ void main() {
       MaterialApp(
         home: AuthFormShell(
           headline: 'Log in to the\ngood stuff',
-          topSpacing: 38,
-          headlineFontSize: 23,
-          headlineFontWeight: FontWeight.w500,
-          logoSize: 210,
-          logoContentScale: 1.24,
+          topSpacing: 18,
+          headlineFontSize: 25,
+          headlineFontWeight: FontWeight.w700,
+          logoSize: 150,
+          logoContentScale: 1.08,
           bottomAction: AuthPrimaryButton(
             label: 'LOG IN',
             icon: Icons.login_rounded,
@@ -41,7 +41,7 @@ void main() {
                 label: 'Email',
                 hintText: 'Enter Email',
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               PasswordField(controller: password),
               const SizedBox(height: 19),
               AuthFooterPrompt(
@@ -66,14 +66,14 @@ void main() {
     expect(find.textContaining('Google'), findsNothing);
 
     final logo = tester.widget<HungrySpotLogo>(find.byType(HungrySpotLogo));
-    expect(logo.size, 210);
-    expect(logo.contentScale, 1.24);
+    expect(logo.size, 147);
+    expect(logo.contentScale, 1.08);
 
     final button = tester.widget<FilledButton>(find.byType(FilledButton));
     expect(button.style?.backgroundColor?.resolve({}), AppColors.red);
     expect(
       tester.getTopLeft(find.text('Log in to the\ngood stuff')).dy,
-      inInclusiveRange(90, 120),
+      inInclusiveRange(35, 75),
     );
     expect(tester.getRect(find.byType(FilledButton)).bottom, greaterThan(800));
     expect(tester.takeException(), isNull);

@@ -15,10 +15,10 @@ class AuthFormShell extends StatelessWidget {
     required this.headline,
     required this.child,
     required this.bottomAction,
-    this.topSpacing = 8,
-    this.headlineFontSize = 30,
-    this.headlineFontWeight = FontWeight.w900,
-    this.logoSize = 180,
+    this.topSpacing = 18,
+    this.headlineFontSize = 25,
+    this.headlineFontWeight = FontWeight.w700,
+    this.logoSize = 150,
     this.logoContentScale = 1,
   });
 
@@ -39,21 +39,21 @@ class AuthFormShell extends StatelessWidget {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final headerWidth = (constraints.maxWidth - 44)
+            final headerWidth = (constraints.maxWidth - 40)
                 .clamp(0.0, 430.0)
                 .toDouble();
-            final resolvedLogoSize = headerWidth >= 340
-                ? logoSize
-                : headerWidth * .52;
+            final resolvedLogoSize = logoSize
+                .clamp(104.0, headerWidth * .42)
+                .toDouble();
 
             return SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(22, 12, 22, 18),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: 430,
-                    minHeight: constraints.maxHeight - 30,
+                    minHeight: constraints.maxHeight - 22,
                   ),
                   child: IntrinsicHeight(
                     child: Column(
@@ -64,20 +64,23 @@ class AuthFormShell extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: Text(
-                                headline,
-                                maxLines: 2,
-                                softWrap: false,
-                                style: TextStyle(
-                                  color: authInk,
-                                  fontSize: headlineFontSize,
-                                  height: 1.16,
-                                  fontWeight: headlineFontWeight,
-                                  letterSpacing: -.45,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  headline,
+                                  maxLines: 2,
+                                  style: AppTypography.screenTitle.copyWith(
+                                    color: authInk,
+                                    fontSize: headlineFontSize,
+                                    fontWeight: headlineFontWeight,
+                                    height: 1.08,
+                                    letterSpacing: -.35,
+                                  ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 12),
                             SizedBox(
                               width: resolvedLogoSize,
                               child: HungrySpotLogo(
@@ -87,10 +90,10 @@ class AuthFormShell extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 38),
+                        const SizedBox(height: 24),
                         child,
                         const Spacer(),
-                        const SizedBox(height: 34),
+                        const SizedBox(height: 22),
                         bottomAction,
                       ],
                     ),
@@ -135,9 +138,8 @@ class AuthTextField extends StatelessWidget {
         textCapitalization: textCapitalization,
         textInputAction: textInputAction,
         validator: validator,
-        style: const TextStyle(
+        style: AppTypography.bodyMedium.copyWith(
           color: authInk,
-          fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
         decoration: authInputDecoration(hintText),
@@ -159,13 +161,12 @@ class AuthFieldFrame extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: AppTypography.label.copyWith(
             color: authMuted,
-            fontSize: 11.5,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 5),
         child,
       ],
     );
@@ -175,28 +176,28 @@ class AuthFieldFrame extends StatelessWidget {
 InputDecoration authInputDecoration(String hintText, {Widget? suffixIcon}) {
   OutlineInputBorder outline(Color color, [double width = 1]) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(10),
       borderSide: BorderSide(color: color, width: width),
     );
   }
 
   return InputDecoration(
     hintText: hintText,
-    hintStyle: const TextStyle(
-      color: Color(0xFF77777C),
-      fontSize: 14,
+    hintStyle: AppTypography.body.copyWith(
+      color: const Color(0xFF77777C),
       fontWeight: FontWeight.w500,
     ),
     suffixIcon: suffixIcon,
     filled: true,
     fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 18),
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: outline(authBorder),
     enabledBorder: outline(authBorder),
     focusedBorder: outline(AppColors.red, 1.4),
     errorBorder: outline(AppColors.red),
     focusedErrorBorder: outline(AppColors.red, 1.4),
-    errorStyle: const TextStyle(fontSize: 10.5),
+    errorStyle: const TextStyle(fontSize: 11),
   );
 }
 
@@ -239,14 +240,13 @@ class AuthLinkButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Text(
           label,
-          style: const TextStyle(
+          style: AppTypography.label.copyWith(
             color: authLink,
-            fontSize: 12.5,
             fontWeight: FontWeight.w500,
             decoration: TextDecoration.underline,
             decorationColor: authLink,
@@ -277,9 +277,8 @@ class AuthFooterPrompt extends StatelessWidget {
       children: [
         Text(
           message,
-          style: const TextStyle(
+          style: AppTypography.label.copyWith(
             color: authInk,
-            fontSize: 12.5,
             fontWeight: FontWeight.w500,
           ),
         ),
