@@ -656,7 +656,7 @@ class _NewCustomerWelcomeDialog extends StatelessWidget {
                     color: AppColors.dark,
                     fontSize: 25,
                     height: 1.08,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -691,7 +691,7 @@ class _CustomerStateLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ColoredBox(
-      color: Color(0xFFF4FAFE),
+      color: Colors.white,
       child: Center(child: AppLoader(size: 42)),
     );
   }
@@ -721,7 +721,7 @@ class _SavedTab extends StatelessWidget {
     }
 
     return ColoredBox(
-      color: const Color(0xFFFFFBFB),
+      color: Colors.white,
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -781,17 +781,14 @@ class _SavedHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Saved meals',
-                  style: TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 22,
+                  style: AppTypography.pageHeader.copyWith(
                     height: 1,
-                    fontWeight: FontWeight.w900,
                     letterSpacing: -.4,
                   ),
                 ),
@@ -837,8 +834,8 @@ class _SavedHeader extends StatelessWidget {
                     '$count ${count == 1 ? 'item' : 'items'}',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -858,7 +855,7 @@ class _SavedEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFFFFFBFB),
+      color: Colors.white,
       child: Column(
         children: [
           const _SavedHeader(),
@@ -915,7 +912,7 @@ class _SavedEmptyState extends StatelessWidget {
                           style: TextStyle(
                             color: AppColors.dark,
                             fontSize: 21,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: -.35,
                           ),
                         ),
@@ -1074,8 +1071,8 @@ class _SavedFoodCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: AppColors.red,
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.w900,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
                                     letterSpacing: .35,
                                   ),
                                 ),
@@ -1091,7 +1088,7 @@ class _SavedFoodCard extends StatelessWidget {
                                     color: AppColors.dark,
                                     fontSize: narrow ? 12.5 : 13.5,
                                     height: 1.1,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                     letterSpacing: -.2,
                                   ),
                                 ),
@@ -1122,7 +1119,7 @@ class _SavedFoodCard extends StatelessWidget {
                                     style: const TextStyle(
                                       color: AppColors.dark,
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(width: 7),
@@ -1139,7 +1136,7 @@ class _SavedFoodCard extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: AppColors.muted,
-                                        fontSize: 8.8,
+                                        fontSize: 9,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -1155,7 +1152,7 @@ class _SavedFoodCard extends StatelessWidget {
                                       color: AppColors.red,
                                       fontSize: narrow ? 14 : 15.5,
                                       height: 1,
-                                      fontWeight: FontWeight.w900,
+                                      fontWeight: FontWeight.w700,
                                       letterSpacing: -.25,
                                     ),
                                   ),
@@ -1260,7 +1257,7 @@ class _SavedExploreBanner extends StatelessWidget {
                         style: TextStyle(
                           color: AppColors.dark,
                           fontSize: 13,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       SizedBox(height: 4),
@@ -1270,7 +1267,7 @@ class _SavedExploreBanner extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: AppColors.muted,
-                          fontSize: 9.8,
+                          fontSize: 10,
                           height: 1.3,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1455,9 +1452,9 @@ class _MinimalNavItem extends StatelessWidget {
                             badgeLabel,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 8.5,
+                              fontSize: 9,
                               height: 1,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -1468,7 +1465,7 @@ class _MinimalNavItem extends StatelessWidget {
                 DefaultTextStyle(
                   style: TextStyle(
                     color: selected ? AppColors.red : const Color(0xFF746C70),
-                    fontSize: 10.5,
+                    fontSize: 11,
                     height: 1,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   ),

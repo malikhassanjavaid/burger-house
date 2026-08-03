@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../models/fulfillment_method.dart';
@@ -67,6 +69,31 @@ class HomeHeroCarousel extends StatefulWidget {
 }
 
 class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
+  final ValueNotifier<bool> _isHomeScrolling = ValueNotifier<bool>(false);
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification.depth != 0) {
+      return false;
+    }
+
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null) {
+      _isHomeScrolling.value = true;
+    } else if (notification is ScrollEndNotification ||
+        (notification is UserScrollNotification &&
+            notification.direction == ScrollDirection.idle)) {
+      _isHomeScrolling.value = false;
+    }
+
+    return false;
+  }
+
+  @override
+  void dispose() {
+    _isHomeScrolling.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageCacheWidth =
@@ -76,146 +103,153 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
 
     return ColoredBox(
       color: Colors.white,
-      child: ListView(
-        key: const PageStorageKey('home-content'),
-        padding: const EdgeInsets.only(bottom: 116),
-        physics: const ClampingScrollPhysics(),
-        children: [
-          _HomeHeader(
-            customerName: widget.customerName,
-            deliveryLabel: widget.deliveryLabel,
-            onNotificationTap: widget.onNotificationTap,
-            onLocationTap: widget.onLocationTap,
-          ),
-          const SizedBox(height: 14),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: _FulfillmentSelector(
-              selected: widget.fulfillmentMethod,
-              onChanged: widget.onFulfillmentChanged,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _handleScrollNotification,
+        child: ListView(
+          key: const PageStorageKey('home-content'),
+          padding: const EdgeInsets.only(bottom: 116),
+          physics: const ClampingScrollPhysics(),
+          addAutomaticKeepAlives: false,
+          children: [
+            _HomeHeader(
+              customerName: widget.customerName,
+              deliveryLabel: widget.deliveryLabel,
+              onNotificationTap: widget.onNotificationTap,
+              onLocationTap: widget.onLocationTap,
             ),
-          ),
-          const SizedBox(height: 16),
-          _AutoRotatingHeroBanner(imageCacheWidth: imageCacheWidth),
-          const SizedBox(height: 22),
-          if (widget.deals.isNotEmpty) ...[
-            const _HomeSectionHeading(
-              'Featured Deals',
-              key: ValueKey('home-featured-deals-heading'),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: _bestSellerViewportHeight,
-              child: _BestSellerPosters(
-                deals: widget.deals,
-                onDealSelected: widget.onDealSelected,
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: _FulfillmentSelector(
+                selected: widget.fulfillmentMethod,
+                onChanged: widget.onFulfillmentChanged,
               ),
             ),
-            const SizedBox(height: 26),
-          ],
-          if (widget.bestSellerBurgers.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _AutoRotatingHeroBanner(
+              imageCacheWidth: imageCacheWidth,
+              isHomeScrolling: _isHomeScrolling,
+            ),
+            const SizedBox(height: 22),
+            if (widget.deals.isNotEmpty) ...[
+              const _HomeSectionHeading(
+                'Featured Deals',
+                key: ValueKey('home-featured-deals-heading'),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: _bestSellerViewportHeight,
+                child: _BestSellerPosters(
+                  deals: widget.deals,
+                  onDealSelected: widget.onDealSelected,
+                ),
+              ),
+              const SizedBox(height: 26),
+            ],
+            if (widget.bestSellerBurgers.isNotEmpty) ...[
+              const _HomeSectionHeading(
+                'Best Seller',
+                key: ValueKey('home-best-seller-heading'),
+              ),
+              const SizedBox(height: 12),
+              _HomeMenuRow(
+                items: widget.bestSellerBurgers,
+                keyPrefix: 'home-best-seller',
+                favourites: widget.favourites,
+                onItemSelected: widget.onPizzaSelected,
+                onFavourite: widget.onFavourite,
+              ),
+              const SizedBox(height: 26),
+            ],
             const _HomeSectionHeading(
-              'Best Seller',
-              key: ValueKey('home-best-seller-heading'),
+              'Pickup from Store',
+              key: ValueKey('home-pickup-store-heading'),
             ),
             const SizedBox(height: 12),
-            _HomeMenuRow(
-              items: widget.bestSellerBurgers,
-              keyPrefix: 'home-best-seller',
-              favourites: widget.favourites,
-              onItemSelected: widget.onPizzaSelected,
-              onFavourite: widget.onFavourite,
-            ),
-            const SizedBox(height: 26),
-          ],
-          const _HomeSectionHeading(
-            'Pickup from Store',
-            key: ValueKey('home-pickup-store-heading'),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Semantics(
-              image: true,
-              label: 'Order ahead and pick up from a Hungry Spot store',
-              child: Container(
-                key: const ValueKey('home-pickup-store-poster'),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFF0ECEC)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.dark.withValues(alpha: .08),
-                      blurRadius: 18,
-                      offset: const Offset(0, 7),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Semantics(
+                image: true,
+                label: 'Order ahead and pick up from a Hungry Spot store',
+                child: Container(
+                  key: const ValueKey('home-pickup-store-poster'),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFF0ECEC)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.dark.withValues(alpha: .08),
+                        blurRadius: 18,
+                        offset: const Offset(0, 7),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: AspectRatio(
+                    aspectRatio: 1983 / 793,
+                    child: Image.asset(
+                      'assets/images/pickup_store.png',
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      cacheWidth: imageCacheWidth,
                     ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: AspectRatio(
-                  aspectRatio: 1983 / 793,
-                  child: Image.asset(
-                    'assets/images/pickup_store.png',
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    cacheWidth: imageCacheWidth,
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 26),
-          if (widget.pizzas.isNotEmpty) ...[
-            const _HomeSectionHeading(
-              'For the Love of Pizza \u{2764}\u{FE0F}',
-              key: ValueKey('home-pizza-heading'),
-            ),
-            const SizedBox(height: 12),
-            _HomeMenuRow(
-              items: widget.pizzas,
-              favourites: widget.favourites,
-              onItemSelected: widget.onPizzaSelected,
-              onFavourite: widget.onFavourite,
-            ),
-          ],
-          if (widget.topPicks.isNotEmpty) ...[
             const SizedBox(height: 26),
-            const _HomeSectionHeading(
-              'Top Picks',
-              key: ValueKey('home-top-picks-heading'),
-            ),
-            const SizedBox(height: 12),
-            _HomeMenuRow(
-              items: widget.topPicks,
-              keyPrefix: 'home-top-pick',
-              favourites: widget.favourites,
-              onItemSelected: widget.onPizzaSelected,
-              onFavourite: widget.onFavourite,
-            ),
-          ],
-          const SizedBox(height: 28),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Semantics(
-              image: true,
-              label: 'Hungry Spot fast delivery banner',
-              child: AspectRatio(
-                key: const ValueKey('home-bottom-banner'),
-                aspectRatio: 2048 / 683,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Image.asset(
-                    'assets/images/homepage_footer.png',
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
-                    cacheWidth: imageCacheWidth,
+            if (widget.pizzas.isNotEmpty) ...[
+              const _HomeSectionHeading(
+                'For the Love of Pizza \u{2764}\u{FE0F}',
+                key: ValueKey('home-pizza-heading'),
+              ),
+              const SizedBox(height: 12),
+              _HomeMenuRow(
+                items: widget.pizzas,
+                favourites: widget.favourites,
+                onItemSelected: widget.onPizzaSelected,
+                onFavourite: widget.onFavourite,
+              ),
+            ],
+            if (widget.topPicks.isNotEmpty) ...[
+              const SizedBox(height: 26),
+              const _HomeSectionHeading(
+                'Top Picks',
+                key: ValueKey('home-top-picks-heading'),
+              ),
+              const SizedBox(height: 12),
+              _HomeMenuRow(
+                items: widget.topPicks,
+                keyPrefix: 'home-top-pick',
+                favourites: widget.favourites,
+                onItemSelected: widget.onPizzaSelected,
+                onFavourite: widget.onFavourite,
+              ),
+            ],
+            const SizedBox(height: 28),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Semantics(
+                image: true,
+                label: 'Hungry Spot fast delivery banner',
+                child: AspectRatio(
+                  key: const ValueKey('home-bottom-banner'),
+                  aspectRatio: 2048 / 683,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/homepage_footer.png',
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      cacheWidth: imageCacheWidth,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -259,7 +293,7 @@ class _HomeHeader extends StatelessWidget {
                   style: const TextStyle(
                     color: AppColors.dark,
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: -.2,
                   ),
                 ),
@@ -290,7 +324,7 @@ class _HomeHeader extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: AppColors.dark,
-                                fontSize: 11.5,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -361,9 +395,13 @@ class _HomeHeader extends StatelessWidget {
 }
 
 class _AutoRotatingHeroBanner extends StatefulWidget {
-  const _AutoRotatingHeroBanner({required this.imageCacheWidth});
+  const _AutoRotatingHeroBanner({
+    required this.imageCacheWidth,
+    required this.isHomeScrolling,
+  });
 
   final int imageCacheWidth;
+  final ValueListenable<bool> isHomeScrolling;
 
   @override
   State<_AutoRotatingHeroBanner> createState() =>
@@ -387,7 +425,26 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _controller = PageController(initialPage: _initialPage);
+    widget.isHomeScrolling.addListener(_handleHomeScrollState);
     _scheduleNextSlide();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AutoRotatingHeroBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isHomeScrolling != widget.isHomeScrolling) {
+      oldWidget.isHomeScrolling.removeListener(_handleHomeScrollState);
+      widget.isHomeScrolling.addListener(_handleHomeScrollState);
+      _handleHomeScrollState();
+    }
+  }
+
+  void _handleHomeScrollState() {
+    if (widget.isHomeScrolling.value) {
+      _autoSlideTimer?.cancel();
+    } else {
+      _scheduleNextSlide();
+    }
   }
 
   @override
@@ -401,10 +458,16 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
 
   void _scheduleNextSlide() {
     _autoSlideTimer?.cancel();
+    if (!mounted || widget.isHomeScrolling.value) {
+      return;
+    }
     _autoSlideTimer = Timer(_displayDuration, _showNextBanner);
   }
 
   void _showNextBanner() {
+    if (widget.isHomeScrolling.value) {
+      return;
+    }
     if (!mounted || !_controller.hasClients) {
       _scheduleNextSlide();
       return;
@@ -424,6 +487,7 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.isHomeScrolling.removeListener(_handleHomeScrollState);
     _autoSlideTimer?.cancel();
     _controller.dispose();
     super.dispose();
@@ -439,7 +503,7 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
             aspectRatio: 1.8,
             child: PageView.builder(
               controller: _controller,
-              physics: const ClampingScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: _handlePageChanged,
               itemBuilder: (context, page) {
                 final bannerIndex = page % HomeHeroCarousel.bannerAssets.length;
@@ -472,7 +536,7 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
                             height: double.infinity,
                             fit: BoxFit.cover,
                             alignment: Alignment.center,
-                            filterQuality: FilterQuality.high,
+                            filterQuality: FilterQuality.medium,
                             gaplessPlayback: true,
                             cacheWidth: widget.imageCacheWidth,
                           ),
@@ -587,9 +651,9 @@ class _FulfillmentOption extends StatelessWidget {
                   method.label,
                   style: TextStyle(
                     color: selected ? Colors.white : AppColors.dark,
-                    fontSize: 11.5,
+                    fontSize: 12,
                     height: 1,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   ),
                 ),
               ],
@@ -635,6 +699,8 @@ class _BestSellerPosters extends StatelessWidget {
       builder: (context, constraints) {
         final posterWidth = _compactHomeCardWidth(constraints.maxWidth);
         final posterHeight = posterWidth / _homePosterAspectRatio;
+        final posterCacheWidth =
+            (posterWidth * MediaQuery.devicePixelRatioOf(context)).ceil();
 
         return ListView.separated(
           key: const PageStorageKey<String>('home-featured-deals-list'),
@@ -668,7 +734,8 @@ class _BestSellerPosters extends StatelessWidget {
                         width: posterWidth,
                         height: posterHeight,
                         fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
+                        filterQuality: FilterQuality.medium,
+                        cacheWidth: posterCacheWidth,
                       ),
                     ),
                   ),
