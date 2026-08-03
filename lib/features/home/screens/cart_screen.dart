@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../location/models/delivery_location.dart';
@@ -12,7 +13,7 @@ import '../models/menu_item.dart';
 import 'checkout_screen.dart';
 import 'menu_details_screen.dart';
 
-const _cartBg = Color(0xFFF4FAFE);
+const _cartBg = Colors.white;
 const _cartRed = Color(0xFFF23845);
 const _cartBlue = Color(0xFF1597E5);
 const _cartInk = Color(0xFF15161C);
@@ -190,7 +191,7 @@ class _CartScreenState extends State<CartScreen> {
               widget.fulfillmentMethod.isPickup
                   ? 'Pickup instructions'
                   : 'Delivery instructions',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+              style: AppTypography.pageHeader,
             ),
             const SizedBox(height: 6),
             Text(
@@ -246,10 +247,7 @@ class _CartScreenState extends State<CartScreen> {
               child: SizedBox(width: 42, child: Divider(thickness: 4)),
             ),
             const SizedBox(height: 15),
-            const Text(
-              'Apply coupon',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
-            ),
+            const Text('Apply coupon', style: AppTypography.pageHeader),
             const SizedBox(height: 6),
             const Text(
               'Try BURGER10 for 10% off your food subtotal.',
@@ -362,7 +360,7 @@ class _CartScreenState extends State<CartScreen> {
                         style: TextStyle(
                           color: _cartInk,
                           fontSize: 18,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 15),
@@ -470,13 +468,9 @@ class _CartHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 15),
-            const Text(
+            Text(
               'Cart',
-              style: TextStyle(
-                color: _cartInk,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
+              style: AppTypography.pageHeader.copyWith(color: _cartInk),
             ),
             const SizedBox(width: 9),
             Text(
@@ -551,7 +545,7 @@ class _CartItemCard extends StatelessWidget {
                       style: const TextStyle(
                         color: _cartInk,
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -609,7 +603,7 @@ class _CartItemCard extends StatelessWidget {
                       '${item.quantity}',
                       style: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -677,7 +671,7 @@ class _CartItemDetailsSheet extends StatelessWidget {
                     style: const TextStyle(
                       color: _cartInk,
                       fontSize: 20,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -855,7 +849,7 @@ class _ActionCard extends StatelessWidget {
                       fontSize: subtitle == null ? 13 : 15,
                       fontWeight: subtitle == null
                           ? FontWeight.w500
-                          : FontWeight.w800,
+                          : FontWeight.w700,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -928,7 +922,7 @@ class _RecommendationCard extends StatelessWidget {
               style: const TextStyle(
                 color: _cartInk,
                 fontSize: 11,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const Spacer(),
@@ -1020,7 +1014,7 @@ class _TotalRow extends StatelessWidget {
           style: TextStyle(
             color: strong ? _cartInk : _cartMuted,
             fontSize: strong ? 14 : 12,
-            fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
+            fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ),
@@ -1029,7 +1023,7 @@ class _TotalRow extends StatelessWidget {
         style: TextStyle(
           color: discount ? const Color(0xFF58A72E) : _cartInk,
           fontSize: strong ? 14 : 12,
-          fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+          fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
         ),
       ),
     ],
@@ -1084,7 +1078,7 @@ class _CartBottomBar extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -1093,7 +1087,7 @@ class _CartBottomBar extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const Text(
@@ -1119,7 +1113,7 @@ class _CartBottomBar extends StatelessWidget {
               ),
               child: const Text(
                 'CHECKOUT',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -1162,13 +1156,9 @@ class _EmptyCart extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 15),
-                  const Text(
+                  Text(
                     'Cart',
-                    style: TextStyle(
-                      color: _cartInk,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: AppTypography.pageHeader.copyWith(color: _cartInk),
                   ),
                 ],
               ),
@@ -1205,7 +1195,7 @@ class _EmptyCart extends StatelessWidget {
                           style: TextStyle(
                             color: _cartInk,
                             fontSize: 24,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: -.35,
                           ),
                         ),
