@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../home/screens/home_screen.dart';
@@ -166,10 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 missing
                     ? 'Account not found'
                     : 'Email or password doesn\'t match',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
+                style: AppTypography.pageHeader,
               ),
               const SizedBox(height: 8),
               Text(
@@ -217,11 +216,11 @@ class _LoginScreenState extends State<LoginScreen> {
       message: 'Signing you in...',
       child: AuthFormShell(
         headline: 'Log in to the\ngood stuff',
-        topSpacing: 38,
-        headlineFontSize: 23,
-        headlineFontWeight: FontWeight.w500,
-        logoSize: 210,
-        logoContentScale: 1.24,
+        topSpacing: 18,
+        headlineFontSize: 25,
+        headlineFontWeight: FontWeight.w700,
+        logoSize: 150,
+        logoContentScale: 1.08,
         bottomAction: AuthPrimaryButton(
           label: 'LOG IN',
           icon: Icons.login_rounded,
@@ -243,9 +242,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? 'Enter a valid email address'
                     : null,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               PasswordField(controller: _password),
-              const SizedBox(height: 19),
+              const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
                 child: AuthLinkButton(
@@ -254,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushNamed(context, AppRoutes.forgotPassword),
                 ),
               ),
-              const SizedBox(height: 42),
+              const SizedBox(height: 24),
               AuthFooterPrompt(
                 message: 'Not a member yet?',
                 actionLabel: 'Sign up',
