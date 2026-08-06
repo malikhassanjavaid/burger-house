@@ -12,7 +12,9 @@ import '../../location/screens/location_setup_screen.dart';
 import '../models/cart_item.dart';
 import '../models/fulfillment_method.dart';
 import '../services/order_service.dart';
+import '../services/stripe_payment_service.dart';
 import 'order_confirmation_screen.dart';
+import 'stripe_card_payment_screen.dart';
 
 enum PaymentMethod { cashOnDelivery, card }
 
@@ -76,6 +78,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _orderService = OrderService();
 
   PaymentMethod? _paymentMethod;
+  StripePaymentResult? _completedCardPayment;
   DeliveryLocation? _deliveryLocation;
   bool _isPlacingOrder = false;
   bool _isLoadingProfile = true;
@@ -89,6 +92,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.fulfillmentMethod.isPickup) {
+      _paymentMethod = PaymentMethod.card;
+    }
     final user = FirebaseAuth.instance.currentUser;
     _nameController.text = user?.displayName ?? '';
     _addressController.text = widget.initialAddress;
@@ -270,6 +276,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate() || _isPlacingOrder) return;
 
+    if (_paymentMethod == PaymentMethod.card && _completedCardPayment == null) {
+      final payment = await Navigator.of(context).push<StripePaymentResult>(
+        MaterialPageRoute(
+          builder: (_) => StripeCardPaymentScreen(
+            amount: _total,
+            fulfillmentMethod: widget.fulfillmentMethod,
+          ),
+        ),
+      );
+      if (payment == null || !mounted) return;
+      setState(() => _completedCardPayment = payment);
+    }
+
     setState(() => _isPlacingOrder = true);
     try {
       await _saveContactDetails();
@@ -285,6 +304,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           landmark: '',
           deliveryNotes: '',
           paymentMethod: _paymentMethod!.valueFor(widget.fulfillmentMethod),
+          paymentStatus: _paymentMethod == PaymentMethod.card
+              ? 'paid'
+              : 'pending',
+          paymentIntentId: _completedCardPayment?.paymentIntentId,
+          paymentAmountCents: _completedCardPayment?.amountCents,
           subtotal: _subtotal,
           deliveryFee: widget.deliveryFee,
           serviceFee: widget.serviceFee,
@@ -377,8 +401,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       child: _PaymentMethodSelector(
                         fulfillmentMethod: widget.fulfillmentMethod,
                         value: _paymentMethod,
-                        onChanged: (method) =>
-                            setState(() => _paymentMethod = method),
+                        onChanged: (method) => setState(() {
+                          if (_paymentMethod != method) {
+                            _completedCardPayment = null;
+                          }
+                          _paymentMethod = method;
+                        }),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -1508,18 +1536,21 @@ class _PaymentMethodSelector extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 13),
-                ...PaymentMethod.values.map(
-                  (method) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _PaymentMethodSheetOption(
-                      method: method,
-                      title: _labelFor(method),
-                      subtitle: _subtitleFor(method),
-                      selected: current == method,
-                      onTap: () => Navigator.of(sheetContext).pop(method),
+                ...(fulfillmentMethod.isPickup
+                        ? const [PaymentMethod.card]
+                        : PaymentMethod.values)
+                    .map(
+                      (method) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _PaymentMethodSheetOption(
+                          method: method,
+                          title: _labelFor(method),
+                          subtitle: _subtitleFor(method),
+                          selected: current == method,
+                          onTap: () => Navigator.of(sheetContext).pop(method),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
               ],
             ),
           ),
