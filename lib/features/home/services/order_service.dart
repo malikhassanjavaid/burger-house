@@ -14,6 +14,9 @@ class PlaceOrderRequest {
     required this.landmark,
     required this.deliveryNotes,
     required this.paymentMethod,
+    this.paymentStatus = 'pending',
+    this.paymentIntentId,
+    this.paymentAmountCents,
     required this.subtotal,
     required this.deliveryFee,
     required this.serviceFee,
@@ -30,6 +33,9 @@ class PlaceOrderRequest {
   final String landmark;
   final String deliveryNotes;
   final String paymentMethod;
+  final String paymentStatus;
+  final String? paymentIntentId;
+  final int? paymentAmountCents;
   final double subtotal;
   final double deliveryFee;
   final double serviceFee;
@@ -109,7 +115,11 @@ class OrderService {
       'landmark': request.landmark,
       'deliveryNotes': request.deliveryNotes,
       'paymentMethod': request.paymentMethod,
-      'paymentStatus': 'pending',
+      'paymentStatus': request.paymentStatus,
+      if (request.paymentIntentId != null)
+        'paymentIntentId': request.paymentIntentId,
+      if (request.paymentAmountCents != null)
+        'paymentAmountCents': request.paymentAmountCents,
       'status': 'placed',
       'subtotal': request.subtotal,
       'deliveryFee': request.deliveryFee,
