@@ -1321,60 +1321,56 @@ class _MinimalBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return Container(
-      height: 80 + bottomInset,
-      padding: EdgeInsets.fromLTRB(8, 7, 8, bottomInset + 3),
-      decoration: BoxDecoration(
+    return DecoratedBox(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFF1EAEC))),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.dark.withValues(alpha: .08),
-            blurRadius: 24,
-            offset: const Offset(0, -7),
-          ),
-        ],
+        border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: .7)),
       ),
-      child: Row(
-        children: [
-          _MinimalNavItem(
-            icon: Icons.home_outlined,
-            selectedIcon: Icons.home_rounded,
-            label: 'Home',
-            selected: selectedIndex == 0,
-            onTap: () => onSelected(0),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(8, 5, 8, bottomInset + 3),
+        child: SizedBox(
+          height: 61,
+          child: Row(
+            children: [
+              _MinimalNavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: 'Home',
+                selected: selectedIndex == 0,
+                onTap: () => onSelected(0),
+              ),
+              _MinimalNavItem(
+                icon: Icons.shopping_bag_outlined,
+                selectedIcon: Icons.shopping_bag_rounded,
+                label: 'Cart',
+                badgeCount: cartCount,
+                selected: selectedIndex == 1,
+                onTap: () => onSelected(1),
+              ),
+              _MinimalNavItem(
+                icon: Icons.fastfood_outlined,
+                selectedIcon: Icons.fastfood_rounded,
+                label: 'Menu',
+                selected: selectedIndex == 2,
+                onTap: () => onSelected(2),
+              ),
+              _MinimalNavItem(
+                icon: Icons.bookmark_border_rounded,
+                selectedIcon: Icons.bookmark_rounded,
+                label: 'Saved',
+                selected: selectedIndex == 3,
+                onTap: () => onSelected(3),
+              ),
+              _MinimalNavItem(
+                icon: Icons.account_circle_outlined,
+                selectedIcon: Icons.account_circle_rounded,
+                label: 'Profile',
+                selected: selectedIndex == 4,
+                onTap: () => onSelected(4),
+              ),
+            ],
           ),
-          _MinimalNavItem(
-            icon: Icons.shopping_bag_outlined,
-            selectedIcon: Icons.shopping_bag_rounded,
-            label: 'Cart',
-            badgeCount: cartCount,
-            selected: selectedIndex == 1,
-            onTap: () => onSelected(1),
-          ),
-          _MinimalNavItem(
-            icon: Icons.fastfood_outlined,
-            selectedIcon: Icons.fastfood_rounded,
-            label: 'Menu',
-            selected: selectedIndex == 2,
-            onTap: () => onSelected(2),
-          ),
-          _MinimalNavItem(
-            icon: Icons.bookmark_border_rounded,
-            selectedIcon: Icons.bookmark_rounded,
-            label: 'Saved',
-            selected: selectedIndex == 3,
-            onTap: () => onSelected(3),
-          ),
-          _MinimalNavItem(
-            icon: Icons.account_circle_outlined,
-            selectedIcon: Icons.account_circle_rounded,
-            label: 'Profile',
-            selected: selectedIndex == 4,
-            onTap: () => onSelected(4),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1411,67 +1407,72 @@ class _MinimalNavItem extends StatelessWidget {
           child: InkWell(
             key: ValueKey('bottom-nav-${label.toLowerCase()}'),
             onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: selected ? AppColors.blush : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        selected ? selectedIcon : icon,
-                        color: selected
-                            ? AppColors.red
-                            : const Color(0xFF625B5E),
-                        size: selected ? 24 : 23,
-                      ),
-                    ),
-                    if (badgeCount > 0)
-                      Positioned(
-                        top: -4,
-                        right: -7,
-                        child: Container(
-                          constraints: const BoxConstraints(minWidth: 18),
-                          height: 18,
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.red,
-                            borderRadius: BorderRadius.circular(9),
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            badgeLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              height: 1,
-                              fontWeight: FontWeight.w700,
-                            ),
+            borderRadius: BorderRadius.circular(12),
+            splashColor: const Color(0x0D000000),
+            highlightColor: const Color(0x08000000),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        width: 36,
+                        height: 28,
+                        child: Center(
+                          child: Icon(
+                            selected ? selectedIcon : icon,
+                            color: selected
+                                ? const Color(0xFF111111)
+                                : const Color(0xFF777277),
+                            size: 24,
                           ),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                DefaultTextStyle(
-                  style: TextStyle(
-                    color: selected ? AppColors.red : const Color(0xFF746C70),
-                    fontSize: 11,
-                    height: 1,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                      if (badgeCount > 0)
+                        Positioned(
+                          top: -5,
+                          right: -7,
+                          child: Container(
+                            constraints: const BoxConstraints(minWidth: 18),
+                            height: 18,
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.red,
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              badgeLabel,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                height: 1,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  child: Text(label, maxLines: 1),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    style: AppTypography.navLabel.copyWith(
+                      color: selected
+                          ? const Color(0xFF111111)
+                          : const Color(0xFF777277),
+                      fontSize: 9.5,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
