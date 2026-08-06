@@ -99,6 +99,8 @@ class _ProfileAddressScreenState extends State<ProfileAddressScreen> {
                           location: _location!,
                           onEdit: _editAddress,
                         ),
+                      const SizedBox(height: 16),
+                      const _AddressPrivacyCard(),
                     ],
                   ),
           ),
@@ -240,6 +242,107 @@ class _SavedAddressCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AddressPrivacyCard extends StatelessWidget {
+  const _AddressPrivacyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 78),
+      padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FBFE),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: const Color(0xFFF0F4F8)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A4D6A83),
+            blurRadius: 16,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE8F8F0),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.verified_user_rounded,
+              color: Color(0xFF0BB56C),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your data is safe with us',
+                  style: TextStyle(
+                    color: Color(0xFF111827),
+                    fontSize: 12,
+                    height: 1.2,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  'Your address is secure and will only be used for delivery purposes.',
+                  maxLines: 2,
+                  style: TextStyle(
+                    color: Color(0xFF657184),
+                    fontSize: 9.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const SizedBox(
+            width: 62,
+            height: 48,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Icon(
+                    Icons.location_city_rounded,
+                    color: Color(0xFFEAF1F7),
+                    size: 46,
+                  ),
+                ),
+                Positioned(
+                  left: 4,
+                  top: 7,
+                  child: CircleAvatar(
+                    radius: 15,
+                    backgroundColor: Color(0xFFF1F6FF),
+                    child: Icon(
+                      Icons.location_on_rounded,
+                      color: Color(0xFF3478F6),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
