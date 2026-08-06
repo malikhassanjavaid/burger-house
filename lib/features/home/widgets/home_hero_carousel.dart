@@ -70,6 +70,22 @@ class HomeHeroCarousel extends StatefulWidget {
 
 class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
   final ValueNotifier<bool> _isHomeScrolling = ValueNotifier<bool>(false);
+  bool _pointerIsDown = false;
+  bool _verticalScrollIsActive = false;
+
+  void _syncInteractionState() {
+    _isHomeScrolling.value = _pointerIsDown || _verticalScrollIsActive;
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _pointerIsDown = true;
+    _syncInteractionState();
+  }
+
+  void _handlePointerUp(PointerEvent event) {
+    _pointerIsDown = false;
+    _syncInteractionState();
+  }
 
   bool _handleScrollNotification(ScrollNotification notification) {
     if (notification.depth != 0) {
@@ -78,13 +94,14 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
 
     if (notification is ScrollStartNotification &&
         notification.dragDetails != null) {
-      _isHomeScrolling.value = true;
+      _verticalScrollIsActive = true;
     } else if (notification is ScrollEndNotification ||
         (notification is UserScrollNotification &&
             notification.direction == ScrollDirection.idle)) {
-      _isHomeScrolling.value = false;
+      _verticalScrollIsActive = false;
     }
 
+    _syncInteractionState();
     return false;
   }
 
@@ -103,152 +120,161 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
 
     return ColoredBox(
       color: Colors.white,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _handleScrollNotification,
-        child: ListView(
-          key: const PageStorageKey('home-content'),
-          padding: const EdgeInsets.only(bottom: 116),
-          physics: const ClampingScrollPhysics(),
-          addAutomaticKeepAlives: false,
-          children: [
-            _HomeHeader(
-              customerName: widget.customerName,
-              deliveryLabel: widget.deliveryLabel,
-              onNotificationTap: widget.onNotificationTap,
-              onLocationTap: widget.onLocationTap,
-            ),
-            const SizedBox(height: 14),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: _FulfillmentSelector(
-                selected: widget.fulfillmentMethod,
-                onChanged: widget.onFulfillmentChanged,
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _handlePointerDown,
+        onPointerUp: _handlePointerUp,
+        onPointerCancel: _handlePointerUp,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _handleScrollNotification,
+          child: ListView(
+            key: const PageStorageKey('home-content'),
+            padding: const EdgeInsets.only(bottom: 116),
+            physics: const ClampingScrollPhysics(),
+            addAutomaticKeepAlives: false,
+            scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+            children: [
+              _HomeHeader(
+                customerName: widget.customerName,
+                deliveryLabel: widget.deliveryLabel,
+                onNotificationTap: widget.onNotificationTap,
+                onLocationTap: widget.onLocationTap,
               ),
-            ),
-            const SizedBox(height: 16),
-            _AutoRotatingHeroBanner(
-              imageCacheWidth: imageCacheWidth,
-              isHomeScrolling: _isHomeScrolling,
-            ),
-            const SizedBox(height: 22),
-            if (widget.deals.isNotEmpty) ...[
-              const _HomeSectionHeading(
-                'Featured Deals',
-                key: ValueKey('home-featured-deals-heading'),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: _bestSellerViewportHeight,
-                child: _BestSellerPosters(
-                  deals: widget.deals,
-                  onDealSelected: widget.onDealSelected,
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: _FulfillmentSelector(
+                  selected: widget.fulfillmentMethod,
+                  onChanged: widget.onFulfillmentChanged,
                 ),
               ),
-              const SizedBox(height: 26),
-            ],
-            if (widget.bestSellerBurgers.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              RepaintBoundary(
+                child: _AutoRotatingHeroBanner(
+                  imageCacheWidth: imageCacheWidth,
+                  isHomeScrolling: _isHomeScrolling,
+                ),
+              ),
+              const SizedBox(height: 22),
+              if (widget.deals.isNotEmpty) ...[
+                const _HomeSectionHeading(
+                  'Featured Deals',
+                  key: ValueKey('home-featured-deals-heading'),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: _bestSellerViewportHeight,
+                  child: _BestSellerPosters(
+                    deals: widget.deals,
+                    onDealSelected: widget.onDealSelected,
+                  ),
+                ),
+                const SizedBox(height: 26),
+              ],
+              if (widget.bestSellerBurgers.isNotEmpty) ...[
+                const _HomeSectionHeading(
+                  'Best Seller',
+                  key: ValueKey('home-best-seller-heading'),
+                ),
+                const SizedBox(height: 12),
+                _HomeMenuRow(
+                  items: widget.bestSellerBurgers,
+                  keyPrefix: 'home-best-seller',
+                  favourites: widget.favourites,
+                  onItemSelected: widget.onPizzaSelected,
+                  onFavourite: widget.onFavourite,
+                ),
+                const SizedBox(height: 26),
+              ],
               const _HomeSectionHeading(
-                'Best Seller',
-                key: ValueKey('home-best-seller-heading'),
+                'Pickup from Store',
+                key: ValueKey('home-pickup-store-heading'),
               ),
               const SizedBox(height: 12),
-              _HomeMenuRow(
-                items: widget.bestSellerBurgers,
-                keyPrefix: 'home-best-seller',
-                favourites: widget.favourites,
-                onItemSelected: widget.onPizzaSelected,
-                onFavourite: widget.onFavourite,
-              ),
-              const SizedBox(height: 26),
-            ],
-            const _HomeSectionHeading(
-              'Pickup from Store',
-              key: ValueKey('home-pickup-store-heading'),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Semantics(
-                image: true,
-                label: 'Order ahead and pick up from a Hungry Spot store',
-                child: Container(
-                  key: const ValueKey('home-pickup-store-poster'),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFF0ECEC)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.dark.withValues(alpha: .08),
-                        blurRadius: 18,
-                        offset: const Offset(0, 7),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Semantics(
+                  image: true,
+                  label: 'Order ahead and pick up from a Hungry Spot store',
+                  child: Container(
+                    key: const ValueKey('home-pickup-store-poster'),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFF0ECEC)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.dark.withValues(alpha: .08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 7),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: AspectRatio(
+                      aspectRatio: 1983 / 793,
+                      child: Image.asset(
+                        'assets/images/pickup_store.png',
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                        cacheWidth: imageCacheWidth,
                       ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: AspectRatio(
-                    aspectRatio: 1983 / 793,
-                    child: Image.asset(
-                      'assets/images/pickup_store.png',
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                      cacheWidth: imageCacheWidth,
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 26),
-            if (widget.pizzas.isNotEmpty) ...[
-              const _HomeSectionHeading(
-                'For the Love of Pizza \u{2764}\u{FE0F}',
-                key: ValueKey('home-pizza-heading'),
-              ),
-              const SizedBox(height: 12),
-              _HomeMenuRow(
-                items: widget.pizzas,
-                favourites: widget.favourites,
-                onItemSelected: widget.onPizzaSelected,
-                onFavourite: widget.onFavourite,
-              ),
-            ],
-            if (widget.topPicks.isNotEmpty) ...[
               const SizedBox(height: 26),
-              const _HomeSectionHeading(
-                'Top Picks',
-                key: ValueKey('home-top-picks-heading'),
-              ),
-              const SizedBox(height: 12),
-              _HomeMenuRow(
-                items: widget.topPicks,
-                keyPrefix: 'home-top-pick',
-                favourites: widget.favourites,
-                onItemSelected: widget.onPizzaSelected,
-                onFavourite: widget.onFavourite,
-              ),
-            ],
-            const SizedBox(height: 28),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Semantics(
-                image: true,
-                label: 'Hungry Spot fast delivery banner',
-                child: AspectRatio(
-                  key: const ValueKey('home-bottom-banner'),
-                  aspectRatio: 2048 / 683,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.asset(
-                      'assets/images/homepage_footer.png',
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
-                      cacheWidth: imageCacheWidth,
+              if (widget.pizzas.isNotEmpty) ...[
+                const _HomeSectionHeading(
+                  'For the Love of Pizza \u{2764}\u{FE0F}',
+                  key: ValueKey('home-pizza-heading'),
+                ),
+                const SizedBox(height: 12),
+                _HomeMenuRow(
+                  items: widget.pizzas,
+                  favourites: widget.favourites,
+                  onItemSelected: widget.onPizzaSelected,
+                  onFavourite: widget.onFavourite,
+                ),
+              ],
+              if (widget.topPicks.isNotEmpty) ...[
+                const SizedBox(height: 26),
+                const _HomeSectionHeading(
+                  'Top Picks',
+                  key: ValueKey('home-top-picks-heading'),
+                ),
+                const SizedBox(height: 12),
+                _HomeMenuRow(
+                  items: widget.topPicks,
+                  keyPrefix: 'home-top-pick',
+                  favourites: widget.favourites,
+                  onItemSelected: widget.onPizzaSelected,
+                  onFavourite: widget.onFavourite,
+                ),
+              ],
+              const SizedBox(height: 28),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Semantics(
+                  image: true,
+                  label: 'Hungry Spot fast delivery banner',
+                  child: AspectRatio(
+                    key: const ValueKey('home-bottom-banner'),
+                    aspectRatio: 2048 / 683,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset(
+                        'assets/images/homepage_footer.png',
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        cacheWidth: imageCacheWidth,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -442,9 +468,19 @@ class _AutoRotatingHeroBannerState extends State<_AutoRotatingHeroBanner>
   void _handleHomeScrollState() {
     if (widget.isHomeScrolling.value) {
       _autoSlideTimer?.cancel();
+      _stopActiveTransition();
     } else {
       _scheduleNextSlide();
     }
+  }
+
+  void _stopActiveTransition() {
+    if (!_controller.hasClients) return;
+    final page = _controller.page;
+    if (page == null) return;
+    final nearestPage = page.round();
+    if ((page - nearestPage).abs() < .001) return;
+    _controller.jumpToPage(nearestPage);
   }
 
   @override
