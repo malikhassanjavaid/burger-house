@@ -499,8 +499,9 @@ class RestaurantMenuCard extends StatelessWidget {
     final artwork = Image.asset(
       item.displayAssetPath,
       fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
+      filterQuality: compact ? FilterQuality.medium : FilterQuality.high,
       cacheWidth: imageCacheWidth,
+      gaplessPlayback: true,
       errorBuilder: (_, _, _) =>
           Center(child: Text(item.emoji, style: const TextStyle(fontSize: 66))),
     );
