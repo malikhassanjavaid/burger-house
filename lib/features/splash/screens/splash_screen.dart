@@ -17,52 +17,65 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  static const _splashDuration = Duration(milliseconds: 1800);
+  static const _startupTimeout = Duration(seconds: 6);
+
   Timer? _timer;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 2400), _continueFromSplash);
+    _timer = Timer(_splashDuration, _continueFromSplash);
   }
 
   Future<void> _continueFromSplash() async {
     final authService = AuthService();
-    if (!mounted) return;
+    try {
+      await _resolveDestination(authService).timeout(_startupTimeout);
+    } on TimeoutException {
+      _useStartupFallback(authService);
+    } catch (_) {
+      _useStartupFallback(authService);
+    }
+  }
+
+  Future<void> _resolveDestination(AuthService authService) async {
+    if (!mounted || _hasNavigated) return;
     if (authService.currentUser == null) {
       var hasCompletedOnboarding = false;
       try {
-        hasCompletedOnboarding = await OnboardingPreferences.hasCompleted();
+        hasCompletedOnboarding = await OnboardingPreferences.hasCompleted()
+            .timeout(const Duration(seconds: 2));
       } catch (_) {
-        // Fall back to onboarding when local preferences are unavailable.
+        // A fresh install should still continue when local storage is delayed.
       }
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(
-        context,
+      _replaceNamed(
         hasCompletedOnboarding ? AppRoutes.login : AppRoutes.onboarding,
       );
       return;
     }
-    bool verified;
-    try {
-      verified = await authService.hasVerifiedSession();
-    } catch (_) {
-      await authService.signOut();
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
-      return;
-    }
+
+    final verified = await authService.hasVerifiedSession().timeout(
+      const Duration(seconds: 4),
+      onTimeout: () => authService.currentUser?.emailVerified ?? false,
+    );
     if (!verified) {
-      await authService.signOut();
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
+      try {
+        await authService.signOut().timeout(const Duration(seconds: 2));
+      } catch (_) {
+        // Navigation must not wait forever for a provider sign-out.
+      }
+      _replaceNamed(AppRoutes.login);
       return;
     }
+
     try {
-      final location = await authService.getDeliveryLocation();
-      if (!mounted) return;
+      final location = await authService.getDeliveryLocation().timeout(
+        const Duration(seconds: 4),
+      );
       if (location == null) {
-        Navigator.pushReplacement(
-          context,
+        _replace(
           MaterialPageRoute(
             builder: (_) => const LocationSetupScreen(
               firstTime: true,
@@ -71,12 +84,32 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         );
       } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        _replaceNamed(AppRoutes.home);
       }
     } catch (_) {
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      // A verified customer can enter with cached authentication while
+      // Firestore is temporarily offline.
+      _replaceNamed(AppRoutes.home);
     }
+  }
+
+  void _useStartupFallback(AuthService authService) {
+    if (!mounted || _hasNavigated) return;
+    _replaceNamed(
+      authService.currentUser == null ? AppRoutes.onboarding : AppRoutes.home,
+    );
+  }
+
+  void _replaceNamed(String routeName) {
+    if (!mounted || _hasNavigated) return;
+    _hasNavigated = true;
+    Navigator.pushReplacementNamed(context, routeName);
+  }
+
+  void _replace(Route<void> route) {
+    if (!mounted || _hasNavigated) return;
+    _hasNavigated = true;
+    Navigator.pushReplacement(context, route);
   }
 
   @override
