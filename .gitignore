@@ -47,3 +47,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local Stripe client configuration. Never commit live/test keys.
+/stripe.config.json

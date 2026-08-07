@@ -10,17 +10,46 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function validCashPayment() {
+      return request.resource.data.fulfillmentMethod == 'delivery'
+        && request.resource.data.paymentMethod == 'cash_on_delivery'
+        && request.resource.data.paymentStatus == 'pending';
+    }
+
+    function validStripePayment() {
+      let paymentId = request.resource.data.paymentIntentId;
+      let paymentPath = /databases/$(database)/documents/stripePayments/$(paymentId);
+      return request.resource.data.paymentMethod == 'card_payment'
+        && request.resource.data.paymentStatus == 'paid'
+        && paymentId is string
+        && request.resource.data.paymentAmountCents is int
+        && request.resource.data.paymentAmountCents
+          == request.resource.data.total * 100
+        && exists(paymentPath)
+        && get(paymentPath).data.customerId == request.auth.uid
+        && get(paymentPath).data.status == 'succeeded'
+        && get(paymentPath).data.currency == 'usd'
+        && get(paymentPath).data.amountCents
+          == request.resource.data.paymentAmountCents
+        && get(paymentPath).data.fulfillmentMethod
+          == request.resource.data.fulfillmentMethod;
+    }
+
     match /users/{userId} {
       allow create, read, update: if ownsDocument(userId);
       allow delete: if false;
+    }
+
+    match /stripePayments/{paymentId} {
+      // Created only by the Admin SDK after Stripe confirms payment.
+      allow read, write: if false;
     }
 
     match /orders/{orderId} {
       allow create: if signedIn()
         && request.resource.data.customerId == request.auth.uid
         && request.resource.data.status == 'placed'
-        && request.resource.data.paymentMethod in ['cash_on_delivery', 'cash_at_pickup', 'card_payment', 'card_on_delivery', 'card_at_pickup']
-        && request.resource.data.paymentStatus == 'pending'
+        && (validCashPayment() || validStripePayment())
         && request.resource.data.orderNumber is string
         && request.resource.data.customerEmail is string
         && request.resource.data.receiverName is string
