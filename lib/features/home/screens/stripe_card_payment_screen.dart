@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_loader.dart';
@@ -22,281 +23,618 @@ class StripeCardPaymentScreen extends StatefulWidget {
 }
 
 class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
+  final _nameController = TextEditingController();
   final _paymentService = StripePaymentService();
-  bool _loading = false;
+  final _cardDetails = ValueNotifier<CardFieldInputDetails?>(null);
 
-  Future<void> _openPaymentSheet() async {
+  bool _loading = false;
+  bool _showErrors = false;
+
+  bool get _canSubmit =>
+      _nameController.text.trim().length >= 2 &&
+      (_cardDetails.value?.complete ?? false);
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _cardDetails.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pay() async {
     if (_loading) return;
+    FocusScope.of(context).unfocus();
+    if (!_canSubmit) {
+      setState(() => _showErrors = true);
+      return;
+    }
+
     setState(() => _loading = true);
     try {
-      final result = await _paymentService.pay(
+      final result = await _paymentService.payWithCard(
         amount: widget.amount,
         fulfillmentMethod: widget.fulfillmentMethod,
+        cardholderName: _nameController.text,
       );
       if (!mounted) return;
       Navigator.of(context).pop(result);
     } on StripePaymentException catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
-      if (!error.cancelled) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.message)));
-      }
+      if (!error.cancelled) _showError(error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The secure card form could not open.')),
-      );
+      _showError('The secure payment could not be completed. Try again.');
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: AppColors.redDark,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isPickup = widget.fulfillmentMethod.isPickup;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: AppLoadingOverlay(
-        loading: _loading,
-        semanticsLabel: 'Opening secure card payment',
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+    return AppLoadingOverlay(
+      loading: _loading,
+      semanticsLabel: 'Processing secure payment',
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Material(
-                      color: Colors.white,
-                      elevation: 4,
-                      shadowColor: const Color(0x22304A5C),
-                      borderRadius: BorderRadius.circular(14),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const SizedBox.square(
-                          dimension: 44,
-                          child: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: AppColors.red,
-                            size: 19,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Text(
-                      'Card payment',
-                      style: TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.5,
-                      ),
-                    ),
-                  ],
+                _Header(onBack: () => Navigator.of(context).pop()),
+                const SizedBox(height: 18),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _nameController,
+                  builder: (context, name, _) {
+                    return ValueListenableBuilder<CardFieldInputDetails?>(
+                      valueListenable: _cardDetails,
+                      builder: (context, details, _) {
+                        return _CardPreview(name: name.text, details: details);
+                      },
+                    );
+                  },
                 ),
-                const SizedBox(height: 28),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF23845),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33F23845),
-                        blurRadius: 24,
-                        offset: Offset(0, 12),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.lock_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          SizedBox(width: 7),
-                          Text(
-                            'STRIPE TEST MODE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: .8,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        '\$${widget.amount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w700,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 7),
-                      Text(
-                        isPickup
-                            ? 'Secure payment for store pickup'
-                            : 'Secure payment for delivery',
-                        style: const TextStyle(
-                          color: Color(0xFFFFE7E9),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'HUNGRY SPOT',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          Icon(
-                            Icons.credit_card_rounded,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 22),
+                const Text('Cardholder name', style: AppTypography.label),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  autofillHints: const [AutofillHints.creditCardName],
+                  textInputAction: TextInputAction.next,
+                  decoration: _nameDecoration(),
                 ),
-                const SizedBox(height: 28),
-                const Text(
-                  'Test card details',
-                  style: TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _nameController,
+                  builder: (context, name, _) {
+                    if (!_showErrors || name.text.trim().length >= 2) {
+                      return const SizedBox.shrink();
+                    }
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 7),
+                      child: _FieldError('Enter the cardholder name.'),
+                    );
+                  },
                 ),
-                const SizedBox(height: 12),
-                const _TestDetailRow(
-                  icon: Icons.numbers_rounded,
-                  label: 'Card number',
-                  value: '4242 4242 4242 4242',
+                const SizedBox(height: 16),
+                const Text('Card details', style: AppTypography.label),
+                const SizedBox(height: 8),
+                _StableStripeCardField(
+                  details: _cardDetails,
+                  showError: _showErrors,
+                  onCompleted: () {
+                    if (mounted) setState(() => _showErrors = false);
+                  },
                 ),
-                const _TestDetailRow(
-                  icon: Icons.calendar_today_rounded,
-                  label: 'Expiry',
-                  value: 'Any future date',
-                ),
-                const _TestDetailRow(
-                  icon: Icons.password_rounded,
-                  label: 'CVC and ZIP',
-                  value: 'Any valid values',
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF4F5),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.verified_user_outlined,
-                        color: AppColors.red,
-                        size: 20,
+                ValueListenableBuilder<CardFieldInputDetails?>(
+                  valueListenable: _cardDetails,
+                  builder: (context, details, _) {
+                    if (!_showErrors || (details?.complete ?? false)) {
+                      return const SizedBox.shrink();
+                    }
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 7),
+                      child: _FieldError(
+                        'Enter a complete card number, expiry date and CVC.',
                       ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Card details are collected by Stripe and never stored in Hungry Spot.',
-                          style: TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 11,
-                            height: 1.35,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 14),
-                AppPrimaryButton(
-                  label: StripePaymentService.isConfigured
-                      ? 'OPEN SECURE CARD FORM'
-                      : 'STRIPE SETUP REQUIRED',
-                  onPressed: _loading ? null : _openPaymentSheet,
-                  height: 52,
-                  borderRadius: 16,
-                ),
+                const _SecurityNote(),
+                const SizedBox(height: 12),
+                const _TestCardHint(),
+                const SizedBox(height: 14),
               ],
             ),
           ),
+        ),
+        bottomNavigationBar: _PaymentActionBar(
+          amount: widget.amount,
+          loading: _loading,
+          onPay: _pay,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _nameDecoration() {
+    OutlineInputBorder border(Color color, [double width = 1]) {
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: color, width: width),
+      );
+    }
+
+    return InputDecoration(
+      hintText: 'Name on card',
+      prefixIcon: const Icon(
+        Icons.person_outline_rounded,
+        size: 20,
+        color: AppColors.red,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: border(const Color(0xFFE4E7EC)),
+      enabledBorder: border(const Color(0xFFE4E7EC)),
+      focusedBorder: border(AppColors.red, 1.5),
+    );
+  }
+}
+
+class _StableStripeCardField extends StatelessWidget {
+  const _StableStripeCardField({
+    required this.details,
+    required this.showError,
+    required this.onCompleted,
+  });
+
+  final ValueNotifier<CardFieldInputDetails?> details;
+  final bool showError;
+  final VoidCallback onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: showError && !(details.value?.complete ?? false)
+              ? AppColors.red
+              : const Color(0xFFE4E7EC),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F182230),
+            blurRadius: 18,
+            offset: Offset(0, 7),
+          ),
+        ],
+      ),
+      child: CardField(
+        key: const ValueKey('hungry-spot-stripe-card-field'),
+        enablePostalCode: false,
+        autofocus: false,
+        dangerouslyGetFullCardDetails: false,
+        dangerouslyUpdateFullCardDetails: false,
+        style: const TextStyle(
+          color: AppColors.dark,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: const InputDecoration(
+          hintText: 'Card number',
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 13),
+        ),
+        onCardChanged: (value) {
+          final wasComplete = details.value?.complete ?? false;
+          details.value = value;
+          if (showError && !wasComplete && (value?.complete ?? false)) {
+            onCompleted();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _PaymentActionBar extends StatelessWidget {
+  const _PaymentActionBar({
+    required this.amount,
+    required this.loading,
+    required this.onPay,
+  });
+
+  final double amount;
+  final bool loading;
+  final VoidCallback onPay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 14,
+      shadowColor: const Color(0x2417222D),
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(18, 10, 18, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('TOTAL', style: AppTypography.caption),
+                  const SizedBox(height: 2),
+                  Text(
+                    '\$${amount.toStringAsFixed(2)}',
+                    style: AppTypography.totalPrice,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: AppPrimaryButton(
+                label: 'PAY & CONTINUE',
+                icon: Icons.arrow_forward_rounded,
+                height: 52,
+                borderRadius: 16,
+                isLoading: loading,
+                onPressed: loading ? null : onPay,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _TestDetailRow extends StatelessWidget {
-  const _TestDetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+class _Header extends StatelessWidget {
+  const _Header({required this.onBack});
 
-  final IconData icon;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Material(
+          color: Colors.white,
+          elevation: 3,
+          shadowColor: const Color(0x1A17222D),
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: onBack,
+            borderRadius: BorderRadius.circular(14),
+            child: const SizedBox.square(
+              dimension: 44,
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: AppColors.red,
+                size: 18,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        const Expanded(
+          child: Text('Add card', style: AppTypography.pageHeader),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.blush,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Text(
+            'TEST MODE',
+            style: TextStyle(
+              color: AppColors.redDark,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .7,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CardPreview extends StatelessWidget {
+  const _CardPreview({required this.name, required this.details});
+
+  final String name;
+  final CardFieldInputDetails? details;
+
+  @override
+  Widget build(BuildContext context) {
+    final month = details?.expiryMonth;
+    final yearText = details?.expiryYear?.toString() ?? '';
+    final expiry = month == null || yearText.length < 2
+        ? 'MM/YY'
+        : '${month.toString().padLeft(2, '0')}/${yearText.substring(yearText.length - 2)}';
+    final brand = (details?.brand ?? 'debit').toUpperCase();
+    final displayName = name.trim().isEmpty
+        ? 'YOUR NAME'
+        : name.trim().toUpperCase();
+
+    return AspectRatio(
+      aspectRatio: 1.68,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFB10E21), AppColors.red, Color(0xFFFF6A63)],
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x42E92539),
+              blurRadius: 28,
+              offset: Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            const Positioned(right: -34, top: -46, child: _CardGlow(size: 160)),
+            const Positioned(
+              left: -65,
+              bottom: -92,
+              child: _CardGlow(size: 190),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      brand == 'UNKNOWN' ? 'DEBIT' : brand,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(
+                      Icons.restaurant_rounded,
+                      color: Color(0xFFFFCD32),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 7),
+                    const Text(
+                      'HUNGRY SPOT',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 31,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD45B),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFF4B926)),
+                      ),
+                      child: const Icon(
+                        Icons.grid_view_rounded,
+                        color: Color(0xFF9C6A00),
+                        size: 20,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.contactless_rounded, color: Colors.white),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  '\u2022\u2022\u2022\u2022  \u2022\u2022\u2022\u2022  \u2022\u2022\u2022\u2022  ${details?.last4 ?? '\u2022\u2022\u2022\u2022'}',
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.7,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: _CardDatum(
+                        label: 'CARDHOLDER',
+                        value: displayName,
+                      ),
+                    ),
+                    _CardDatum(label: 'EXPIRES', value: expiry),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CardDatum extends StatelessWidget {
+  const _CardDatum({required this.label, required this.value});
+
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFC),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: const Color(0xFFE9ECF1)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xCCFFFFFF),
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+            letterSpacing: .8,
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.red, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CardGlow extends StatelessWidget {
+  const _CardGlow({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0x22FFFFFF), width: 24),
+      ),
+    );
+  }
+}
+
+class _FieldError extends StatelessWidget {
+  const _FieldError(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      style: const TextStyle(
+        color: AppColors.redDark,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _SecurityNote extends StatelessWidget {
+  const _SecurityNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.lock_outline_rounded, color: AppColors.red, size: 19),
+          SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              'Encrypted by Stripe. Hungry Spot never stores your full card number or CVC.',
+              style: AppTypography.caption,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TestCardHint extends StatelessWidget {
+  const _TestCardHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E3),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFE0A0)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.science_outlined, color: Color(0xFFC57B00), size: 18),
+          SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              'Demo card: 4242 4242 4242 4242 \u2022 any future expiry \u2022 any CVC',
+              style: TextStyle(
+                color: Color(0xFF835700),
+                fontSize: 10.5,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              value,
-              style: const TextStyle(
-                color: AppColors.dark,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
