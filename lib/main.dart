@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,26 @@ Future<void> main() async {
   // ready before we await Firebase.initializeApp().
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Firebase Functions requires the Blaze plan only when the backend is
+  // deployed. For local Stripe demos, route callable functions to the local
+  // emulator instead. This is opt-in so normal builds keep using Firebase.
+  const useFunctionsEmulator = bool.fromEnvironment(
+    'USE_FIREBASE_EMULATORS',
+    defaultValue: false,
+  );
+  if (useFunctionsEmulator) {
+    const emulatorHost = String.fromEnvironment(
+      'FUNCTIONS_EMULATOR_HOST',
+      defaultValue: '127.0.0.1',
+    );
+    const emulatorPort = int.fromEnvironment(
+      'FUNCTIONS_EMULATOR_PORT',
+      defaultValue: 5001,
+    );
+    FirebaseFunctions.instance.useFunctionsEmulator(emulatorHost, emulatorPort);
+  }
+
   const stripePublishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY');
   if (stripePublishableKey.isNotEmpty) {
     Stripe.publishableKey = stripePublishableKey;
