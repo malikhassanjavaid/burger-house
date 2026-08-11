@@ -24,6 +24,8 @@ class StripeCardPaymentScreen extends StatefulWidget {
 
 class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
   final _nameController = TextEditingController();
+  final _nameFocusNode = FocusNode();
+  final _cardController = CardEditController();
   final _paymentService = StripePaymentService();
   final _cardDetails = ValueNotifier<CardFieldInputDetails?>(null);
 
@@ -37,6 +39,8 @@ class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFocusNode.dispose();
+    _cardController.dispose();
     _cardDetails.dispose();
     super.dispose();
   }
@@ -124,9 +128,18 @@ class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _nameController,
+                  focusNode: _nameFocusNode,
                   textCapitalization: TextCapitalization.words,
-                  autofillHints: const [AutofillHints.creditCardName],
-                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    _nameFocusNode.unfocus();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _cardController.focus();
+                    });
+                  },
+                  onTapOutside: (_) => _nameFocusNode.unfocus(),
                   decoration: _nameDecoration(),
                 ),
                 ValueListenableBuilder<TextEditingValue>(
@@ -145,8 +158,10 @@ class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
                 const Text('Card details', style: AppTypography.label),
                 const SizedBox(height: 8),
                 _StableStripeCardField(
+                  controller: _cardController,
                   details: _cardDetails,
                   showError: _showErrors,
+                  onInteraction: _nameFocusNode.unfocus,
                   onCompleted: () {
                     if (mounted) setState(() => _showErrors = false);
                   },
@@ -210,13 +225,17 @@ class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
 
 class _StableStripeCardField extends StatelessWidget {
   const _StableStripeCardField({
+    required this.controller,
     required this.details,
     required this.showError,
+    required this.onInteraction,
     required this.onCompleted,
   });
 
+  final CardEditController controller;
   final ValueNotifier<CardFieldInputDetails?> details;
   final bool showError;
+  final VoidCallback onInteraction;
   final VoidCallback onCompleted;
 
   @override
@@ -241,8 +260,12 @@ class _StableStripeCardField extends StatelessWidget {
       ),
       child: CardField(
         key: const ValueKey('hungry-spot-stripe-card-field'),
+        controller: controller,
         enablePostalCode: false,
         autofocus: false,
+        onFocus: (focusedField) {
+          if (focusedField != null) onInteraction();
+        },
         dangerouslyGetFullCardDetails: false,
         dangerouslyUpdateFullCardDetails: false,
         style: const TextStyle(
@@ -356,22 +379,6 @@ class _Header extends StatelessWidget {
         const Expanded(
           child: Text('Add card', style: AppTypography.pageHeader),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.blush,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text(
-            'TEST MODE',
-            style: TextStyle(
-              color: AppColors.redDark,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: .7,
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -400,28 +407,12 @@ class _CardPreview extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFB10E21), AppColors.red, Color(0xFFFF6A63)],
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x42E92539),
-              blurRadius: 28,
-              offset: Offset(0, 14),
-            ),
-          ],
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: Stack(
           children: [
-            const Positioned(right: -34, top: -46, child: _CardGlow(size: 160)),
-            const Positioned(
-              left: -65,
-              bottom: -92,
-              child: _CardGlow(size: 190),
-            ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -430,7 +421,7 @@ class _CardPreview extends StatelessWidget {
                     Text(
                       brand == 'UNKNOWN' ? 'DEBIT' : brand,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF171A21),
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1,
@@ -439,14 +430,14 @@ class _CardPreview extends StatelessWidget {
                     const Spacer(),
                     const Icon(
                       Icons.restaurant_rounded,
-                      color: Color(0xFFFFCD32),
+                      color: AppColors.red,
                       size: 20,
                     ),
                     const SizedBox(width: 7),
                     const Text(
                       'HUNGRY SPOT',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF171A21),
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
@@ -471,7 +462,10 @@ class _CardPreview extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    const Icon(Icons.contactless_rounded, color: Colors.white),
+                    const Icon(
+                      Icons.contactless_rounded,
+                      color: Color(0xFF171A21),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -479,7 +473,7 @@ class _CardPreview extends StatelessWidget {
                   '\u2022\u2022\u2022\u2022  \u2022\u2022\u2022\u2022  \u2022\u2022\u2022\u2022  ${details?.last4 ?? '\u2022\u2022\u2022\u2022'}',
                   maxLines: 1,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF171A21),
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.7,
@@ -522,7 +516,7 @@ class _CardDatum extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xCCFFFFFF),
+            color: Color(0xFF6B7280),
             fontSize: 8,
             fontWeight: FontWeight.w700,
             letterSpacing: .8,
@@ -534,30 +528,12 @@ class _CardDatum extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: Colors.white,
+            color: Color(0xFF171A21),
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CardGlow extends StatelessWidget {
-  const _CardGlow({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x22FFFFFF), width: 24),
-      ),
     );
   }
 }
