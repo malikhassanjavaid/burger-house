@@ -7,6 +7,15 @@
     "source": "functions",
     "runtime": "nodejs20"
   },
+  "emulators": {
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true
+    }
+  },
   "flutter": {
     "platforms": {
       "android": {
