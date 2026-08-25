@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../auth/services/auth_service.dart';
@@ -90,11 +91,10 @@ class _LocationSetupScreenState extends State<LocationSetupScreen> {
       }
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(friendlyAuthError(error)),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppNotification.show(
+        context,
+        message: friendlyAuthError(error),
+        tone: AppNotificationTone.error,
       );
     } finally {
       if (mounted) setState(() => _saving = false);

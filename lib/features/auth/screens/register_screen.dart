@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../../core/widgets/app_notification.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_form_widgets.dart';
 import '../widgets/auth_loading_overlay.dart';
@@ -55,11 +56,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await _showVerificationSent();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(friendlyAuthError(error)),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppNotification.show(
+        context,
+        message: friendlyAuthError(error),
+        tone: AppNotificationTone.error,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

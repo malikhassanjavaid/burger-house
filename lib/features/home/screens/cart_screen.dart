@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
@@ -108,21 +109,18 @@ class _CartScreenState extends State<CartScreen> {
       _refreshRecommendations();
     });
     _notifyHome();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${removed.menuItem.name} removed'),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'UNDO',
-          onPressed: () {
-            setState(() {
-              _items.insert(index, removed);
-              _refreshRecommendations();
-            });
-            _notifyHome();
-          },
-        ),
-      ),
+    AppNotification.show(
+      context,
+      message: '${removed.menuItem.name} removed',
+      actionLabel: 'UNDO',
+      onAction: () {
+        if (!mounted) return;
+        setState(() {
+          _items.insert(index.clamp(0, _items.length), removed);
+          _refreshRecommendations();
+        });
+        _notifyHome();
+      },
     );
   }
 
@@ -279,18 +277,16 @@ class _CartScreenState extends State<CartScreen> {
     if (!mounted || result == null) return;
     if (result == 'BURGER10') {
       setState(() => _couponCode = result);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('BURGER10 applied — you saved 10%!'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppNotification.show(
+        context,
+        message: 'BURGER10 applied — you saved 10%!',
+        tone: AppNotificationTone.success,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('That coupon code is not valid.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppNotification.show(
+        context,
+        message: 'That coupon code is not valid.',
+        tone: AppNotificationTone.error,
       );
     }
   }

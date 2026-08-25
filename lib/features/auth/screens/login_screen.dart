@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../home/screens/home_screen.dart';
 import '../../location/screens/location_setup_screen.dart';
@@ -48,11 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (isSignInCredentialError(error)) {
         await _showAccountHelp(error);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(friendlyAuthError(error)),
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppNotification.show(
+          context,
+          message: friendlyAuthError(error),
+          tone: AppNotificationTone.error,
         );
       }
     } finally {
@@ -82,19 +82,17 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _password.text,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A new verification email has been sent.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppNotification.show(
+        context,
+        message: 'A new verification email has been sent.',
+        tone: AppNotificationTone.success,
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(friendlyAuthError(error)),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppNotification.show(
+        context,
+        message: friendlyAuthError(error),
+        tone: AppNotificationTone.error,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

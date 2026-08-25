@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/auth_layout.dart';
 import '../services/auth_service.dart';
@@ -30,17 +31,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await _authService.sendPasswordResetEmail(_email.text);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset email sent. Check your inbox.'),
-        ),
+      AppNotification.show(
+        context,
+        message: 'Password reset email sent. Check your inbox.',
+        tone: AppNotificationTone.success,
       );
       Navigator.pop(context);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      AppNotification.show(
         context,
-      ).showSnackBar(SnackBar(content: Text(friendlyAuthError(error))));
+        message: friendlyAuthError(error),
+        tone: AppNotificationTone.error,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

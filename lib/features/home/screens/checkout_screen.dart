@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../location/models/delivery_location.dart';
@@ -333,16 +334,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final message = error.code == 'permission-denied'
           ? 'Firestore rules do not allow this order yet.'
           : error.message ?? 'Firebase could not place the order.';
-      ScaffoldMessenger.of(
+      AppNotification.show(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+        message: message,
+        tone: AppNotificationTone.error,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _isPlacingOrder = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('The order could not be placed. Please try again.'),
-        ),
+      AppNotification.show(
+        context,
+        message: 'The order could not be placed. Please try again.',
+        tone: AppNotificationTone.error,
       );
     }
   }

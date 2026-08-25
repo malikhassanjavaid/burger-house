@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../models/fulfillment_method.dart';
@@ -74,24 +75,11 @@ class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline_rounded, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: AppColors.redDark,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      );
+    AppNotification.show(
+      context,
+      message: message,
+      tone: AppNotificationTone.error,
+    );
   }
 
   @override
