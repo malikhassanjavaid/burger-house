@@ -43,9 +43,17 @@ dependencies:
   latlong2: ^0.10.1
   google_sign_in: ^7.2.0
   shared_preferences: ^2.5.5
-  flutter_stripe: ^13.1.0
+  # Newer releases used by this app contain an Android focus regression that
+  # can leave the keyboard attached to a completed Flutter TextField. Keep the
+  # pre-regression package set together until flutter-stripe#2364 is fixed.
+  flutter_stripe: 12.1.1
   cloud_functions: ^6.3.6
   http: ^1.6.0
+
+dependency_overrides:
+  stripe_android: 12.1.0
+  stripe_ios: 12.1.0
+  stripe_platform_interface: 12.1.1
 
 dev_dependencies:
   flutter_test:
