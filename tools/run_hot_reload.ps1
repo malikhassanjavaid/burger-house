@@ -10,12 +10,22 @@ $adb = Join-Path $env:LOCALAPPDATA "Android\Sdk\platform-tools\adb.exe"
 $apk = Join-Path $projectRoot "build\app\outputs\flutter-apk\app-debug.apk"
 $stripeConfig = Join-Path $projectRoot "stripe.config.json"
 $functionsSecret = Join-Path $projectRoot "functions\.secret.local"
+$firebaseNodeHelper = Join-Path $PSScriptRoot "firebase_node_runtime.ps1"
+$firebaseProcessHelper = Join-Path $PSScriptRoot "firebase_process_launcher.ps1"
+$androidPluginCacheHelper = Join-Path $PSScriptRoot "android_plugin_cache.ps1"
+$pluginMetadata = Join-Path $projectRoot ".flutter-plugins-dependencies"
+$pluginFingerprint = Join-Path $projectRoot ".dart_tool\android-plugin-fingerprint.txt"
+$projectFirebaseNode = Join-Path $projectRoot ".dart_tool\firebase-node-v22\node.exe"
 $emulatorOutLog = Join-Path $projectRoot ".dart_tool\stripe-functions-emulator.out.log"
 $emulatorErrorLog = Join-Path $projectRoot ".dart_tool\stripe-functions-emulator.error.log"
 $packageName = "com.example.flutter_application_1"
 $activityName = "$packageName/.MainActivity"
 $functionsPort = 5001
 $stripeFunctionUrl = "http://127.0.0.1:$functionsPort/burger-house-80541/us-central1/createPaymentIntent"
+
+. $firebaseNodeHelper
+. $firebaseProcessHelper
+. $androidPluginCacheHelper
 
 function Test-LocalPort {
     param([int]$Port)
@@ -192,6 +202,13 @@ if (-not (Test-StripeFunctions)) {
         throw "Firebase CLI was not found. Install it with: npm install -g firebase-tools"
     }
 
+    $hostNodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
+    $firebaseNode = Resolve-FirebaseNodeRuntime -CandidatePaths @(
+        $projectFirebaseNode
+        if ($null -ne $hostNodeCommand) { $hostNodeCommand.Source }
+    )
+    $firebaseEntryPoint = Resolve-FirebaseCliEntryPoint -ShimPath $firebaseCommand.Source
+
     New-Item -ItemType Directory -Path (Split-Path -Parent $emulatorOutLog) -Force | Out-Null
     Remove-Item -LiteralPath $emulatorOutLog -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $emulatorErrorLog -Force -ErrorAction SilentlyContinue
@@ -199,13 +216,13 @@ if (-not (Test-StripeFunctions)) {
     $env:FUNCTIONS_DISCOVERY_TIMEOUT = "60"
 
     Write-Host "Starting the local Stripe payment function..." -ForegroundColor Cyan
-    Start-Process `
-        -FilePath $firebaseCommand.Source `
-        -ArgumentList @("emulators:start", "--only", "functions", "--project", "burger-house-80541") `
-        -WorkingDirectory $projectRoot `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $emulatorOutLog `
-        -RedirectStandardError $emulatorErrorLog | Out-Null
+    Start-FirebaseFunctionsEmulator `
+        -NodePath $firebaseNode `
+        -FirebaseEntryPoint $firebaseEntryPoint `
+        -ProjectRoot $projectRoot `
+        -ProjectId "burger-house-80541" `
+        -StandardOutputLog $emulatorOutLog `
+        -StandardErrorLog $emulatorErrorLog | Out-Null
 
     $emulatorReady = $false
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
@@ -230,24 +247,37 @@ Set-StripeReverseTunnel -Id $DeviceId
 Write-Host "Stripe test connection verified on the phone." -ForegroundColor Green
 
 if ($ReuseBuiltApk) {
-    if (-not (Test-Path -LiteralPath $apk)) {
-        throw "No existing debug APK was found. Run this script once without -ReuseBuiltApk."
-    }
+    Write-Host "Refreshing the APK so the current Stripe test configuration is embedded..." -ForegroundColor Yellow
+}
 
-    Write-Host "Reusing the completed Hungry Spot debug APK..." -ForegroundColor Cyan
+Write-Host "Refreshing Flutter dependency metadata..." -ForegroundColor Cyan
+& flutter pub get
+if ($LASTEXITCODE -ne 0) {
+    throw "Flutter dependency resolution failed."
 }
-else {
-    Write-Host "Building the Hungry Spot debug APK with Stripe test mode..." -ForegroundColor Cyan
-    & flutter build apk `
-        --debug `
-        "--dart-define-from-file=$stripeConfig" `
-        --dart-define=USE_FIREBASE_EMULATORS=true `
-        --dart-define=FUNCTIONS_EMULATOR_HOST=127.0.0.1 `
-        "--dart-define=FUNCTIONS_EMULATOR_PORT=$functionsPort"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Flutter build failed."
-    }
+
+$refreshAndroidPlugins = Test-AndroidPluginRefreshRequired `
+    -PluginMetadataPath $pluginMetadata `
+    -FingerprintPath $pluginFingerprint
+$currentAndroidPluginFingerprint = Get-AndroidPluginFingerprint -PluginMetadataPath $pluginMetadata
+if ($refreshAndroidPlugins) {
+    Write-Host "Android plugin versions changed. Clearing stale Gradle plugin outputs once..." -ForegroundColor Yellow
+    Clear-AndroidGradleOutputs -ProjectRoot $projectRoot
 }
+
+Write-Host "Building the Hungry Spot debug APK with Stripe test mode..." -ForegroundColor Cyan
+& flutter build apk `
+    --debug `
+    "--dart-define-from-file=$stripeConfig" `
+    --dart-define=USE_FIREBASE_EMULATORS=true `
+    --dart-define=FUNCTIONS_EMULATOR_HOST=127.0.0.1 `
+    "--dart-define=FUNCTIONS_EMULATOR_PORT=$functionsPort"
+if ($LASTEXITCODE -ne 0) {
+    throw "Flutter build failed."
+}
+Save-AndroidPluginFingerprint `
+    -Fingerprint $currentAndroidPluginFingerprint `
+    -FingerprintPath $pluginFingerprint
 
 $phoneReady = $false
 for ($attempt = 0; $attempt -lt 20; $attempt++) {
