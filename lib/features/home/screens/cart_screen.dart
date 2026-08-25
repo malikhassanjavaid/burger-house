@@ -19,6 +19,8 @@ const _cartBlue = Color(0xFF1597E5);
 const _cartInk = Color(0xFF15161C);
 const _cartMuted = Color(0xFF858C98);
 
+enum CartScreenExit { exploreMenu }
+
 class CartScreen extends StatefulWidget {
   const CartScreen({
     super.key,
@@ -322,7 +324,11 @@ class _CartScreenState extends State<CartScreen> {
     return Scaffold(
       backgroundColor: _cartBg,
       body: _items.isEmpty
-          ? _EmptyCart(onBack: () => Navigator.pop(context))
+          ? _EmptyCart(
+              onBack: () => Navigator.pop(context),
+              onExploreMenu: () =>
+                  Navigator.pop(context, CartScreenExit.exploreMenu),
+            )
           : Column(
               children: [
                 _CartHeader(
@@ -390,7 +396,8 @@ class _CartScreenState extends State<CartScreen> {
                         icon: Icons.menu_book_outlined,
                         title: 'Explore Menu',
                         subtitle: 'Add more items in your cart',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () =>
+                            Navigator.pop(context, CartScreenExit.exploreMenu),
                       ),
                       const SizedBox(height: 12),
                       _ActionCard(
@@ -1124,9 +1131,10 @@ class _CartBottomBar extends StatelessWidget {
 }
 
 class _EmptyCart extends StatelessWidget {
-  const _EmptyCart({required this.onBack});
+  const _EmptyCart({required this.onBack, required this.onExploreMenu});
 
   final VoidCallback onBack;
+  final VoidCallback onExploreMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -1215,7 +1223,7 @@ class _EmptyCart extends StatelessWidget {
                           constraints: const BoxConstraints(maxWidth: 320),
                           child: AppPrimaryButton(
                             label: 'Explore Menu',
-                            onPressed: onBack,
+                            onPressed: onExploreMenu,
                           ),
                         ),
                       ],

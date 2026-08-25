@@ -13,7 +13,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     final controller = TextEditingController();
+    final searchFocusNode = FocusNode();
     addTearDown(controller.dispose);
+    addTearDown(searchFocusNode.dispose);
     var selectedCategory = 'Burgers';
 
     await tester.pumpWidget(
@@ -24,6 +26,7 @@ void main() {
               builder: (context, setState) {
                 return RestaurantMenuTab(
                   controller: controller,
+                  searchFocusNode: searchFocusNode,
                   searchText: '',
                   selectedCategory: selectedCategory,
                   items: sampleMenu,
@@ -35,6 +38,9 @@ void main() {
                   },
                   onOpenItem: (_) {},
                   onFavourite: (_) {},
+                  cartItems: const [],
+                  onBack: () {},
+                  onViewCart: () {},
                 );
               },
             ),
@@ -75,7 +81,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     final controller = TextEditingController();
+    final searchFocusNode = FocusNode();
     addTearDown(controller.dispose);
+    addTearDown(searchFocusNode.dispose);
     var query = '';
 
     await tester.pumpWidget(
@@ -92,6 +100,7 @@ void main() {
                 }).toList();
                 return RestaurantMenuTab(
                   controller: controller,
+                  searchFocusNode: searchFocusNode,
                   searchText: query,
                   selectedCategory: 'Burgers',
                   items: matches,
@@ -103,6 +112,9 @@ void main() {
                   onCategorySelected: (_) {},
                   onOpenItem: (_) {},
                   onFavourite: (_) {},
+                  cartItems: const [],
+                  onBack: () {},
+                  onViewCart: () {},
                 );
               },
             ),
@@ -110,6 +122,9 @@ void main() {
         ),
       ),
     );
+
+    await tester.tap(find.byTooltip('Search menu'));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'oreo');
     await tester.pump();

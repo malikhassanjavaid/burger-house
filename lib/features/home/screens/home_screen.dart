@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -15,6 +14,7 @@ import '../models/cart_item.dart';
 import '../models/fulfillment_method.dart';
 import '../models/menu_item.dart';
 import '../services/customer_data_service.dart';
+import '../widgets/first_order_offer_dialog.dart';
 import '../widgets/home_hero_carousel.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/restaurant_menu_tab.dart';
@@ -40,6 +40,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
+  final _menuSearchFocusNode = FocusNode();
   final _authService = AuthService();
   final _customerDataService = CustomerDataService();
   FulfillmentMethod _fulfillmentMethod = FulfillmentMethod.delivery;
@@ -105,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
       barrierLabel: 'Close first order offer',
       barrierColor: Colors.black.withValues(alpha: .64),
       transitionDuration: const Duration(milliseconds: 240),
-      pageBuilder: (_, _, _) => const _FirstOrderOfferDialog(),
+      pageBuilder: (_, _, _) => const FirstOrderOfferDialog(),
       transitionBuilder: (_, animation, _, child) {
         final curved = CurvedAnimation(
           parent: animation,
@@ -235,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _menuSearchFocusNode.dispose();
     super.dispose();
   }
 
@@ -323,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openCart() async {
-    await Navigator.push<void>(
+    final exit = await Navigator.push<CartScreenExit>(
       context,
       MaterialPageRoute(
         builder: (_) => CartScreen(
@@ -335,6 +337,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+    if (exit == CartScreenExit.exploreMenu && mounted) {
+      setState(() => _selectedTab = 2);
+      _menuSearchFocusNode.unfocus();
+    }
   }
 
   Future<void> _openProfileDetails() async {
@@ -432,6 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       2: RestaurantMenuTab(
         controller: _searchController,
+        searchFocusNode: _menuSearchFocusNode,
         searchText: _searchText,
         selectedCategory: _selectedMenuCategory,
         items: _filteredItems,
@@ -445,6 +452,12 @@ class _HomeScreenState extends State<HomeScreen> {
             setState(() => _selectedMenuCategory = category),
         onOpenItem: _openDetails,
         onFavourite: _toggleFavourite,
+        cartItems: _activeCartItems,
+        onBack: () {
+          _menuSearchFocusNode.unfocus();
+          setState(() => _selectedTab = 0);
+        },
+        onViewCart: _openCart,
       ),
       3: _SavedTab(
         items: sampleMenu
@@ -472,100 +485,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const _CustomerStateLoading()
             : pages[_selectedTab] ?? pages[0]!,
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_selectedTab == 4) ProfileLogoutBar(onSignOut: _signOut),
-          _MinimalBottomBar(
-            selectedIndex: _selectedTab,
-            cartCount: _cartCount,
-            onSelected: (index) {
-              if (index == 1) {
-                _openCart();
-              } else {
-                setState(() => _selectedTab = index);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FirstOrderOfferDialog extends StatelessWidget {
-  const _FirstOrderOfferDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      minimum: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const posterAspectRatio = 803 / 1559;
-          final posterWidth = math.min(
-            300.0,
-            math.min(
-              constraints.maxWidth * .86,
-              constraints.maxHeight * posterAspectRatio * .82,
-            ),
-          );
-          final cacheWidth =
-              (posterWidth * MediaQuery.devicePixelRatioOf(context)).round();
-
-          return Center(
-            child: Material(
-              color: Colors.transparent,
-              child: SizedBox(
-                width: posterWidth,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Semantics(
-                      image: true,
-                      label: 'Ten percent off your first Hungry Spot order',
-                      child: Image.asset(
-                        'assets/images/first_order_offer_v2.png',
-                        width: posterWidth,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                        cacheWidth: cacheWidth,
-                      ),
-                    ),
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Semantics(
-                        button: true,
-                        label: 'Close offer',
-                        child: Material(
-                          color: const Color(0xD922252A),
-                          shape: const CircleBorder(),
-                          elevation: 3,
-                          child: InkWell(
-                            key: const ValueKey('first-order-offer-close'),
-                            customBorder: const CircleBorder(),
-                            onTap: () => Navigator.pop(context),
-                            child: const SizedBox(
-                              width: 34,
-                              height: 34,
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+      bottomNavigationBar: _selectedTab == 2
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_selectedTab == 4) ProfileLogoutBar(onSignOut: _signOut),
+                _MinimalBottomBar(
+                  selectedIndex: _selectedTab,
+                  cartCount: _cartCount,
+                  onSelected: (index) {
+                    if (index == 1) {
+                      _openCart();
+                    } else {
+                      setState(() => _selectedTab = index);
+                    }
+                  },
                 ),
-              ),
+              ],
             ),
-          );
-        },
-      ),
     );
   }
 }

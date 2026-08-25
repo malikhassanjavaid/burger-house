@@ -4,16 +4,20 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../models/cart_item.dart';
 import '../models/menu_item.dart';
+import 'menu_cart_summary_bar.dart';
+import 'menu_page_header.dart';
 
 const _menuBackground = Colors.white;
 const _menuBorder = Color(0xFFE4EAF0);
 const _menuMuted = Color(0xFF737D8B);
 
-class RestaurantMenuTab extends StatelessWidget {
+class RestaurantMenuTab extends StatefulWidget {
   const RestaurantMenuTab({
     super.key,
     required this.controller,
+    required this.searchFocusNode,
     required this.searchText,
     required this.selectedCategory,
     required this.items,
@@ -23,9 +27,13 @@ class RestaurantMenuTab extends StatelessWidget {
     required this.onCategorySelected,
     required this.onOpenItem,
     required this.onFavourite,
+    required this.cartItems,
+    required this.onBack,
+    required this.onViewCart,
   });
 
   final TextEditingController controller;
+  final FocusNode searchFocusNode;
   final String searchText;
   final String selectedCategory;
   final List<MenuItem> items;
@@ -35,6 +43,12 @@ class RestaurantMenuTab extends StatelessWidget {
   final ValueChanged<String> onCategorySelected;
   final ValueChanged<MenuItem> onOpenItem;
   final ValueChanged<MenuItem> onFavourite;
+  final List<CartItem> cartItems;
+  final VoidCallback onBack;
+  final VoidCallback onViewCart;
+
+  @override
+  State<RestaurantMenuTab> createState() => _RestaurantMenuTabState();
 
   static const categories = [
     'Burgers',
@@ -47,8 +61,12 @@ class RestaurantMenuTab extends StatelessWidget {
     'Deals',
   ];
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildContent(
+    BuildContext context, {
+    required bool searchVisible,
+    required VoidCallback onSearch,
+    required VoidCallback onCloseSearch,
+  }) {
     final searching = searchText.trim().isNotEmpty;
     final orderedCategories = <String>[
       selectedCategory,
@@ -64,121 +82,147 @@ class RestaurantMenuTab extends StatelessWidget {
         .where((section) => section.value.isNotEmpty)
         .toList();
 
+    final cartItemCount = cartItems.fold<int>(
+      0,
+      (total, item) => total + item.quantity,
+    );
+    final cartTotal = cartItems.fold<double>(
+      0,
+      (total, item) => total + item.totalPrice,
+    );
+
     return ColoredBox(
       color: _menuBackground,
-      child: CustomScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
-              child: _MenuSearchField(
-                controller: controller,
-                searchText: searchText,
-                onChanged: onChanged,
-                onClear: onClear,
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 22)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Categories',
-                      style: AppTypography.sectionTitle,
+      child: Column(
+        children: [
+          MenuPageHeader(onBack: onBack, onSearch: onSearch),
+          Expanded(
+            child: CustomScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                if (searchVisible)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                      child: _MenuSearchField(
+                        controller: controller,
+                        focusNode: searchFocusNode,
+                        onChanged: onChanged,
+                        onClose: onCloseSearch,
+                      ),
                     ),
                   ),
-                  if (searching)
-                    TextButton(
-                      onPressed: () {
+                SliverToBoxAdapter(
+                  child: SizedBox(height: searchVisible ? 22 : 20),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Categories',
+                            style: AppTypography.sectionTitle,
+                          ),
+                        ),
+                        if (searching)
+                          TextButton(
+                            onPressed: () {
+                              controller.clear();
+                              onClear();
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.red,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: const Text(
+                              'Clear search',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 96,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 13),
+                      itemBuilder: (_, index) {
+                        final category = categories[index];
+                        return _MenuCategory(
+                          label: category,
+                          selected: !searching && category == selectedCategory,
+                          assetPath: _categoryAsset(category),
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            if (searching) {
+                              controller.clear();
+                              onClear();
+                            }
+                            onCategorySelected(category);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                if (searching && items.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _NoMenuMatches(
+                      searchText: searchText,
+                      onClear: () {
                         controller.clear();
                         onClear();
                       },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.red,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      child: const Text(
-                        'Clear search',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    ),
+                  )
+                else if (searching)
+                  SliverToBoxAdapter(
+                    child: _MenuHorizontalSection(
+                      title: 'Search results',
+                      description: 'Matches for "${searchText.trim()}"',
+                      rowKey: 'menu-search-results',
+                      items: items,
+                      favourites: favourites,
+                      onOpenItem: onOpenItem,
+                      onFavourite: onFavourite,
+                    ),
+                  )
+                else
+                  for (final section in categorySections)
+                    SliverToBoxAdapter(
+                      child: _MenuHorizontalSection(
+                        title: section.key,
+                        description: _categoryDescription(section.key),
+                        rowKey: 'menu-${section.key.toLowerCase()}',
+                        items: section.value,
+                        favourites: favourites,
+                        onOpenItem: onOpenItem,
+                        onFavourite: onFavourite,
                       ),
                     ),
-                ],
-              ),
+                const SliverToBoxAdapter(child: SizedBox(height: 30)),
+              ],
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 96,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 13),
-                itemBuilder: (_, index) {
-                  final category = categories[index];
-                  return _MenuCategory(
-                    label: category,
-                    selected: !searching && category == selectedCategory,
-                    assetPath: _categoryAsset(category),
-                    onTap: () {
-                      FocusScope.of(context).unfocus();
-                      if (searching) {
-                        controller.clear();
-                        onClear();
-                      }
-                      onCategorySelected(category);
-                    },
-                  );
-                },
-              ),
+          if (cartItems.isNotEmpty)
+            MenuCartSummaryBar(
+              previewItem: cartItems.first,
+              itemCount: cartItemCount,
+              total: cartTotal,
+              onViewCart: onViewCart,
             ),
-          ),
-          if (searching && items.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: _NoMenuMatches(
-                searchText: searchText,
-                onClear: () {
-                  controller.clear();
-                  onClear();
-                },
-              ),
-            )
-          else if (searching)
-            SliverToBoxAdapter(
-              child: _MenuHorizontalSection(
-                title: 'Search results',
-                description: 'Matches for "${searchText.trim()}"',
-                rowKey: 'menu-search-results',
-                items: items,
-                favourites: favourites,
-                onOpenItem: onOpenItem,
-                onFavourite: onFavourite,
-              ),
-            )
-          else
-            for (final section in categorySections)
-              SliverToBoxAdapter(
-                child: _MenuHorizontalSection(
-                  title: section.key,
-                  description: _categoryDescription(section.key),
-                  rowKey: 'menu-${section.key.toLowerCase()}',
-                  items: section.value,
-                  favourites: favourites,
-                  onOpenItem: onOpenItem,
-                  onFavourite: onFavourite,
-                ),
-              ),
-          const SliverToBoxAdapter(child: SizedBox(height: 112)),
         ],
       ),
     );
@@ -208,6 +252,48 @@ class RestaurantMenuTab extends StatelessWidget {
       'Desserts' => 'A sweet finish to your Hungry Spot order',
       _ => 'More food, more value, one easy order',
     };
+  }
+}
+
+class _RestaurantMenuTabState extends State<RestaurantMenuTab> {
+  late bool _searchVisible;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchVisible = widget.searchText.trim().isNotEmpty;
+  }
+
+  @override
+  void didUpdateWidget(covariant RestaurantMenuTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_searchVisible && widget.searchText.trim().isNotEmpty) {
+      _searchVisible = true;
+    }
+  }
+
+  void _showSearch() {
+    if (!_searchVisible) setState(() => _searchVisible = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.searchFocusNode.requestFocus();
+    });
+  }
+
+  void _closeSearch() {
+    widget.controller.clear();
+    widget.onClear();
+    widget.searchFocusNode.unfocus();
+    if (_searchVisible) setState(() => _searchVisible = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget._buildContent(
+      context,
+      searchVisible: _searchVisible,
+      onSearch: _showSearch,
+      onCloseSearch: _closeSearch,
+    );
   }
 }
 
@@ -329,15 +415,15 @@ class _MenuHorizontalSection extends StatelessWidget {
 class _MenuSearchField extends StatelessWidget {
   const _MenuSearchField({
     required this.controller,
-    required this.searchText,
+    required this.focusNode,
     required this.onChanged,
-    required this.onClear,
+    required this.onClose,
   });
 
   final TextEditingController controller;
-  final String searchText;
+  final FocusNode focusNode;
   final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -357,6 +443,7 @@ class _MenuSearchField extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         onChanged: onChanged,
         onSubmitted: (_) => FocusScope.of(context).unfocus(),
         textInputAction: TextInputAction.search,
@@ -377,16 +464,11 @@ class _MenuSearchField extends StatelessWidget {
             color: AppColors.dark,
             size: 23,
           ),
-          suffixIcon: searchText.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: 'Clear search',
-                  onPressed: () {
-                    controller.clear();
-                    onClear();
-                  },
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                ),
+          suffixIcon: IconButton(
+            tooltip: 'Close search',
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded, size: 20),
+          ),
           filled: false,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
