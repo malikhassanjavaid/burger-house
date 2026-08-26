@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_bottom_action_bar.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_loader.dart';
-import '../../../core/widgets/app_primary_button.dart';
 import '../models/fulfillment_method.dart';
 import '../services/stripe_payment_service.dart';
+import '../widgets/add_card_preview.dart';
+import '../widgets/add_card_preview_surface.dart';
 
 class StripeCardPaymentScreen extends StatefulWidget {
   const StripeCardPaymentScreen({
@@ -106,7 +109,13 @@ class _StripeCardPaymentScreenState extends State<StripeCardPaymentScreen> {
                     return ValueListenableBuilder<CardFieldInputDetails?>(
                       valueListenable: _cardDetails,
                       builder: (context, details, _) {
-                        return _CardPreview(name: name.text, details: details);
+                        return AddCardPreview(
+                          name: name.text,
+                          last4: details?.last4,
+                          expiryMonth: details?.expiryMonth,
+                          expiryYear: details?.expiryYear,
+                          hasCardInput: details != null,
+                        );
                       },
                     );
                   },
@@ -294,44 +303,18 @@ class _PaymentActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      elevation: 14,
-      shadowColor: const Color(0x2417222D),
-      child: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.fromLTRB(18, 10, 18, 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('TOTAL', style: AppTypography.caption),
-                  const SizedBox(height: 2),
-                  Text(
-                    '\$${amount.toStringAsFixed(2)}',
-                    style: AppTypography.totalPrice,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: AppPrimaryButton(
-                label: 'PAY & CONTINUE',
-                icon: Icons.arrow_forward_rounded,
-                height: 52,
-                borderRadius: 16,
-                isLoading: loading,
-                onPressed: loading ? null : onPay,
-              ),
-            ),
-          ],
-        ),
+    return AppBottomActionBar(
+      leading: const Icon(
+        Icons.credit_card_rounded,
+        color: AppColors.red,
+        size: 24,
       ),
+      eyebrow: 'TOTAL',
+      amount: '\$${amount.toStringAsFixed(2)}',
+      caption: 'Inclusive of taxes',
+      actionLabel: 'PAY & CONTINUE',
+      loading: loading,
+      onPressed: loading ? null : onPay,
     );
   }
 }
@@ -345,24 +328,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Material(
-          color: Colors.white,
-          elevation: 3,
-          shadowColor: const Color(0x1A17222D),
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: onBack,
-            borderRadius: BorderRadius.circular(14),
-            child: const SizedBox.square(
-              dimension: 44,
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: AppColors.red,
-                size: 18,
-              ),
-            ),
-          ),
-        ),
+        AppBackButton(onPressed: onBack, tooltip: 'Back to checkout'),
         const SizedBox(width: 14),
         const Expanded(
           child: Text('Add card', style: AppTypography.pageHeader),
@@ -372,6 +338,7 @@ class _Header extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _CardPreview extends StatelessWidget {
   const _CardPreview({required this.name, required this.details});
 
@@ -392,13 +359,7 @@ class _CardPreview extends StatelessWidget {
 
     return AspectRatio(
       aspectRatio: 1.68,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
+      child: AddCardPreviewSurface(
         child: Stack(
           children: [
             Column(
@@ -409,7 +370,7 @@ class _CardPreview extends StatelessWidget {
                     Text(
                       brand == 'UNKNOWN' ? 'DEBIT' : brand,
                       style: const TextStyle(
-                        color: Color(0xFF171A21),
+                        color: AppColors.dark,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1,
@@ -425,7 +386,7 @@ class _CardPreview extends StatelessWidget {
                     const Text(
                       'HUNGRY SPOT',
                       style: TextStyle(
-                        color: Color(0xFF171A21),
+                        color: AppColors.red,
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
@@ -439,20 +400,20 @@ class _CardPreview extends StatelessWidget {
                       width: 42,
                       height: 31,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFD45B),
+                        color: const Color(0x1A171315),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFF4B926)),
+                        border: Border.all(color: const Color(0x33171315)),
                       ),
                       child: const Icon(
                         Icons.grid_view_rounded,
-                        color: Color(0xFF9C6A00),
+                        color: AppColors.dark,
                         size: 20,
                       ),
                     ),
                     const Spacer(),
                     const Icon(
                       Icons.contactless_rounded,
-                      color: Color(0xFF171A21),
+                      color: AppColors.dark,
                     ),
                   ],
                 ),
@@ -461,7 +422,7 @@ class _CardPreview extends StatelessWidget {
                   '\u2022\u2022\u2022\u2022  \u2022\u2022\u2022\u2022  \u2022\u2022\u2022\u2022  ${details?.last4 ?? '\u2022\u2022\u2022\u2022'}',
                   maxLines: 1,
                   style: const TextStyle(
-                    color: Color(0xFF171A21),
+                    color: AppColors.dark,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.7,
@@ -504,7 +465,7 @@ class _CardDatum extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF6B7280),
+            color: AppColors.dark,
             fontSize: 8,
             fontWeight: FontWeight.w700,
             letterSpacing: .8,
@@ -516,7 +477,7 @@ class _CardDatum extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: Color(0xFF171A21),
+            color: AppColors.dark,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
