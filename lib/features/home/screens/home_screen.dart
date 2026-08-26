@@ -244,18 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _addCartItem(CartItem(menuItem: item, quantity: 1, unitPrice: item.price));
   }
 
-  void _addDealAndOpenCart(MenuItem item) {
-    _addCartItem(
-      CartItem(
-        menuItem: item,
-        quantity: 1,
-        unitPrice: item.price,
-        size: 'Bundle',
-      ),
-    );
-    unawaited(_openCart());
-  }
-
   void _addCartItem(CartItem cartItem) {
     final fulfillmentMethod = _fulfillmentMethod;
     setState(() {
@@ -315,13 +303,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openDetails(MenuItem item) async {
+    var addedToCart = false;
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            MenuDetailsScreen(item: item, onAddToCart: _addCartItem),
+        builder: (_) => MenuDetailsScreen(
+          item: item,
+          onAddToCart: (cartItem) {
+            addedToCart = true;
+            _addCartItem(cartItem);
+          },
+        ),
       ),
     );
+    if (addedToCart && item.isDeal && mounted) {
+      _menuSearchFocusNode.unfocus();
+      setState(() => _selectedTab = 2);
+    }
   }
 
   Future<void> _openCart() async {
@@ -418,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final pages = <int, Widget>{
       0: HomeHeroCarousel(
         deals: homeDeals,
-        onDealSelected: _addDealAndOpenCart,
+        onDealSelected: _openDetails,
         bestSellerBurgers: homeBestSellerBurgers,
         pizzas: homePizzas,
         topPicks: homeTopPicks,
