@@ -5,7 +5,12 @@
       "name": "Hungry Spot - Stripe demo",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main.dart"
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define-from-file=stripe.config.json",
+        "--dart-define=USE_FIREBASE_EMULATORS=true",
+        "--dart-define=FUNCTIONS_EMULATOR_HOST=127.0.0.1"
+      ]
     }
   ]
 }
