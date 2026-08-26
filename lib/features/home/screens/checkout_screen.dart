@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_bottom_action_bar.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/app_primary_button.dart';
@@ -24,8 +26,8 @@ const _checkoutRed = Color(0xFFF23845);
 const _checkoutInk = Color(0xFF15161C);
 const _checkoutMuted = Color(0xFF858C98);
 const _softBorder = Color(0xFFE5E7EB);
-const _deliveryGreen = Color(0xFF53A92C);
-const _deliveryTint = Color(0xFFF0F8E9);
+const _locationAccent = _checkoutRed;
+const _locationTint = Color(0xFFFFF0F2);
 const _phoneBlue = Color(0xFF2C86E5);
 const _phoneTint = Color(0xFFEBF4FF);
 const _paymentPurple = Color(0xFF9552E8);
@@ -446,24 +448,7 @@ class _CheckoutHeader extends StatelessWidget {
           height: 44,
           child: Row(
             children: [
-              Material(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                elevation: 5,
-                shadowColor: const Color(0x1F304A5C),
-                child: InkWell(
-                  onTap: onBack,
-                  borderRadius: BorderRadius.circular(14),
-                  child: const SizedBox.square(
-                    dimension: 42,
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: _checkoutRed,
-                      size: 19,
-                    ),
-                  ),
-                ),
-              ),
+              AppBackButton(onPressed: onBack, tooltip: 'Back to cart'),
               const SizedBox(width: 16),
               Text(
                 'Checkout',
@@ -490,136 +475,34 @@ class _CheckoutHeroBanner extends StatelessWidget {
       child: Semantics(
         image: true,
         label: 'Almost there. Review your details and place your order.',
-        child: Container(
-          height: 142,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x18304A5C),
-                blurRadius: 18,
-                offset: Offset(0, 7),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Row(
-            children: [
-              Expanded(
-                flex: 43,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 14, 2, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: 'Almost '),
-                            TextSpan(
-                              text: 'there!',
-                              style: TextStyle(color: _checkoutRed),
-                            ),
-                          ],
-                        ),
-                        style: TextStyle(
-                          color: _checkoutInk,
-                          fontSize: 19,
-                          height: 1.05,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -.35,
-                        ),
-                      ),
-                      const SizedBox(height: 7),
-                      const Text(
-                        'Review your details and place your order',
-                        maxLines: 2,
-                        style: TextStyle(
-                          color: _checkoutInk,
-                          fontSize: 10,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          _HeroFeature(
-                            icon: Icons.verified_user_outlined,
-                            label: 'Secure',
-                          ),
-                          const SizedBox(width: 6),
-                          _HeroFeature(icon: Icons.bolt_rounded, label: 'Fast'),
-                          const SizedBox(width: 6),
-                          _HeroFeature(
-                            icon: Icons.workspace_premium_outlined,
-                            label: 'Quality',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+        child: AspectRatio(
+          key: const ValueKey('checkout-hero-banner'),
+          aspectRatio: 16 / 9,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x18304A5C),
+                  blurRadius: 18,
+                  offset: Offset(0, 7),
                 ),
-              ),
-              Expanded(
-                flex: 57,
-                child: SizedBox.expand(
-                  child: Image.asset(
-                    'assets/images/checkout_hero_hd.png',
-                    fit: BoxFit.cover,
-                    alignment: Alignment.centerRight,
-                    filterQuality: FilterQuality.high,
-                    cacheWidth: (460 * MediaQuery.devicePixelRatioOf(context))
-                        .round(),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'assets/images/checkout_banner_full_hd.png',
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              filterQuality: FilterQuality.high,
+              cacheWidth: (760 * MediaQuery.devicePixelRatioOf(context))
+                  .round(),
+            ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HeroFeature extends StatelessWidget {
-  const _HeroFeature({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final (accentColor, backgroundColor) = switch (icon) {
-      Icons.verified_user_outlined => (_deliveryGreen, _deliveryTint),
-      Icons.bolt_rounded => (_checkoutRed, const Color(0xFFFFF0F2)),
-      _ => (_phoneBlue, _phoneTint),
-    };
-    return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: accentColor, size: 13),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            maxLines: 1,
-            style: const TextStyle(
-              color: _checkoutInk,
-              fontSize: 8,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -714,8 +597,8 @@ class _CheckoutLocationRow extends StatelessWidget {
               children: [
                 _CheckoutIconTile(
                   icon: icon,
-                  accentColor: _deliveryGreen,
-                  backgroundColor: _deliveryTint,
+                  accentColor: _locationAccent,
+                  backgroundColor: _locationTint,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -726,7 +609,7 @@ class _CheckoutLocationRow extends StatelessWidget {
                       Text(
                         eyebrow,
                         style: const TextStyle(
-                          color: _deliveryGreen,
+                          color: _locationAccent,
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
                           letterSpacing: .35,
@@ -760,8 +643,8 @@ class _CheckoutLocationRow extends StatelessWidget {
                       _CheckoutActionPill(
                         label: actionLabel,
                         icon: Icons.location_on_outlined,
-                        accentColor: _deliveryGreen,
-                        backgroundColor: _deliveryTint,
+                        accentColor: _locationAccent,
+                        backgroundColor: _locationTint,
                       ),
                     ],
                   ),
@@ -1822,147 +1705,18 @@ class _PlaceOrderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: _checkoutBg,
-      padding: const EdgeInsets.fromLTRB(12, 5, 12, 7),
-      child: SafeArea(
-        top: false,
-        child: Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          elevation: 6,
-          shadowColor: const Color(0x26304A5C),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    const _CheckoutIconTile(icon: Icons.receipt_long_outlined),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '$itemCount ITEM${itemCount == 1 ? '' : 'S'}',
-                            style: const TextStyle(
-                              color: _checkoutMuted,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            formatUsd(total),
-                            style: const TextStyle(
-                              color: _checkoutInk,
-                              fontSize: 18,
-                              height: 1,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          const Text(
-                            'Inclusive of taxes',
-                            style: TextStyle(
-                              color: _checkoutMuted,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 42,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      color: const Color(0xFFE8EAED),
-                    ),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 116,
-                        maxWidth: 142,
-                      ),
-                      child: SizedBox(
-                        height: 46,
-                        child: FilledButton(
-                          onPressed: loading ? null : onPlaceOrder,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _checkoutRed,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: const Color(0xFFF7A0A7),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            elevation: 5,
-                            shadowColor: const Color(0x55F23845),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: loading
-                              ? const AppLoader(
-                                  size: 17,
-                                  strokeWidth: 2.2,
-                                  color: Colors.white,
-                                  trackColor: Color(0x4DFFFFFF),
-                                )
-                              : Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        isPickup
-                                            ? 'CONFIRM PICKUP'
-                                            : 'PLACE ORDER',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.fade,
-                                        softWrap: false,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 19,
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.verified_user_rounded,
-                      color: Color(0xFF68C965),
-                      size: 13,
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'Safe & secure payments',
-                      style: TextStyle(
-                        color: _checkoutMuted,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+    return AppBottomActionBar(
+      leading: const Icon(
+        Icons.receipt_long_outlined,
+        color: AppColors.red,
+        size: 24,
       ),
+      eyebrow: '$itemCount ITEM${itemCount == 1 ? '' : 'S'}',
+      amount: formatUsd(total),
+      caption: 'Inclusive of taxes',
+      actionLabel: isPickup ? 'CONFIRM PICKUP' : 'PLACE ORDER',
+      loading: loading,
+      onPressed: loading ? null : onPlaceOrder,
     );
   }
 }
