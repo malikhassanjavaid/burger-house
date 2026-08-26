@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_bottom_action_bar.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../location/models/delivery_location.dart';
@@ -224,7 +226,6 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> _applyCoupon() async {
-    final controller = TextEditingController();
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -232,48 +233,8 @@ class _CartScreenState extends State<CartScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          22,
-          10,
-          22,
-          MediaQuery.viewInsetsOf(context).bottom + 22,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: SizedBox(width: 42, child: Divider(thickness: 4)),
-            ),
-            const SizedBox(height: 15),
-            const Text('Apply coupon', style: AppTypography.pageHeader),
-            const SizedBox(height: 6),
-            const Text(
-              'Try BURGER10 for 10% off your food subtotal.',
-              style: TextStyle(color: _cartMuted),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Coupon code',
-                prefixIcon: Icon(Icons.local_offer_outlined),
-              ),
-            ),
-            const SizedBox(height: 16),
-            AppPrimaryButton(
-              label: 'APPLY COUPON',
-              onPressed: () =>
-                  Navigator.pop(context, controller.text.trim().toUpperCase()),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => const _CouponSheet(),
     );
-    controller.dispose();
     if (!mounted || result == null) return;
     if (result == 'BURGER10') {
       setState(() => _couponCode = result);
@@ -443,6 +404,70 @@ class _CartScreenState extends State<CartScreen> {
   }
 }
 
+class _CouponSheet extends StatefulWidget {
+  const _CouponSheet();
+
+  @override
+  State<_CouponSheet> createState() => _CouponSheetState();
+}
+
+class _CouponSheetState extends State<_CouponSheet> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.pop(context, _controller.text.trim().toUpperCase());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(22, 10, 22, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: SizedBox(width: 42, child: Divider(thickness: 4)),
+              ),
+              const SizedBox(height: 15),
+              const Text('Apply coupon', style: AppTypography.pageHeader),
+              const SizedBox(height: 6),
+              const Text(
+                'Try BURGER10 for 10% off your food subtotal.',
+                style: TextStyle(color: _cartMuted),
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  labelText: 'Coupon code',
+                  prefixIcon: Icon(Icons.local_offer_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              AppPrimaryButton(label: 'APPLY COUPON', onPressed: _submit),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CartHeader extends StatelessWidget {
   const _CartHeader({required this.itemCount, required this.onBack});
   final int itemCount;
@@ -456,20 +481,7 @@ class _CartHeader extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Row(
           children: [
-            Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              elevation: 5,
-              shadowColor: Colors.black12,
-              child: IconButton(
-                onPressed: onBack,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _cartBlue,
-                  size: 20,
-                ),
-              ),
-            ),
+            AppBackButton(onPressed: onBack, tooltip: 'Back'),
             const SizedBox(width: 15),
             Text(
               'Cart',
@@ -1047,82 +1059,13 @@ class _CartBottomBar extends StatelessWidget {
   final bool enabled;
   final VoidCallback onCheckout;
   @override
-  Widget build(BuildContext context) => Container(
-    color: _cartBg,
-    padding: const EdgeInsets.fromLTRB(15, 12, 15, 12),
-    child: SafeArea(
-      top: false,
-      child: Container(
-        height: 76,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: _cartRed,
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(9),
-              child: Container(
-                width: 48,
-                height: 48,
-                color: Colors.white,
-                child: Image.asset(item.displayAssetPath, fit: BoxFit.contain),
-              ),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$itemCount ITEM${itemCount == 1 ? '' : 'S'}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    formatUsd(total),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Text(
-                    'inclusive of taxes',
-                    style: TextStyle(color: Colors.white70, fontSize: 10),
-                  ),
-                ],
-              ),
-            ),
-            FilledButton(
-              onPressed: enabled ? onCheckout : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: _cartRed,
-                disabledBackgroundColor: Colors.white70,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'CHECKOUT',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
+  Widget build(BuildContext context) => AppBottomActionBar(
+    leading: Image.asset(item.displayAssetPath, fit: BoxFit.contain),
+    eyebrow: '$itemCount ITEM${itemCount == 1 ? '' : 'S'}',
+    amount: formatUsd(total),
+    caption: 'Inclusive of taxes',
+    actionLabel: 'CHECKOUT',
+    onPressed: enabled ? onCheckout : null,
   );
 }
 
@@ -1144,21 +1087,7 @@ class _EmptyCart extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Row(
                 children: [
-                  Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    elevation: 5,
-                    shadowColor: Colors.black12,
-                    child: IconButton(
-                      tooltip: 'Back to menu',
-                      onPressed: onBack,
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: _cartBlue,
-                        size: 20,
-                      ),
-                    ),
-                  ),
+                  AppBackButton(onPressed: onBack, tooltip: 'Back to menu'),
                   const SizedBox(width: 15),
                   Text(
                     'Cart',
