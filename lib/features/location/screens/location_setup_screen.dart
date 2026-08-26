@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_loader.dart';
@@ -186,7 +187,14 @@ class _LocationSetupScreenState extends State<LocationSetupScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            automaticallyImplyLeading: !widget.firstTime,
+            automaticallyImplyLeading: false,
+            leadingWidth: widget.firstTime ? 0 : 62,
+            leading: widget.firstTime
+                ? null
+                : const Padding(
+                    padding: EdgeInsets.only(left: 12),
+                    child: AppBackButton(tooltip: 'Back'),
+                  ),
             title: Text(
               widget.firstTime ? 'Delivery location' : 'Edit location',
             ),

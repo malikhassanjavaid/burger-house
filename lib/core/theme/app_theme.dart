@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 abstract final class AppColors {
   static const red = Color(0xFFF23846);
   static const redDark = Color(0xFFC9152A);
+  static const brandYellow = Color(0xFFFDCD04);
   static const blush = Color(0xFFFFE9EC);
   static const dark = Color(0xFF171315);
   static const cream = Colors.white;
+  static const navigationBlue = Color(0xFF1597E5);
   static const muted = Color(0xFF746A6D);
 
   // Compatibility alias for existing screens while the visual system uses red.

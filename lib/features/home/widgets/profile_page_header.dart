@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_back_button.dart';
 
 const profilePageBackground = Colors.white;
 const profilePageInk = Color(0xFF15161C);
@@ -27,20 +28,7 @@ class ProfilePageHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18),
           child: Row(
             children: [
-              Material(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                elevation: 4,
-                shadowColor: const Color(0x1F47657A),
-                child: IconButton(
-                  onPressed: onBack,
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: profilePageBlue,
-                    size: 19,
-                  ),
-                ),
-              ),
+              AppBackButton(onPressed: onBack, tooltip: 'Back'),
               const SizedBox(width: 15),
               Text(
                 title,

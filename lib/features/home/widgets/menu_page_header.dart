@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_back_button.dart';
 
 class MenuPageHeader extends StatelessWidget {
   const MenuPageHeader({
@@ -23,21 +24,7 @@ class MenuPageHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            elevation: 4,
-            shadowColor: const Color(0x1A1D2939),
-            child: IconButton(
-              tooltip: 'Back to home',
-              onPressed: onBack,
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Color(0xFF1597E5),
-                size: 19,
-              ),
-            ),
-          ),
+          AppBackButton(onPressed: onBack, tooltip: 'Back to home'),
           const SizedBox(width: 14),
           const Expanded(
             child: Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/auth_layout.dart';
@@ -76,10 +77,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               isLoading: _isLoading,
             ),
             const SizedBox(height: 10),
-            TextButton.icon(
+            AppBackButton(
               onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Back to sign in'),
+              tooltip: 'Back to sign in',
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../models/menu_item.dart';
 
 const _searchBackground = Colors.white;
@@ -180,15 +181,14 @@ class _SearchHeader extends StatelessWidget {
             color: _searchFieldBackground,
             child: Row(
               children: [
-                IconButton(
-                  onPressed: onBack,
-                  padding: const EdgeInsets.only(left: 12, right: 8),
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.black,
-                    size: 26,
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: AppBackButton(
+                    onPressed: onBack,
+                    tooltip: 'Back to menu',
                   ),
                 ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: controller,
