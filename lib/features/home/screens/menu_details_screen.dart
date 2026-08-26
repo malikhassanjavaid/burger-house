@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 
 const _pageBlue = Colors.white;
 const _accentRed = Color(0xFFF23845);
-const _accentBlue = Color(0xFF1597E5);
 const _accentGold = Color(0xFFF5A313);
 const _ink = Color(0xFF14151B);
 const _softText = Color(0xFF7D8490);
@@ -30,17 +30,31 @@ class MenuDetailsScreen extends StatefulWidget {
 }
 
 class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
+  static const _pattyChoiceBurgerIds = {
+    'classic-smash',
+    'firehouse',
+    'cheese-burger',
+  };
+
   late int _quantity;
   late String _size;
   late String _crust;
+  String _dealPizza = 'Classic Cheese Pizza';
   String _dealBurger = 'Classic Smash';
   String _dealDrink = 'Classic Cola';
   final Set<String> _extras = {};
   final Set<String> _removedDefaults = {};
 
+  bool get _supportsPattyChoice =>
+      widget.item.category == 'Burgers' &&
+      _pattyChoiceBurgerIds.contains(widget.item.id);
+
   Map<String, double> get _sizes => switch (widget.item.category) {
     'Pizzas' => const {'Small': 0, 'Medium': 4, 'Large': 7},
-    'Burgers' => const {'Single': 0, 'Double': 2.5, 'Triple': 4.5},
+    'Burgers' =>
+      _supportsPattyChoice
+          ? const {'Single': 0, 'Double': 2.5, 'Triple': 4.5}
+          : const {'Regular': 0},
     'Wraps' => const {'8 Inches': 0, '12 Inches': 3},
     'Chicken' => const {'4 Pieces': 0, '8 Pieces': 3.5, '12 Pieces': 6.5},
     'Sides' => const {'Regular': 0, 'Large': 1.5},
@@ -86,6 +100,13 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
   void initState() {
     super.initState();
     final initial = widget.initialCartItem;
+    if (widget.item.id == 'wow-pizza-deal') {
+      _dealDrink = 'Coke';
+    }
+    if (widget.item.id == 'wow-burger-deal') {
+      _dealBurger = 'Crispy Chicken Burger';
+      _dealDrink = 'Coke';
+    }
     _quantity = initial?.quantity ?? 1;
     final defaultSize =
         widget.item.category == 'Pizzas' && _sizes.containsKey('Medium')
@@ -102,6 +123,9 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
           if (_crusts.containsKey(crust)) _crust = crust;
         }
         if (_toppings.containsKey(addOn)) _extras.add(addOn);
+        if (addOn.startsWith('Pizza: ')) {
+          _dealPizza = addOn.substring('Pizza: '.length);
+        }
         if (addOn.startsWith('Burger: ')) {
           _dealBurger = addOn.substring('Burger: '.length);
         }
@@ -111,6 +135,35 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
       }
     }
   }
+
+  List<String> get _dealAddOns => switch (widget.item.id) {
+    'wow-pizza-deal' => [
+      '2 Medium Pizzas',
+      '3 Chilled Drinks',
+      'Pizza: $_dealPizza',
+      'Drink: $_dealDrink',
+    ],
+    'wow-burger-deal' => [
+      '4 Crispy Chicken Burgers',
+      '4 Chilled Drinks',
+      'Burger: Crispy Chicken Burger',
+      'Drink: $_dealDrink',
+    ],
+    'family-box' => [
+      '4 Burgers',
+      '2 Large Fries',
+      '4 Chilled Drinks',
+      'Burger: $_dealBurger',
+      'Drink: $_dealDrink',
+    ],
+    _ => [
+      '2 Burgers',
+      '1 Large Fries',
+      '2 Chilled Drinks',
+      'Burger: $_dealBurger',
+      'Drink: $_dealDrink',
+    ],
+  };
 
   void _addToCart() {
     widget.onAddToCart(
@@ -135,12 +188,7 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
               widget.item.category != 'Desserts' &&
               widget.item.category != 'Deals')
             ..._extras,
-          if (widget.item.category == 'Deals')
-            ...(widget.item.id == 'family-box'
-                ? const ['4 Burgers', '2 Large Fries', '4 Chilled Drinks']
-                : const ['2 Burgers', '1 Large Fries', '2 Chilled Drinks']),
-          if (widget.item.category == 'Deals') 'Burger: $_dealBurger',
-          if (widget.item.category == 'Deals') 'Drink: $_dealDrink',
+          if (widget.item.category == 'Deals') ..._dealAddOns,
         ],
       ),
     );
@@ -188,8 +236,10 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
     if (widget.item.category == 'Deals') {
       return _DealContentsSection(
         item: widget.item,
+        selectedPizza: _dealPizza,
         selectedBurger: _dealBurger,
         selectedDrink: _dealDrink,
+        onPizzaSelected: (value) => setState(() => _dealPizza = value),
         onBurgerSelected: (value) => setState(() => _dealBurger = value),
         onDrinkSelected: (value) => setState(() => _dealDrink = value),
       );
@@ -255,20 +305,22 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
       );
     }
 
+    final isBurger = widget.item.category == 'Burgers';
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 25, 24, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SizeSection(
-            entries: _sizes,
-            selected: _size,
-            basePrice: widget.item.price,
-            pizzaStyle: widget.item.category == 'Pizzas',
-            burgerStyle: widget.item.category == 'Burgers',
-            onSelected: (value) => setState(() => _size = value),
-          ),
-          if (widget.item.category != 'Burgers') ...[
+          if (!isBurger || _supportsPattyChoice)
+            _SizeSection(
+              entries: _sizes,
+              selected: _size,
+              basePrice: widget.item.price,
+              pizzaStyle: widget.item.category == 'Pizzas',
+              burgerStyle: isBurger,
+              onSelected: (value) => setState(() => _size = value),
+            ),
+          if (!isBurger) ...[
             const SizedBox(height: 38),
             _CrustSection(
               entries: _crusts,
@@ -276,11 +328,9 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
               onSelected: (value) => setState(() => _crust = value),
             ),
           ],
-          const SizedBox(height: 38),
+          if (!isBurger || _supportsPattyChoice) const SizedBox(height: 38),
           _ExtrasSection(
-            title: widget.item.category == 'Burgers'
-                ? 'Choose Ingredients'
-                : 'Choose Toppings',
+            title: isBurger ? 'Choose Ingredients' : 'Choose Toppings',
             entries: _toppings,
             selected: _extras,
             removedDefaults: _removedDefaults,
@@ -308,62 +358,97 @@ class _MenuDetailsScreenState extends State<MenuDetailsScreen> {
 class _DealContentsSection extends StatelessWidget {
   const _DealContentsSection({
     required this.item,
+    required this.selectedPizza,
     required this.selectedBurger,
     required this.selectedDrink,
+    required this.onPizzaSelected,
     required this.onBurgerSelected,
     required this.onDrinkSelected,
   });
 
   final MenuItem item;
+  final String selectedPizza;
   final String selectedBurger;
   final String selectedDrink;
+  final ValueChanged<String> onPizzaSelected;
   final ValueChanged<String> onBurgerSelected;
   final ValueChanged<String> onDrinkSelected;
 
   @override
   Widget build(BuildContext context) {
+    final pizzaDeal = item.id == 'wow-pizza-deal';
+    final burgerDeal = item.id == 'wow-burger-deal';
     final familyDeal = item.id == 'family-box';
-    final parts = familyDeal
-        ? const [
-            _DealPart(
-              name: 'Signature Burgers',
-              detail: 'Freshly prepared house favourites',
-              quantity: 4,
-              image: 'assets/images/beefburger-cutout.png',
-            ),
-            _DealPart(
-              name: 'Large Fries',
-              detail: 'Golden, crispy and lightly seasoned',
-              quantity: 2,
-              image: 'assets/images/fries-cutout.png',
-            ),
-            _DealPart(
-              name: 'Chilled Drinks',
-              detail: 'Ice-cold drinks to complete the feast',
-              quantity: 4,
-              image: 'assets/images/coke-cutout.png',
-            ),
-          ]
-        : const [
-            _DealPart(
-              name: 'Premium Burgers',
-              detail: 'Two juicy Hungry Spot favourites',
-              quantity: 2,
-              image: 'assets/images/beefburger-cutout.png',
-            ),
-            _DealPart(
-              name: 'Large Fries',
-              detail: 'One generous serving of crispy fries',
-              quantity: 1,
-              image: 'assets/images/fries-cutout.png',
-            ),
-            _DealPart(
-              name: 'Chilled Drinks',
-              detail: 'Two refreshing ice-cold drinks',
-              quantity: 2,
-              image: 'assets/images/coke-cutout.png',
-            ),
-          ];
+    final parts = switch (item.id) {
+      'wow-pizza-deal' => const [
+        _DealPart(
+          name: 'Medium Pizzas',
+          detail: 'Two freshly baked pizzas in your selected flavour',
+          quantity: 2,
+          image: 'assets/images/pepperoni_pizza-cutout.png',
+        ),
+        _DealPart(
+          name: 'Chilled Drinks',
+          detail: 'Three Coke or Sprite drinks, served ice-cold',
+          quantity: 3,
+          image: 'assets/images/coke-cutout.png',
+        ),
+      ],
+      'wow-burger-deal' => const [
+        _DealPart(
+          name: 'Crispy Chicken Burgers',
+          detail: 'Four crunchy chicken burgers with signature sauce',
+          quantity: 4,
+          image: 'assets/images/chicken_burger-cutout.png',
+        ),
+        _DealPart(
+          name: 'Chilled Drinks',
+          detail: 'Four Coke or Sprite drinks, served ice-cold',
+          quantity: 4,
+          image: 'assets/images/coke-cutout.png',
+        ),
+      ],
+      'family-box' => const [
+        _DealPart(
+          name: 'Signature Burgers',
+          detail: 'Freshly prepared house favourites',
+          quantity: 4,
+          image: 'assets/images/beefburger-cutout.png',
+        ),
+        _DealPart(
+          name: 'Large Fries',
+          detail: 'Golden, crispy and lightly seasoned',
+          quantity: 2,
+          image: 'assets/images/fries-cutout.png',
+        ),
+        _DealPart(
+          name: 'Chilled Drinks',
+          detail: 'Ice-cold drinks to complete the feast',
+          quantity: 4,
+          image: 'assets/images/coke-cutout.png',
+        ),
+      ],
+      _ => const [
+        _DealPart(
+          name: 'Premium Burgers',
+          detail: 'Two juicy Hungry Spot favourites',
+          quantity: 2,
+          image: 'assets/images/beefburger-cutout.png',
+        ),
+        _DealPart(
+          name: 'Large Fries',
+          detail: 'One generous serving of crispy fries',
+          quantity: 1,
+          image: 'assets/images/fries-cutout.png',
+        ),
+        _DealPart(
+          name: 'Chilled Drinks',
+          detail: 'Two refreshing ice-cold drinks',
+          quantity: 2,
+          image: 'assets/images/coke-cutout.png',
+        ),
+      ],
+    };
     final saving = (item.oldPrice ?? item.price) - item.price;
 
     return Padding(
@@ -417,9 +502,13 @@ class _DealContentsSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        familyDeal
-                            ? 'A feast made for sharing'
-                            : 'The perfect meal for two',
+                        switch (item.id) {
+                          'wow-pizza-deal' => 'Pick your pizza and drink',
+                          'wow-burger-deal' =>
+                            'Crispy chicken made for sharing',
+                          'family-box' => 'A feast made for sharing',
+                          _ => 'The perfect meal for two',
+                        },
                         style: const TextStyle(
                           color: _ink,
                           fontSize: 16,
@@ -454,44 +543,99 @@ class _DealContentsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 26),
-          _DealChoiceSelector(
-            title: 'Choose your burger',
-            subtitle: familyDeal
-                ? 'Your choice applies to all 4 burgers.'
-                : 'Your choice applies to both burgers.',
-            choices: const [
-              _DealChoice(
-                name: 'Classic Smash',
-                image: 'assets/images/beefburger-cutout.png',
-              ),
-              _DealChoice(
-                name: 'Firehouse',
-                image: 'assets/images/firehouse_burger-cutout.png',
-              ),
-              _DealChoice(
-                name: 'Crispy Chicken',
-                image: 'assets/images/chicken_burger-cutout.png',
-              ),
-            ],
-            selected: selectedBurger,
-            onSelected: onBurgerSelected,
-          ),
+          if (pizzaDeal)
+            _DealChoiceSelector(
+              title: 'Choose your pizza flavour',
+              subtitle: 'Your choice applies to both medium pizzas.',
+              choices: const [
+                _DealChoice(
+                  name: 'Classic Cheese Pizza',
+                  image: 'assets/images/cheese_pizza-cutout.png',
+                ),
+                _DealChoice(
+                  name: 'Pepperoni Pizza',
+                  image: 'assets/images/pepperoni_pizza-cutout.png',
+                ),
+                _DealChoice(
+                  name: 'Chicken Fajita Pizza',
+                  image: 'assets/images/chicked_fajita_pizza-cutout.png',
+                ),
+                _DealChoice(
+                  name: 'Kabab Crown Pizza',
+                  image: 'assets/images/kabab_pizza-cutout.png',
+                ),
+                _DealChoice(
+                  name: 'Super Duper Pizza',
+                  image: 'assets/images/superduper_pizza-cutout.png',
+                ),
+                _DealChoice(
+                  name: "Chef's Special Pizza",
+                  image: 'assets/images/chefspecial_pizza-cutout.png',
+                ),
+              ],
+              selected: selectedPizza,
+              onSelected: onPizzaSelected,
+            )
+          else if (burgerDeal)
+            const _FixedDealChoice(
+              title: 'Included burger',
+              name: 'Crispy Chicken Burger',
+              subtitle: 'Included in all 4 burgers',
+              image: 'assets/images/chicken_burger-cutout.png',
+            )
+          else
+            _DealChoiceSelector(
+              title: 'Choose your burger',
+              subtitle: familyDeal
+                  ? 'Your choice applies to all 4 burgers.'
+                  : 'Your choice applies to both burgers.',
+              choices: const [
+                _DealChoice(
+                  name: 'Classic Smash',
+                  image: 'assets/images/beefburger-cutout.png',
+                ),
+                _DealChoice(
+                  name: 'Firehouse',
+                  image: 'assets/images/firehouse_burger-cutout.png',
+                ),
+                _DealChoice(
+                  name: 'Crispy Chicken',
+                  image: 'assets/images/chicken_burger-cutout.png',
+                ),
+              ],
+              selected: selectedBurger,
+              onSelected: onBurgerSelected,
+            ),
           const SizedBox(height: 24),
           _DealChoiceSelector(
             title: 'Choose your drink',
-            subtitle: familyDeal
-                ? 'Your flavor applies to all 4 drinks.'
-                : 'Your flavor applies to both drinks.',
-            choices: const [
-              _DealChoice(
-                name: 'Classic Cola',
-                image: 'assets/images/coke-cutout.png',
-              ),
-              _DealChoice(
-                name: 'Lemon-Lime',
-                image: 'assets/images/sprite-cutout.png',
-              ),
-            ],
+            subtitle: switch (item.id) {
+              'wow-pizza-deal' => 'Your choice applies to all 3 drinks.',
+              'wow-burger-deal' ||
+              'family-box' => 'Your choice applies to all 4 drinks.',
+              _ => 'Your choice applies to both drinks.',
+            },
+            choices: pizzaDeal || burgerDeal
+                ? const [
+                    _DealChoice(
+                      name: 'Coke',
+                      image: 'assets/images/coke-cutout.png',
+                    ),
+                    _DealChoice(
+                      name: 'Sprite',
+                      image: 'assets/images/sprite-cutout.png',
+                    ),
+                  ]
+                : const [
+                    _DealChoice(
+                      name: 'Classic Cola',
+                      image: 'assets/images/coke-cutout.png',
+                    ),
+                    _DealChoice(
+                      name: 'Lemon-Lime',
+                      image: 'assets/images/sprite-cutout.png',
+                    ),
+                  ],
             selected: selectedDrink,
             onSelected: onDrinkSelected,
           ),
@@ -604,6 +748,97 @@ class _DealPart {
   final String detail;
   final int quantity;
   final String image;
+}
+
+class _FixedDealChoice extends StatelessWidget {
+  const _FixedDealChoice({
+    required this.title,
+    required this.name,
+    required this.subtitle,
+    required this.image,
+  });
+
+  final String title;
+  final String name;
+  final String subtitle;
+  final String image;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(
+          color: _ink,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        'This item is fixed for this deal.',
+        style: const TextStyle(color: _softText, fontSize: 11),
+      ),
+      const SizedBox(height: 13),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _accentRed, width: 1.4),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0E0C3955),
+              blurRadius: 11,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7F1),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Image.asset(image, fit: BoxFit.contain),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: _ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: _softText, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Color(0xFFFFEEF0),
+              child: Icon(Icons.lock_rounded, color: _accentRed, size: 17),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class _DealChoiceSelector extends StatelessWidget {
@@ -883,40 +1118,10 @@ class _ProductHero extends StatelessWidget {
             Positioned(
               left: 20,
               top: 12,
-              child: _FloatingButton(
-                icon: Icons.arrow_back_ios_new_rounded,
-                color: _accentBlue,
-                onTap: onBack,
-              ),
+              child: AppBackButton(onPressed: onBack, tooltip: 'Back to menu'),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FloatingButton extends StatelessWidget {
-  const _FloatingButton({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 5,
-      shadowColor: Colors.black12,
-      child: IconButton(
-        onPressed: onTap,
-        color: color,
-        icon: Icon(icon, size: 21),
       ),
     );
   }
