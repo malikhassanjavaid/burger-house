@@ -3,6 +3,17 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    configurations.configureEach {
+        // stripe_android's optional push-provisioning compileOnly module points
+        // at Google's non-public TapAndPay artifact. Hungry Spot uses Stripe
+        // card payments, not wallet push provisioning, so keep it off every
+        // release/lint classpath while retaining the Stripe issuing stubs.
+        exclude(
+            group = "com.google.android.gms",
+            module = "play-services-tapandpay",
+        )
+    }
 }
 
 val newBuildDir: Directory =

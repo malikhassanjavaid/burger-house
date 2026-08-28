@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBn_1j-EWQ5hukK4agbiQLnvOh9gvfus1w',
-    appId: '1:996721668582:android:d3c6256aac4aba4ada2627',
+    appId: '1:996721668582:android:873ed7600e4dc4eada2627',
     messagingSenderId: '996721668582',
     projectId: 'burger-house-80541',
     storageBucket: 'burger-house-80541.firebasestorage.app',
