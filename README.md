@@ -1,81 +1,106 @@
 # Hungry Spot
 
-A Flutter customer ordering application for Hungry Spot. Customers can create
-accounts, sign in securely, choose a delivery address, search the menu, and—once
-the ordering features are complete—place and track orders in real time.
+Hungry Spot is a production-oriented Flutter food-ordering app with a branded
+onboarding flow, configurable menu items, cart and coupons, delivery/pickup,
+Stripe card payments, Cash on Delivery, and customer order history.
 
-## Current features
+![Hungry Spot onboarding](audit/linkedin-release/01-onboarding.png)
 
-- Branded splash screen
-- Three-page onboarding flow
-- Firebase email/password registration and login
-- Password reset emails
-- Customer profiles stored in Cloud Firestore
-- Persistent authentication sessions and sign out
-- Premium customer homepage with best sellers and food categories
-- Dedicated menu search and saved-items navigation
-- Quick menu filters for popular, spicy, cheesy, and vegetarian picks
-- Product customization with sizes, add-ons, quantity and instructions
-- Shopping cart with minimum-order and delivery-fee calculations
-- Validated checkout with delivery details and Cash on Delivery
-- Firestore order creation and customer-owned order security rules
-- Customer profile editing, saved delivery addresses, and live order history
-- USD pricing throughout the ordering flow
-- Responsive black-and-white bottom navigation
-- Responsive Material 3 interface
+## Highlights
 
-## Technology
+- Firebase email/password and Google authentication with verification flows
+- Searchable restaurant menu, favorites, deals, and product customization
+- Cart persistence, coupon validation, delivery fees, and checkout validation
+- Stripe PaymentIntents created and verified by authenticated Cloud Functions
+- Cash on Delivery and customer-owned Firestore order history
+- Shared branded navigation, action bars, notifications, and form components
+- In-app privacy/account controls and public privacy/deletion documentation
+- API 36 Android configuration, upload signing, R8 protection, and adaptive icons
+- 115 optimized WebP assets (about 21 MB, reduced from about 167 MB)
+- Widget and service regression coverage for ordering, checkout, card input,
+  navigation, notifications, account controls, and responsive layouts
 
-- Flutter and Dart
-- Firebase Authentication
-- Cloud Firestore
-- Firebase Core
+## Architecture
 
-## Android hot reload
+```text
+Flutter UI
+├── core/                 theme, routes, config, reusable widgets
+├── features/auth/        Firebase authentication
+├── features/home/        menu, cart, checkout, Stripe, orders, profile
+├── features/account/     privacy and deletion controls
+├── features/location/    optional map/location address setup
+└── features/onboarding/  first-run experience
+        │
+        ├── Firebase Auth + Firestore
+        ├── Firebase callable Functions
+        └── Stripe PaymentIntents
+```
 
-Some Honor devices do not automatically expose Flutter's Dart VM service.
-For the configured development phone, start a reliable hot-reload session with:
+Card details are collected by Stripe’s native SDK. Secret Stripe keys stay in
+Firebase Secret Manager and never ship in the app or repository.
+
+## Local setup
+
+1. Install the Flutter SDK and an Android API 36 development environment.
+2. Clone the repository and run `flutter pub get`.
+3. Copy `stripe.config.example.json` to the ignored `stripe.config.json` and
+   add a Stripe **test** publishable key.
+4. Connect an Android device or start an emulator.
+5. Run `flutter run --dart-define-from-file=stripe.config.json`.
+
+For the configured Honor development device, the helper below starts the local
+Stripe Functions emulator, establishes ADB forwarding, and runs hot reload:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ".\tools\run_hot_reload.ps1"
 ```
 
-Keep the terminal open, save Dart changes, and press `r` to hot reload or `R`
-to hot restart.
+## Quality checks
 
-## Project structure
-
-```text
-lib/
-├── core/              # Shared routes, theme, and widgets
-├── features/
-│   ├── auth/          # Authentication screens and Firebase service
-│   ├── home/          # Customer home screen
-│   ├── onboarding/    # Introductory pages
-│   └── splash/        # Startup screen
-├── app.dart           # Application routes and theme configuration
-├── firebase_options.dart
-└── main.dart          # Application entry point and Firebase initialization
+```powershell
+flutter analyze --no-pub
+flutter test --no-pub
+Set-Location functions
+npm run lint
 ```
 
-## Getting started
+## Android release
 
-1. Install Flutter and configure an Android or iOS development environment.
-2. Clone this repository.
-3. Run `flutter pub get`.
-4. Connect a configured device or start an emulator.
-5. Run `flutter run`.
+The permanent package is `com.malikhassanjavaid.hungryspot`. Release signing
+uses ignored local files `android/key.properties` and
+`android/app/upload-keystore.jks`; never commit or share either file.
 
-The repository contains Firebase client configuration. Firebase security is
-enforced through Authentication and Firestore security rules; private service
-account credentials must never be committed.
+Create `production.config.json` from the checked-in example, supply the live
+publishable key and support email, and then build:
 
-## Roadmap
+```powershell
+flutter build appbundle --release --dart-define-from-file=production.config.json
+```
 
-- Burger menu and categories
-- Product details and customization
-- Shopping cart and checkout
-- Real-time order tracking
-- Staff/admin application
-- Rider delivery application
-- Push notifications
+Before publishing, complete every item in
+[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md). The public documents
+are [`docs/privacy-policy.html`](docs/privacy-policy.html) and
+[`docs/delete-account.html`](docs/delete-account.html); enable GitHub Pages from
+the `/docs` directory before entering their URLs in Play Console.
+
+## Firebase deployment
+
+The repository contains public Firebase client configuration, Firestore rules,
+indexes, and callable Function source. Service-account credentials and Stripe
+secret keys must never be committed.
+
+```powershell
+firebase deploy --only firestore:rules,firestore:indexes
+firebase functions:secrets:set STRIPE_SECRET_KEY
+firebase deploy --only functions
+```
+
+Use separate Stripe test/live keys and verify the active Firebase project before
+every deployment.
+
+## Portfolio demo
+
+Record a captioned 30–45 second mobile demo showing: home/deal selection,
+customization, cart/coupon, checkout, a clearly labeled Stripe **test** payment,
+and order confirmation. Do not show personal addresses, email addresses, API
+keys, terminal secrets, or real card information.
