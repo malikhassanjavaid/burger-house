@@ -258,6 +258,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () =>
                     Navigator.pushNamed(context, AppRoutes.register),
               ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.center,
+                child: AuthLinkButton(
+                  label: 'Privacy & account information',
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.privacyAccount),
+                ),
+              ),
             ],
           ),
         ),

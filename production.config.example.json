@@ -1,0 +1,6 @@
+{
+  "STRIPE_PUBLISHABLE_KEY": "pk_live_REPLACE_ME",
+  "SUPPORT_EMAIL": "support@example.com",
+  "PRIVACY_POLICY_URL": "https://malikhassanjavaid.github.io/burger-house/privacy-policy.html",
+  "ACCOUNT_DELETION_URL": "https://malikhassanjavaid.github.io/burger-house/delete-account.html"
+}

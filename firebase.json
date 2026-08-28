@@ -5,7 +5,7 @@
   },
   "functions": {
     "source": "functions",
-    "runtime": "nodejs20"
+    "runtime": "nodejs22"
   },
   "emulators": {
     "functions": {
@@ -21,7 +21,7 @@
       "android": {
         "default": {
           "projectId": "burger-house-80541",
-          "appId": "1:996721668582:android:d3c6256aac4aba4ada2627",
+          "appId": "1:996721668582:android:873ed7600e4dc4eada2627",
           "fileOutput": "android/app/google-services.json"
         }
       },
@@ -29,7 +29,7 @@
         "lib/firebase_options.dart": {
           "projectId": "burger-house-80541",
           "configurations": {
-            "android": "1:996721668582:android:d3c6256aac4aba4ada2627",
+            "android": "1:996721668582:android:873ed7600e4dc4eada2627",
             "ios": "1:996721668582:ios:0929687f5988cec8da2627",
             "macos": "1:996721668582:ios:0929687f5988cec8da2627",
             "web": "1:996721668582:web:4d5088cf8a835d0dda2627",

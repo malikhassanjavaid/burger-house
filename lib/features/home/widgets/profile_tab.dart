@@ -13,11 +13,13 @@ class ProfileTab extends StatelessWidget {
     required this.onDetails,
     required this.onAddress,
     required this.onOrders,
+    required this.onPrivacy,
   });
 
   final VoidCallback onDetails;
   final VoidCallback onAddress;
   final VoidCallback onOrders;
+  final VoidCallback onPrivacy;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,8 @@ class ProfileTab extends StatelessWidget {
           _ProfileMenuTile(title: 'MY ADDRESS', onTap: onAddress),
           const SizedBox(height: 13),
           _ProfileMenuTile(title: 'MY ORDERS', onTap: onOrders),
+          const SizedBox(height: 13),
+          _ProfileMenuTile(title: 'PRIVACY & ACCOUNT', onTap: onPrivacy),
         ],
       ),
     );

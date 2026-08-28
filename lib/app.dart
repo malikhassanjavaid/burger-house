@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/screens/forgot_password_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/account/screens/privacy_account_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/splash/screens/splash_screen.dart';
@@ -25,6 +26,7 @@ class HungrySpotApp extends StatelessWidget {
         AppRoutes.login: (_) => const LoginScreen(),
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
+        AppRoutes.privacyAccount: (_) => const PrivacyAccountScreen(),
         AppRoutes.home: (_) => const HomeScreen(),
       },
     );

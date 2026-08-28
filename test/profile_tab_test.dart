@@ -12,6 +12,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     var detailsOpened = false;
+    var privacyOpened = false;
     var signedOut = false;
 
     await tester.pumpWidget(
@@ -22,6 +23,7 @@ void main() {
               onDetails: () => detailsOpened = true,
               onAddress: () {},
               onOrders: () {},
+              onPrivacy: () => privacyOpened = true,
             ),
           ),
           bottomNavigationBar: Column(
@@ -38,6 +40,7 @@ void main() {
     expect(find.text('MY DETAILS'), findsOneWidget);
     expect(find.text('MY ADDRESS'), findsOneWidget);
     expect(find.text('MY ORDERS'), findsOneWidget);
+    expect(find.text('PRIVACY & ACCOUNT'), findsOneWidget);
     expect(find.text('MY FAVOURITES'), findsNothing);
     expect(tester.takeException(), isNull);
 
@@ -47,6 +50,9 @@ void main() {
 
     await tester.tap(find.text('MY DETAILS'));
     expect(detailsOpened, isTrue);
+
+    await tester.tap(find.text('PRIVACY & ACCOUNT'));
+    expect(privacyOpened, isTrue);
 
     await tester.tap(find.text('LOGOUT'));
     await tester.pumpAndSettle();

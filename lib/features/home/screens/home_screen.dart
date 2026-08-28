@@ -8,6 +8,7 @@ import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../auth/services/auth_service.dart';
+import '../../account/screens/privacy_account_screen.dart';
 import '../../location/models/delivery_location.dart';
 import '../data/sample_menu.dart';
 import '../models/cart_item.dart';
@@ -374,6 +375,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _openPrivacyAccount() {
+    return Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => const PrivacyAccountScreen()),
+    );
+  }
+
   void _toggleFavourite(MenuItem item) {
     setState(() {
       if (!_favourites.add(item.id)) _favourites.remove(item.id);
@@ -471,6 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onDetails: _openProfileDetails,
         onAddress: _openProfileAddress,
         onOrders: _openProfileOrders,
+        onPrivacy: _openPrivacyAccount,
       ),
     };
 
@@ -832,7 +841,7 @@ class _SavedEmptyState extends StatelessWidget {
                                 ),
                               ),
                               Image.asset(
-                                'assets/images/empty_saved_illustration.png',
+                                'assets/images/empty_saved_illustration.webp',
                                 key: const ValueKey('empty-saved-illustration'),
                                 width: imageSize,
                                 height: imageSize,
@@ -1176,7 +1185,7 @@ class _SavedExploreBanner extends StatelessWidget {
                 SizedBox(
                   width: 98,
                   child: Image.asset(
-                    'assets/images/empty_saved_illustration.png',
+                    'assets/images/empty_saved_illustration.webp',
                     fit: BoxFit.contain,
                     filterQuality: FilterQuality.high,
                   ),

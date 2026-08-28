@@ -50,3 +50,4 @@ app.*.map.json
 
 # Local Stripe client configuration. Never commit live/test keys.
 /stripe.config.json
+/production.config.json

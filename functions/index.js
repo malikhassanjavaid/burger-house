@@ -3,6 +3,7 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {defineSecret} = require("firebase-functions/params");
 const {initializeApp} = require("firebase-admin/app");
+const {getAuth} = require("firebase-admin/auth");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const Stripe = require("stripe");
 
@@ -10,6 +11,19 @@ initializeApp();
 
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const db = getFirestore();
+
+async function deleteQueryInBatches(query) {
+  while (true) {
+    const snapshot = await query.limit(400).get();
+    if (snapshot.empty) return;
+
+    const batch = db.batch();
+    snapshot.docs.forEach((document) => batch.delete(document.ref));
+    await batch.commit();
+
+    if (snapshot.size < 400) return;
+  }
+}
 
 function authenticatedUid(request) {
   const uid = request.auth && request.auth.uid;
@@ -112,3 +126,31 @@ exports.verifyPaymentIntent = onCall(
     }
   },
 );
+
+exports.deleteAccount = onCall(async (request) => {
+  const uid = authenticatedUid(request);
+
+  try {
+    await deleteQueryInBatches(
+      db.collection("orders").where("customerId", "==", uid),
+    );
+    await deleteQueryInBatches(
+      db.collection("stripePayments").where("customerId", "==", uid),
+    );
+    await db.collection("users").doc(uid).delete();
+
+    try {
+      await getAuth().deleteUser(uid);
+    } catch (error) {
+      if (error && error.code !== "auth/user-not-found") throw error;
+    }
+
+    return {status: "deleted"};
+  } catch (error) {
+    console.error("Unable to delete Hungry Spot account", {uid, error});
+    throw new HttpsError(
+      "failed-precondition",
+      "The account could not be deleted yet.",
+    );
+  }
+});
