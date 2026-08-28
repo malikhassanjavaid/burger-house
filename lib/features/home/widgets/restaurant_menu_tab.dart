@@ -230,14 +230,14 @@ class RestaurantMenuTab extends StatefulWidget {
 
   static String _categoryAsset(String category) {
     return switch (category) {
-      'Burgers' => 'assets/images/beefburger-cutout.png',
-      'Pizzas' => 'assets/images/cheese_pizza-cutout.png',
-      'Chicken' => 'assets/images/Spicy_glazed_wings-cutout.png',
-      'Sides' => 'assets/images/fries-cutout.png',
-      'Wraps' => 'assets/images/chicken_wrap-cutout.png',
-      'Drinks' => 'assets/images/strawberry_frappe-cutout.png',
-      'Desserts' => 'assets/images/cheesecake_slice-cutout.png',
-      _ => 'assets/images/duo_deal-cutout.png',
+      'Burgers' => 'assets/images/beefburger-cutout.webp',
+      'Pizzas' => 'assets/images/cheese_pizza-cutout.webp',
+      'Chicken' => 'assets/images/Spicy_glazed_wings-cutout.webp',
+      'Sides' => 'assets/images/fries-cutout.webp',
+      'Wraps' => 'assets/images/chicken_wrap-cutout.webp',
+      'Drinks' => 'assets/images/strawberry_frappe-cutout.webp',
+      'Desserts' => 'assets/images/cheesecake_slice-cutout.webp',
+      _ => 'assets/images/duo_deal-cutout.webp',
     };
   }
 

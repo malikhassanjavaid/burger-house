@@ -53,7 +53,7 @@ class AddCardPreview extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image.asset(
-              'assets/images/add_card_reference_background.png',
+              'assets/images/add_card_reference_background.webp',
               key: const ValueKey('add-card-reference-artwork'),
               fit: BoxFit.cover,
               filterQuality: FilterQuality.high,

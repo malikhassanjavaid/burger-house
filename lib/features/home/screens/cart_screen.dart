@@ -1115,7 +1115,7 @@ class _EmptyCart extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Image.asset(
-                          'assets/images/empty_cart_illustration.png',
+                          'assets/images/empty_cart_illustration.webp',
                           key: const ValueKey('empty-cart-illustration'),
                           width: imageSize,
                           height: imageSize,

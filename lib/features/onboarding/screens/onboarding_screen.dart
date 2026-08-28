@@ -27,7 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Good food,\nmade for your moment.',
       body:
           'Discover crowd favorites prepared fresh and ready whenever hunger calls.',
-      asset: 'assets/images/onboarding/intro_1_cutout.png',
+      asset: 'assets/images/onboarding/intro_1_cutout.webp',
       imageWidthFactor: .94,
       imageLabel: 'Happy customer holding a fresh pizza',
     ),
@@ -38,7 +38,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Every bite,\nmade your way.',
       body:
           'Choose your size, extras, and ingredients for a meal that feels personal.',
-      asset: 'assets/images/onboarding/intro_2_cutout.png',
+      asset: 'assets/images/onboarding/intro_2_cutout.webp',
       imageWidthFactor: .92,
       imageLabel: 'Freshly prepared cheeseburger',
     ),
@@ -49,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Your next craving,\none tap away.',
       body:
           'Place your order and follow every step from our kitchen to your door.',
-      asset: 'assets/images/onboarding/intro_3_cutout.png',
+      asset: 'assets/images/onboarding/intro_3_cutout.webp',
       imageWidthFactor: 1,
       imageLabel: 'Fresh cheese pizza',
     ),
@@ -204,7 +204,7 @@ class _OnboardingHeader extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: color,
                   padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(48, 48),
                   alignment: Alignment.centerRight,
                 ),
                 child: const Text(

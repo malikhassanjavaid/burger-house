@@ -15,7 +15,7 @@ class HungrySpotLogo extends StatelessWidget {
         child: Transform.scale(
           scale: contentScale,
           child: Image.asset(
-            'assets/images/hungry_spot_logo.png',
+            'assets/images/hungry_spot_logo.webp',
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),

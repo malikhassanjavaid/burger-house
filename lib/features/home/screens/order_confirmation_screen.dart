@@ -182,7 +182,7 @@ class _ConfirmationArtwork extends StatelessWidget {
         width: double.infinity,
         height: 125,
         child: Image.asset(
-          'assets/images/confirmed_order_chef.png',
+          'assets/images/confirmed_order_chef.webp',
           fit: BoxFit.contain,
           alignment: Alignment.bottomCenter,
           filterQuality: FilterQuality.high,
@@ -463,7 +463,7 @@ class _EstimatedTimeBanner extends StatelessWidget {
             child: Opacity(
               opacity: .95,
               child: Image.asset(
-                'assets/images/beefburger-cutout.png',
+                'assets/images/beefburger-cutout.webp',
                 width: 112,
                 height: 92,
                 fit: BoxFit.contain,

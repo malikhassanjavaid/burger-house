@@ -385,13 +385,13 @@ class _DealContentsSection extends StatelessWidget {
           name: 'Medium Pizzas',
           detail: 'Two freshly baked pizzas in your selected flavour',
           quantity: 2,
-          image: 'assets/images/pepperoni_pizza-cutout.png',
+          image: 'assets/images/pepperoni_pizza-cutout.webp',
         ),
         _DealPart(
           name: 'Chilled Drinks',
           detail: 'Three Coke or Sprite drinks, served ice-cold',
           quantity: 3,
-          image: 'assets/images/coke-cutout.png',
+          image: 'assets/images/coke-cutout.webp',
         ),
       ],
       'wow-burger-deal' => const [
@@ -399,13 +399,13 @@ class _DealContentsSection extends StatelessWidget {
           name: 'Crispy Chicken Burgers',
           detail: 'Four crunchy chicken burgers with signature sauce',
           quantity: 4,
-          image: 'assets/images/chicken_burger-cutout.png',
+          image: 'assets/images/chicken_burger-cutout.webp',
         ),
         _DealPart(
           name: 'Chilled Drinks',
           detail: 'Four Coke or Sprite drinks, served ice-cold',
           quantity: 4,
-          image: 'assets/images/coke-cutout.png',
+          image: 'assets/images/coke-cutout.webp',
         ),
       ],
       'family-box' => const [
@@ -413,19 +413,19 @@ class _DealContentsSection extends StatelessWidget {
           name: 'Signature Burgers',
           detail: 'Freshly prepared house favourites',
           quantity: 4,
-          image: 'assets/images/beefburger-cutout.png',
+          image: 'assets/images/beefburger-cutout.webp',
         ),
         _DealPart(
           name: 'Large Fries',
           detail: 'Golden, crispy and lightly seasoned',
           quantity: 2,
-          image: 'assets/images/fries-cutout.png',
+          image: 'assets/images/fries-cutout.webp',
         ),
         _DealPart(
           name: 'Chilled Drinks',
           detail: 'Ice-cold drinks to complete the feast',
           quantity: 4,
-          image: 'assets/images/coke-cutout.png',
+          image: 'assets/images/coke-cutout.webp',
         ),
       ],
       _ => const [
@@ -433,19 +433,19 @@ class _DealContentsSection extends StatelessWidget {
           name: 'Premium Burgers',
           detail: 'Two juicy Hungry Spot favourites',
           quantity: 2,
-          image: 'assets/images/beefburger-cutout.png',
+          image: 'assets/images/beefburger-cutout.webp',
         ),
         _DealPart(
           name: 'Large Fries',
           detail: 'One generous serving of crispy fries',
           quantity: 1,
-          image: 'assets/images/fries-cutout.png',
+          image: 'assets/images/fries-cutout.webp',
         ),
         _DealPart(
           name: 'Chilled Drinks',
           detail: 'Two refreshing ice-cold drinks',
           quantity: 2,
-          image: 'assets/images/coke-cutout.png',
+          image: 'assets/images/coke-cutout.webp',
         ),
       ],
     };
@@ -550,27 +550,27 @@ class _DealContentsSection extends StatelessWidget {
               choices: const [
                 _DealChoice(
                   name: 'Classic Cheese Pizza',
-                  image: 'assets/images/cheese_pizza-cutout.png',
+                  image: 'assets/images/cheese_pizza-cutout.webp',
                 ),
                 _DealChoice(
                   name: 'Pepperoni Pizza',
-                  image: 'assets/images/pepperoni_pizza-cutout.png',
+                  image: 'assets/images/pepperoni_pizza-cutout.webp',
                 ),
                 _DealChoice(
                   name: 'Chicken Fajita Pizza',
-                  image: 'assets/images/chicked_fajita_pizza-cutout.png',
+                  image: 'assets/images/chicked_fajita_pizza-cutout.webp',
                 ),
                 _DealChoice(
                   name: 'Kabab Crown Pizza',
-                  image: 'assets/images/kabab_pizza-cutout.png',
+                  image: 'assets/images/kabab_pizza-cutout.webp',
                 ),
                 _DealChoice(
                   name: 'Super Duper Pizza',
-                  image: 'assets/images/superduper_pizza-cutout.png',
+                  image: 'assets/images/superduper_pizza-cutout.webp',
                 ),
                 _DealChoice(
                   name: "Chef's Special Pizza",
-                  image: 'assets/images/chefspecial_pizza-cutout.png',
+                  image: 'assets/images/chefspecial_pizza-cutout.webp',
                 ),
               ],
               selected: selectedPizza,
@@ -581,7 +581,7 @@ class _DealContentsSection extends StatelessWidget {
               title: 'Included burger',
               name: 'Crispy Chicken Burger',
               subtitle: 'Included in all 4 burgers',
-              image: 'assets/images/chicken_burger-cutout.png',
+              image: 'assets/images/chicken_burger-cutout.webp',
             )
           else
             _DealChoiceSelector(
@@ -592,15 +592,15 @@ class _DealContentsSection extends StatelessWidget {
               choices: const [
                 _DealChoice(
                   name: 'Classic Smash',
-                  image: 'assets/images/beefburger-cutout.png',
+                  image: 'assets/images/beefburger-cutout.webp',
                 ),
                 _DealChoice(
                   name: 'Firehouse',
-                  image: 'assets/images/firehouse_burger-cutout.png',
+                  image: 'assets/images/firehouse_burger-cutout.webp',
                 ),
                 _DealChoice(
                   name: 'Crispy Chicken',
-                  image: 'assets/images/chicken_burger-cutout.png',
+                  image: 'assets/images/chicken_burger-cutout.webp',
                 ),
               ],
               selected: selectedBurger,
@@ -619,21 +619,21 @@ class _DealContentsSection extends StatelessWidget {
                 ? const [
                     _DealChoice(
                       name: 'Coke',
-                      image: 'assets/images/coke-cutout.png',
+                      image: 'assets/images/coke-cutout.webp',
                     ),
                     _DealChoice(
                       name: 'Sprite',
-                      image: 'assets/images/sprite-cutout.png',
+                      image: 'assets/images/sprite-cutout.webp',
                     ),
                   ]
                 : const [
                     _DealChoice(
                       name: 'Classic Cola',
-                      image: 'assets/images/coke-cutout.png',
+                      image: 'assets/images/coke-cutout.webp',
                     ),
                     _DealChoice(
                       name: 'Lemon-Lime',
-                      image: 'assets/images/sprite-cutout.png',
+                      image: 'assets/images/sprite-cutout.webp',
                     ),
                   ],
             selected: selectedDrink,
@@ -1265,11 +1265,11 @@ class _SizeSection extends StatelessWidget {
                               ? Image.asset(
                                   switch (index) {
                                     0 =>
-                                      'assets/images/pizza_size_4-cutout.png',
+                                      'assets/images/pizza_size_4-cutout.webp',
                                     1 =>
-                                      'assets/images/pizza_size_6-cutout.png',
+                                      'assets/images/pizza_size_6-cutout.webp',
                                     _ =>
-                                      'assets/images/pizza_size_8-cutout.png',
+                                      'assets/images/pizza_size_8-cutout.webp',
                                   },
                                   fit: BoxFit.contain,
                                   filterQuality: FilterQuality.high,
@@ -1277,9 +1277,9 @@ class _SizeSection extends StatelessWidget {
                               : burgerStyle
                               ? Image.asset(
                                   switch (index) {
-                                    0 => 'assets/images/patty_single.png',
-                                    1 => 'assets/images/patty_double.png',
-                                    _ => 'assets/images/patty_triple.png',
+                                    0 => 'assets/images/patty_single.webp',
+                                    1 => 'assets/images/patty_double.webp',
+                                    _ => 'assets/images/patty_triple.webp',
                                   },
                                   fit: BoxFit.contain,
                                   filterQuality: FilterQuality.high,
@@ -1373,10 +1373,10 @@ class _CrustSection extends StatelessWidget {
 
   static String _crustImage(String crust) {
     final value = crust.toLowerCase();
-    if (value.contains('thin')) return 'assets/images/crust_thin.jpg';
-    if (value.contains('pan')) return 'assets/images/crust_pan.jpg';
-    if (value.contains('cheese')) return 'assets/images/crust_cheese.jpg';
-    return 'assets/images/cheese_pizza.png';
+    if (value.contains('thin')) return 'assets/images/crust_thin.webp';
+    if (value.contains('pan')) return 'assets/images/crust_pan.webp';
+    if (value.contains('cheese')) return 'assets/images/crust_cheese.webp';
+    return 'assets/images/cheese_pizza.webp';
   }
 }
 
@@ -1449,38 +1449,38 @@ class _ExtrasSection extends StatelessWidget {
   static String _extraImage(String name) {
     final value = name.toLowerCase();
     if (value.contains('cheese slice')) {
-      return 'assets/images/burger_cheese_slice.jpg';
+      return 'assets/images/burger_cheese_slice.webp';
     }
     if (value.contains('tomato')) {
-      return 'assets/images/burger_tomatoes.jpg';
+      return 'assets/images/burger_tomatoes.webp';
     }
     if (value.contains('lettuce')) {
-      return 'assets/images/burger_lettuce.jpg';
+      return 'assets/images/burger_lettuce.webp';
     }
     if (value.contains('mushroom')) {
-      return 'assets/images/topping_mushrooms.jpg';
+      return 'assets/images/topping_mushrooms.webp';
     }
     if (value.contains('mozzarella')) {
-      return 'assets/images/topping_mozzarella.jpg';
+      return 'assets/images/topping_mozzarella.webp';
     }
     if (value.contains('red onion')) {
-      return 'assets/images/topping_red_onion.jpg';
+      return 'assets/images/topping_red_onion.webp';
     }
     if (value.contains('jalape')) {
-      return 'assets/images/topping_jalapeno.jpg';
+      return 'assets/images/topping_jalapeno.webp';
     }
     if (value.contains('capsicum')) {
-      return 'assets/images/topping_green_capsicum.jpg';
+      return 'assets/images/topping_green_capsicum.webp';
     }
-    if (value.contains('chicken')) return 'assets/images/chicken_bite.png';
+    if (value.contains('chicken')) return 'assets/images/chicken_bite.webp';
     if (value.contains('cheese') || value.contains('mozzarella')) {
-      return 'assets/images/cheese_pizza.png';
+      return 'assets/images/cheese_pizza.webp';
     }
-    if (value.contains('sauce')) return 'assets/images/loaded_fries.png';
+    if (value.contains('sauce')) return 'assets/images/loaded_fries.webp';
     if (value.contains('jalapeno') || value.contains('pepper')) {
-      return 'assets/images/chicked_fajita_pizza.png';
+      return 'assets/images/chicked_fajita_pizza.webp';
     }
-    return 'assets/images/superduper_pizza.png';
+    return 'assets/images/superduper_pizza.webp';
   }
 
   static String _toppingDescription(String name) {

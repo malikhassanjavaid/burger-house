@@ -78,6 +78,21 @@ void main() {
     expect(button.right, lessThanOrEqualTo(340));
     expect(button.bottom, lessThanOrEqualTo(640));
   });
+
+  testWidgets('skip action meets the minimum accessible touch target', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await _pumpOnboarding(tester);
+
+    final skip = tester.getRect(find.byKey(const ValueKey('onboarding-skip')));
+    expect(skip.width, greaterThanOrEqualTo(48));
+    expect(skip.height, greaterThanOrEqualTo(48));
+  });
 }
 
 Future<void> _pumpOnboarding(WidgetTester tester) async {

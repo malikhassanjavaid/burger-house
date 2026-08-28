@@ -28,7 +28,7 @@ void main() {
       description: 'Test checkout item',
       category: 'Burgers',
       emoji: '',
-      assetPath: 'assets/images/beefburger.png',
+      assetPath: 'assets/images/beefburger.webp',
       price: 9.99,
     );
 

@@ -35,7 +35,7 @@ void main() {
       ),
     );
 
-    expect(image.assetName, 'assets/images/add_card_reference_background.png');
+    expect(image.assetName, 'assets/images/add_card_reference_background.webp');
     expect(aspectRatio.aspectRatio, closeTo(550 / 333, 0.0001));
     expect(find.text('Alena Syabian'), findsOneWidget);
     expect(find.text('4241 9214 7219 3456'), findsOneWidget);

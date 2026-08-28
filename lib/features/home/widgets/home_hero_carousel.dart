@@ -54,9 +54,9 @@ class HomeHeroCarousel extends StatefulWidget {
   final VoidCallback? onNotificationTap;
   final VoidCallback? onLocationTap;
   static const bannerAssets = [
-    'assets/images/home_hero_1_mobile_v2.png',
-    'assets/images/home_hero_2_mobile_v2.png',
-    'assets/images/home_hero_3_mobile_v2.png',
+    'assets/images/home_hero_1_mobile_v2.webp',
+    'assets/images/home_hero_2_mobile_v2.webp',
+    'assets/images/home_hero_3_mobile_v2.webp',
   ];
   static const bannerBackgroundColors = [
     Color(0xFF180506),
@@ -214,7 +214,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
                     child: AspectRatio(
                       aspectRatio: 1983 / 793,
                       child: Image.asset(
-                        'assets/images/pickup_store.png',
+                        'assets/images/pickup_store.webp',
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.high,
                         cacheWidth: imageCacheWidth,
@@ -264,7 +264,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(18),
                       child: Image.asset(
-                        'assets/images/homepage_footer.png',
+                        'assets/images/homepage_footer.webp',
                         fit: BoxFit.cover,
                         filterQuality: FilterQuality.high,
                         cacheWidth: imageCacheWidth,
