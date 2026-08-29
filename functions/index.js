@@ -7,6 +7,11 @@ const {getAuth} = require("firebase-admin/auth");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const Stripe = require("stripe");
 
+const {
+  authenticatedUid,
+  verifiedCustomerUid,
+} = require("./auth_policy");
+
 initializeApp();
 
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
@@ -25,14 +30,6 @@ async function deleteQueryInBatches(query) {
   }
 }
 
-function authenticatedUid(request) {
-  const uid = request.auth && request.auth.uid;
-  if (!uid) {
-    throw new HttpsError("unauthenticated", "Sign in before making a payment.");
-  }
-  return uid;
-}
-
 function validatedAmount(value) {
   if (!Number.isInteger(value) || value < 50 || value > 100000) {
     throw new HttpsError("invalid-argument", "The payment amount is invalid.");
@@ -43,7 +40,7 @@ function validatedAmount(value) {
 exports.createPaymentIntent = onCall(
   {secrets: [stripeSecretKey]},
   async (request) => {
-    const uid = authenticatedUid(request);
+    const uid = verifiedCustomerUid(request);
     const amount = validatedAmount(request.data && request.data.amount);
     const currency = String(request.data && request.data.currency || "usd").toLowerCase();
     const fulfillment = String(request.data && request.data.fulfillmentMethod || "delivery");
@@ -89,7 +86,7 @@ exports.createPaymentIntent = onCall(
 exports.verifyPaymentIntent = onCall(
   {secrets: [stripeSecretKey]},
   async (request) => {
-    const uid = authenticatedUid(request);
+    const uid = verifiedCustomerUid(request);
     const paymentIntentId = String(request.data && request.data.paymentIntentId || "");
     if (!/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId)) {
       throw new HttpsError("invalid-argument", "The payment reference is invalid.");

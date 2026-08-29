@@ -6,6 +6,8 @@
     "node": "22"
   },
   "scripts": {
+    "test": "node --test index.test.js",
+    "test:rules": "node --test firestore.rules.test.js",
     "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
@@ -16,7 +18,9 @@
     "stripe": "^18.5.0"
   },
   "devDependencies": {
-    "eslint": "^10.9.1"
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "eslint": "^10.9.1",
+    "firebase": "^12.18.0"
   },
   "overrides": {
     "uuid": "11.1.1"
