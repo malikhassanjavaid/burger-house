@@ -113,6 +113,11 @@ abstract final class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: Colors.white,
       canvasColor: Colors.white,
+      splashFactory: InkRipple.splashFactory,
+      splashColor: AppColors.red.withValues(alpha: .10),
+      highlightColor: AppColors.red.withValues(alpha: .04),
+      hoverColor: AppColors.red.withValues(alpha: .04),
+      focusColor: AppColors.red.withValues(alpha: .08),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
@@ -171,13 +176,22 @@ abstract final class AppTheme {
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(textStyle: AppTypography.button),
+        style: FilledButton.styleFrom(
+          textStyle: AppTypography.button,
+          overlayColor: Colors.white.withValues(alpha: .16),
+        ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(textStyle: AppTypography.button),
+        style: OutlinedButton.styleFrom(
+          textStyle: AppTypography.button,
+          overlayColor: AppColors.red.withValues(alpha: .10),
+        ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(textStyle: AppTypography.button),
+        style: TextButton.styleFrom(
+          textStyle: AppTypography.button,
+          overlayColor: AppColors.red.withValues(alpha: .09),
+        ),
       ),
     );
   }

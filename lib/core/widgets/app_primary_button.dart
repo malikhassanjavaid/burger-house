@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'app_loader.dart';
+import 'app_pressable.dart';
 
 /// The single primary action button used across Hungry Spot.
 ///
@@ -33,6 +34,10 @@ class AppPrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveOnPressed = isLoading ? null : onPressed;
+    final feedbackOnPressed = AppPressable.withFeedback(
+      effectiveOnPressed,
+      haptic: AppHaptic.light,
+    );
     final buttonColor = backgroundColor ?? AppColors.red;
     final style = FilledButton.styleFrom(
       backgroundColor: buttonColor,
@@ -40,6 +45,8 @@ class AppPrimaryButton extends StatelessWidget {
       disabledBackgroundColor: buttonColor.withValues(alpha: .56),
       disabledForegroundColor: Colors.white,
       elevation: 0,
+      overlayColor: Colors.white.withValues(alpha: .18),
+      splashFactory: InkRipple.splashFactory,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -61,23 +68,26 @@ class AppPrimaryButton extends StatelessWidget {
       );
     } else if (icon != null) {
       button = FilledButton.icon(
-        onPressed: effectiveOnPressed,
+        onPressed: feedbackOnPressed,
         style: style,
         icon: Icon(icon, size: 18),
         label: Text(label),
       );
     } else {
       button = FilledButton(
-        onPressed: effectiveOnPressed,
+        onPressed: feedbackOnPressed,
         style: style,
         child: Text(label),
       );
     }
 
-    return SizedBox(
-      width: fullWidth ? double.infinity : null,
-      height: height,
-      child: button,
+    return AppPressable(
+      enabled: feedbackOnPressed != null,
+      child: SizedBox(
+        width: fullWidth ? double.infinity : null,
+        height: height,
+        child: button,
+      ),
     );
   }
 }
