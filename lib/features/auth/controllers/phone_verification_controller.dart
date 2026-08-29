@@ -89,7 +89,7 @@ class PhoneVerificationController extends ChangeNotifier {
         PhoneVerificationState(
           phase: PhoneVerificationPhase.failure,
           phoneNumber: phoneNumber,
-          errorMessage: 'Enter a valid phone number.',
+          errorMessage: 'Enter a valid phone number',
         ),
       );
       return;
