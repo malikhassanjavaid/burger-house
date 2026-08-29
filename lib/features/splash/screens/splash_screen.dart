@@ -5,98 +5,74 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/onboarding_preferences.dart';
 import '../../../core/widgets/brand_logo.dart';
+import '../../auth/screens/authenticated_entry_screen.dart';
+import '../../auth/services/auth_repository.dart';
 import '../../auth/services/auth_service.dart';
-import '../../home/screens/home_screen.dart';
-import '../../location/screens/location_setup_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({
+    super.key,
+    this.repository,
+    this.splashDuration = const Duration(milliseconds: 1800),
+  });
+
+  final AuthRepository? repository;
+  final Duration splashDuration;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  static const _splashDuration = Duration(milliseconds: 1800);
-  static const _startupTimeout = Duration(seconds: 6);
-
   Timer? _timer;
+  AuthRepository? _resolvedRepository;
   bool _hasNavigated = false;
+
+  AuthRepository get _repository =>
+      _resolvedRepository ??= widget.repository ?? AuthService();
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(_splashDuration, _continueFromSplash);
+    _timer = Timer(widget.splashDuration, _continueFromSplash);
   }
 
   Future<void> _continueFromSplash() async {
-    final authService = AuthService();
-    try {
-      await _resolveDestination(authService).timeout(_startupTimeout);
-    } on TimeoutException {
-      _useStartupFallback(authService);
-    } catch (_) {
-      _useStartupFallback(authService);
-    }
-  }
-
-  Future<void> _resolveDestination(AuthService authService) async {
     if (!mounted || _hasNavigated) return;
-    if (authService.currentUser == null) {
+    try {
+      if (_repository.hasAuthenticatedUser) {
+        _replaceWithVerifiedEntry();
+        return;
+      }
+
       var hasCompletedOnboarding = false;
       try {
         hasCompletedOnboarding = await OnboardingPreferences.hasCompleted()
             .timeout(const Duration(seconds: 2));
       } catch (_) {
-        // A fresh install should still continue when local storage is delayed.
+        // A fresh install still proceeds if local preferences are delayed.
       }
+      if (!mounted || _hasNavigated) return;
       _replaceNamed(
         hasCompletedOnboarding ? AppRoutes.login : AppRoutes.onboarding,
       );
-      return;
-    }
-
-    final verified = await authService.hasVerifiedSession().timeout(
-      const Duration(seconds: 4),
-      onTimeout: () => authService.currentUser?.emailVerified ?? false,
-    );
-    if (!verified) {
-      try {
-        await authService.signOut().timeout(const Duration(seconds: 2));
-      } catch (_) {
-        // Navigation must not wait forever for a provider sign-out.
-      }
-      _replaceNamed(AppRoutes.login);
-      return;
-    }
-
-    try {
-      final location = await authService.getDeliveryLocation().timeout(
-        const Duration(seconds: 4),
-      );
-      if (location == null) {
-        _replace(
-          MaterialPageRoute(
-            builder: (_) => const LocationSetupScreen(
-              firstTime: true,
-              destinationAfterSave: HomeScreen(),
-            ),
-          ),
-        );
-      } else {
-        _replaceNamed(AppRoutes.home);
-      }
     } catch (_) {
-      // A verified customer can enter with cached authentication while
-      // Firestore is temporarily offline.
-      _replaceNamed(AppRoutes.home);
+      if (!mounted || _hasNavigated) return;
+      // A restored authenticated session is never allowed to fall through to
+      // home. The shared entry screen performs the trusted phone check.
+      if (_repository.hasAuthenticatedUser) {
+        _replaceWithVerifiedEntry();
+      } else {
+        _replaceNamed(AppRoutes.onboarding);
+      }
     }
   }
 
-  void _useStartupFallback(AuthService authService) {
-    if (!mounted || _hasNavigated) return;
-    _replaceNamed(
-      authService.currentUser == null ? AppRoutes.onboarding : AppRoutes.home,
+  void _replaceWithVerifiedEntry() {
+    _replace(
+      MaterialPageRoute<void>(
+        builder: (_) => AuthenticatedEntryScreen(repository: _repository),
+      ),
     );
   }
 

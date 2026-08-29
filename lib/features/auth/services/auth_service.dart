@@ -173,9 +173,6 @@ class AuthService implements AuthRepository {
     return refreshed != null && _userHasVerifiedPhone(refreshed);
   }
 
-  // Temporary compatibility for the old splash screen. Task 5 removes it.
-  Future<bool> hasVerifiedSession() => hasVerifiedPhoneSession();
-
   @override
   Future<void> syncVerifiedCustomerProfile() async {
     final user = currentUser;
@@ -226,17 +223,6 @@ class AuthService implements AuthRepository {
     return hasVerifiedPhoneIdentity(
       providerIds: user.providerData.map((provider) => provider.providerId),
       phoneNumber: user.phoneNumber,
-    );
-  }
-
-  // Temporary compatibility for the old login screen. Task 5 removes it.
-  Future<void> resendEmailVerification({
-    required String email,
-    required String password,
-  }) {
-    throw FirebaseAuthException(
-      code: 'operation-not-allowed',
-      message: 'Phone verification replaces email verification.',
     );
   }
 
@@ -392,6 +378,3 @@ bool isSignInCredentialError(Object error) {
 bool isDefinitelyMissingAccount(Object error) {
   return error is FirebaseAuthException && error.code == 'user-not-found';
 }
-
-// Temporary compatibility for the old login screen. Task 5 removes it.
-bool isUnverifiedEmailError(Object _) => false;

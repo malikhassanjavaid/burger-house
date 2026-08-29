@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_notification.dart';
+import '../../../core/widgets/international_phone_input.dart';
+import '../services/auth_repository.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_form_widgets.dart';
 import '../widgets/auth_loading_overlay.dart';
-import '../widgets/email_verification_sheet.dart';
 import '../widgets/password_field.dart';
+import 'authenticated_entry_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({this.initialEmail = '', super.key});
+  const RegisterScreen({this.initialEmail = '', this.repository, super.key});
 
   final String initialEmail;
+  final AuthRepository? repository;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -21,14 +24,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
-  final _phone = TextEditingController();
   final _password = TextEditingController();
-  final _authService = AuthService();
+  late final AuthRepository _repository;
+  String _phoneNumber = '';
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? AuthService();
     _email.text = widget.initialEmail;
   }
 
@@ -36,7 +40,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _name.dispose();
     _email.dispose();
-    _phone.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -46,14 +49,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await _authService.register(
-        name: _name.text,
+      final name = _name.text.trim();
+      await _repository.register(
+        name: name,
         email: _email.text,
-        phone: _phone.text,
+        phone: _phoneNumber,
         password: _password.text,
       );
       if (!mounted) return;
-      await _showVerificationSent();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => AuthenticatedEntryScreen(
+            repository: _repository,
+            initialPhone: _phoneNumber,
+            showWelcome: true,
+            welcomeName: name,
+          ),
+        ),
+        (route) => false,
+      );
     } catch (error) {
       if (!mounted) return;
       AppNotification.show(
@@ -66,35 +81,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Future<void> _showVerificationSent() async {
-    await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder: (_) => EmailVerificationSheet(
-        email: _email.text.trim().toLowerCase(),
-        title: 'Verify your Gmail',
-        message:
-            'We sent a verification link to your inbox. Open it to confirm this Gmail address, then return and log in.',
-        primaryLabel: 'GO TO LOGIN',
-        showSecondaryAction: false,
-      ),
-    );
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.login,
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AuthLoadingOverlay(
       loading: _isLoading,
-      message: 'Creating your account...',
+      message: 'Securing your account...',
       child: AuthFormShell(
         headline: 'Create your\naccount',
         topSpacing: 18,
@@ -119,8 +110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 hintText: 'Enter Full Name',
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.next,
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? 'Enter your name' : null,
+                validator: (value) =>
+                    (value ?? '').trim().isEmpty ? 'Enter your name' : null,
               ),
               const SizedBox(height: 11),
               AuthTextField(
@@ -129,19 +120,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 hintText: 'Enter Email',
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                validator: (v) => isValidGmailAddress(v ?? '')
+                validator: (value) => isValidEmailAddress(value ?? '')
                     ? null
-                    : 'Use a valid @gmail.com address',
+                    : 'Enter a valid email address',
               ),
               const SizedBox(height: 11),
-              AuthTextField(
-                controller: _phone,
+              AuthFieldFrame(
                 label: 'Phone number',
-                hintText: 'Enter Phone Number',
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
-                validator: (v) =>
-                    (v ?? '').length < 7 ? 'Enter a valid phone number' : null,
+                child: InternationalPhoneInput(
+                  value: _phoneNumber,
+                  onChanged: (value) => _phoneNumber = value,
+                  countrySelectorKey: const ValueKey(
+                    'signup-phone-country-selector',
+                  ),
+                  phoneFieldKey: const ValueKey('signup-phone-number-input'),
+                  validator: validateInternationalPhoneNumber,
+                  fieldDecoration: authInputDecoration('Enter Phone Number'),
+                  countryBorderColor: authBorder,
+                  countryAccentColor: AppColors.red,
+                  textStyle: AppTypography.bodyMedium.copyWith(
+                    color: authInk,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               const SizedBox(height: 11),
               PasswordField(controller: _password),

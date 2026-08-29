@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
-
 import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
-import '../../home/screens/home_screen.dart';
-import '../../location/screens/location_setup_screen.dart';
+import '../services/auth_repository.dart';
 import '../services/auth_service.dart';
 import '../widgets/auth_form_widgets.dart';
 import '../widgets/auth_loading_overlay.dart';
-import '../widgets/email_verification_sheet.dart';
 import '../widgets/password_field.dart';
+import 'authenticated_entry_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.repository});
+
+  final AuthRepository? repository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,8 +25,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  final _authService = AuthService();
+  late final AuthRepository _repository;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? AuthService();
+  }
 
   @override
   void dispose() {
@@ -40,13 +46,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await _authService.signIn(email: _email.text, password: _password.text);
-      await _continueAfterSignIn();
+      await _repository.signIn(email: _email.text, password: _password.text);
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => AuthenticatedEntryScreen(repository: _repository),
+        ),
+        (route) => false,
+      );
     } catch (error) {
       if (!mounted) return;
-      if (isUnverifiedEmailError(error)) {
-        await _showVerificationRequired();
-      } else if (isSignInCredentialError(error)) {
+      if (isSignInCredentialError(error)) {
         await _showAccountHelp(error);
       } else {
         AppNotification.show(
@@ -58,75 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _showVerificationRequired() async {
-    final shouldResend = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => EmailVerificationSheet(
-        email: _email.text.trim().toLowerCase(),
-        title: 'Gmail not verified',
-        message:
-            'Open the verification link we sent before logging in. If it expired or is missing, request a new one.',
-        primaryLabel: 'RESEND EMAIL',
-      ),
-    );
-    if (shouldResend != true || !mounted) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await _authService.resendEmailVerification(
-        email: _email.text,
-        password: _password.text,
-      );
-      if (!mounted) return;
-      AppNotification.show(
-        context,
-        message: 'A new verification email has been sent.',
-        tone: AppNotificationTone.success,
-      );
-    } catch (error) {
-      if (!mounted) return;
-      AppNotification.show(
-        context,
-        message: friendlyAuthError(error),
-        tone: AppNotificationTone.error,
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _continueAfterSignIn({
-    bool showWelcome = false,
-    String? welcomeName,
-  }) async {
-    if (!mounted) return;
-    final location = await _authService.getDeliveryLocation();
-    if (!mounted) return;
-    if (location == null) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LocationSetupScreen(
-            firstTime: true,
-            destinationAfterSave: HomeScreen(
-              showNewAccountWelcome: showWelcome,
-              welcomeName: welcomeName,
-            ),
-          ),
-        ),
-        (route) => false,
-      );
-      return;
-    }
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.home,
-      (route) => false,
-    );
   }
 
   Future<void> _showAccountHelp(Object error) async {
@@ -183,9 +125,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.pop(sheetContext);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          RegisterScreen(initialEmail: _email.text.trim()),
+                    MaterialPageRoute<void>(
+                      builder: (_) => RegisterScreen(
+                        initialEmail: _email.text.trim(),
+                        repository: _repository,
+                      ),
                     ),
                   );
                 },
