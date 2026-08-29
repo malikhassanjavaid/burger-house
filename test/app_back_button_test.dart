@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/core/theme/app_theme.dart';
 import 'package:flutter_application_1/core/widgets/app_back_button.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,16 @@ void main() {
     tester,
   ) async {
     var pressed = false;
+    final platformCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          platformCalls.add(call);
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -29,5 +40,10 @@ void main() {
 
     await tester.tap(button);
     expect(pressed, isTrue);
+    final hapticCalls = platformCalls
+        .where((call) => call.method == 'HapticFeedback.vibrate')
+        .toList();
+    expect(hapticCalls, hasLength(1));
+    expect(hapticCalls.single.arguments, 'HapticFeedbackType.selectionClick');
   });
 }

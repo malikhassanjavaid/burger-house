@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'app_loader.dart';
+import 'app_pressable.dart';
 
 class AppBottomActionBar extends StatelessWidget {
   const AppBottomActionBar({
@@ -133,51 +134,67 @@ class AppBottomActionButton extends StatelessWidget {
     _ => null,
   };
 
+  AppHaptic get _haptic => switch (label.trim().toUpperCase()) {
+    'PLACE ORDER' || 'PAY & CONTINUE' => AppHaptic.medium,
+    _ => AppHaptic.light,
+  };
+
   @override
   Widget build(BuildContext context) {
     final semanticIcon = _semanticIcon;
-    return SizedBox(
-      height: 46,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.red,
-          disabledBackgroundColor: Colors.white70,
-          disabledForegroundColor: AppColors.red.withValues(alpha: .62),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: loading
-            ? const AppLoader(
-                size: 17,
-                strokeWidth: 2.2,
-                color: AppColors.red,
-                trackColor: AppColors.blush,
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (semanticIcon != null) ...[
-                    Icon(semanticIcon, size: 16),
-                    const SizedBox(width: 6),
-                  ],
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.fade,
-                      softWrap: false,
-                      style: const TextStyle(
-                        color: AppColors.red,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+    final feedbackOnPressed = AppPressable.withFeedback(
+      loading ? null : onPressed,
+      haptic: _haptic,
+    );
+    return AppPressable(
+      enabled: feedbackOnPressed != null,
+      child: SizedBox(
+        height: 46,
+        child: FilledButton(
+          onPressed: feedbackOnPressed,
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: AppColors.red,
+            disabledBackgroundColor: Colors.white70,
+            disabledForegroundColor: AppColors.red.withValues(alpha: .62),
+            elevation: 0,
+            overlayColor: AppColors.red.withValues(alpha: .10),
+            splashFactory: InkRipple.splashFactory,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: loading
+              ? const AppLoader(
+                  size: 17,
+                  strokeWidth: 2.2,
+                  color: AppColors.red,
+                  trackColor: AppColors.blush,
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (semanticIcon != null) ...[
+                      Icon(semanticIcon, size: 16),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.fade,
+                        softWrap: false,
+                        style: const TextStyle(
+                          color: AppColors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }
