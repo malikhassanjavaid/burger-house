@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 // ignore: depend_on_referenced_packages
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/core/theme/app_theme.dart';
 import 'package:flutter_application_1/features/home/screens/home_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,67 @@ void main() {
   setupFirebaseCoreMocks();
 
   setUpAll(Firebase.initializeApp);
+
+  testWidgets(
+    'bottom navigation gives selection feedback when switching tabs',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final platformCalls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            platformCalls.add(call);
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(0.8)),
+            child: child!,
+          ),
+          home: const HomeScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final offerClose = find.byKey(const ValueKey('first-order-offer-close'));
+      if (offerClose.evaluate().isNotEmpty) {
+        await tester.tap(offerClose);
+        await tester.pumpAndSettle();
+      }
+      for (var attempt = 0; attempt < 10; attempt++) {
+        if (find
+            .byKey(const PageStorageKey('home-content'))
+            .evaluate()
+            .isNotEmpty) {
+          break;
+        }
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      platformCalls.clear();
+      await tester.tap(find.byKey(const ValueKey('bottom-nav-saved')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved meals'), findsOneWidget);
+      final hapticCalls = platformCalls
+          .where((call) => call.method == 'HapticFeedback.vibrate')
+          .toList();
+      expect(hapticCalls, hasLength(1));
+      expect(hapticCalls.single.arguments, 'HapticFeedbackType.selectionClick');
+    },
+  );
 
   testWidgets('adding a featured deal opens Menu with the View Cart summary', (
     tester,
@@ -70,6 +132,79 @@ void main() {
     expect(find.byKey(const ValueKey('menu-cart-summary')), findsOneWidget);
     expect(find.text('1 ITEM'), findsOneWidget);
     expect(find.text(r'$24.99'), findsOneWidget);
+    expect(find.text('View Cart'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('adding a regular item opens Menu with the View Cart summary', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(0.8)),
+          child: child!,
+        ),
+        home: const HomeScreen(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final offerClose = find.byKey(const ValueKey('first-order-offer-close'));
+    if (offerClose.evaluate().isNotEmpty) {
+      await tester.tap(offerClose);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    for (var attempt = 0; attempt < 10; attempt++) {
+      if (find
+          .byKey(const PageStorageKey('home-content'))
+          .evaluate()
+          .isNotEmpty) {
+        break;
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    final homeList = find.byKey(const PageStorageKey('home-content'));
+    expect(homeList, findsOneWidget);
+    final homeScrollable = find
+        .descendant(of: homeList, matching: find.byType(Scrollable))
+        .first;
+    final classicSmash = find.byKey(
+      const ValueKey('home-best-seller-classic-smash'),
+    );
+    await tester.scrollUntilVisible(
+      classicSmash,
+      240,
+      scrollable: homeScrollable,
+    );
+    final classicRect = tester.getRect(classicSmash);
+    await tester.tapAt(Offset(classicRect.center.dx, classicRect.top + 30));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Classic Smash'), findsWidgets);
+    await tester.tap(find.text('ADD TO CART'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Explore Menu'), findsOneWidget);
+    final cartSummary = find.byKey(const ValueKey('menu-cart-summary'));
+    expect(cartSummary, findsOneWidget);
+    expect(find.text('1 ITEM'), findsOneWidget);
+    expect(
+      find.descendant(of: cartSummary, matching: find.text(r'$7.49')),
+      findsOneWidget,
+    );
     expect(find.text('View Cart'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

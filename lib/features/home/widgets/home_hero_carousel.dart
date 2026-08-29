@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_pressable.dart';
 import '../models/fulfillment_method.dart';
 import '../models/menu_item.dart';
 import 'restaurant_menu_tab.dart';
@@ -645,54 +646,62 @@ class _FulfillmentOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final feedbackOnTap = AppPressable.withFeedback(
+      onTap,
+      haptic: AppHaptic.selection,
+    );
     return Semantics(
       selected: selected,
       button: true,
       label: '${method.label} order mode',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Container(
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected ? AppColors.red : Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: selected ? AppColors.red : const Color(0xFFEDE7E8),
+      child: AppPressable(
+        enabled: feedbackOnTap != null,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: feedbackOnTap,
+            splashColor: AppColors.red.withValues(alpha: .10),
+            highlightColor: AppColors.red.withValues(alpha: .04),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? AppColors.red : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: selected ? AppColors.red : const Color(0xFFEDE7E8),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (selected ? AppColors.red : AppColors.dark)
+                        .withValues(alpha: selected ? .18 : .07),
+                    blurRadius: selected ? 12 : 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: (selected ? AppColors.red : AppColors.dark).withValues(
-                    alpha: selected ? .18 : .07,
-                  ),
-                  blurRadius: selected ? 12 : 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  method.isPickup
-                      ? Icons.shopping_bag_outlined
-                      : Icons.delivery_dining_rounded,
-                  size: 17,
-                  color: selected ? Colors.white : AppColors.dark,
-                ),
-                const SizedBox(width: 7),
-                Text(
-                  method.label,
-                  style: TextStyle(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    method.isPickup
+                        ? Icons.shopping_bag_outlined
+                        : Icons.delivery_dining_rounded,
+                    size: 17,
                     color: selected ? Colors.white : AppColors.dark,
-                    fontSize: 12,
-                    height: 1,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 7),
+                  Text(
+                    method.label,
+                    style: TextStyle(
+                      color: selected ? Colors.white : AppColors.dark,
+                      fontSize: 12,
+                      height: 1,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -748,6 +757,10 @@ class _BestSellerPosters extends StatelessWidget {
           separatorBuilder: (_, _) => const SizedBox(width: 12),
           itemBuilder: (context, index) {
             final deal = deals[index];
+            final feedbackOnTap = AppPressable.withFeedback(
+              () => onDealSelected(deal),
+              haptic: AppHaptic.selection,
+            );
             return Align(
               alignment: Alignment.topCenter,
               child: SizedBox(
@@ -756,22 +769,26 @@ class _BestSellerPosters extends StatelessWidget {
                 child: Semantics(
                   button: true,
                   label: 'Order ${deal.name}',
-                  child: Material(
-                    color: Colors.white,
-                    elevation: 3,
-                    shadowColor: AppColors.dark.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(16),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      key: ValueKey('deal-poster-${deal.id}'),
-                      onTap: () => onDealSelected(deal),
-                      child: Image.asset(
-                        deal.assetPath,
-                        width: posterWidth,
-                        height: posterHeight,
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.medium,
-                        cacheWidth: posterCacheWidth,
+                  child: AppPressable(
+                    child: Material(
+                      color: Colors.white,
+                      elevation: 3,
+                      shadowColor: AppColors.dark.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(16),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        key: ValueKey('deal-poster-${deal.id}'),
+                        onTap: feedbackOnTap,
+                        splashColor: AppColors.red.withValues(alpha: .10),
+                        highlightColor: AppColors.red.withValues(alpha: .04),
+                        child: Image.asset(
+                          deal.assetPath,
+                          width: posterWidth,
+                          height: posterHeight,
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.medium,
+                          cacheWidth: posterCacheWidth,
+                        ),
                       ),
                     ),
                   ),

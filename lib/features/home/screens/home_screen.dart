@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
-import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_loader.dart';
+import '../../../core/widgets/app_pressable.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/services/auth_service.dart';
 import '../../account/screens/privacy_account_screen.dart';
 import '../../location/models/delivery_location.dart';
@@ -243,6 +244,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _addQuickItem(MenuItem item) {
     _addCartItem(CartItem(menuItem: item, quantity: 1, unitPrice: item.price));
+    _showMenuWithCart();
+  }
+
+  void _showMenuWithCart() {
+    if (!mounted) return;
+    _menuSearchFocusNode.unfocus();
+    setState(() => _selectedTab = 2);
   }
 
   void _addCartItem(CartItem cartItem) {
@@ -317,10 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-    if (addedToCart && item.isDeal && mounted) {
-      _menuSearchFocusNode.unfocus();
-      setState(() => _selectedTab = 2);
-    }
+    if (addedToCart) _showMenuWithCart();
   }
 
   Future<void> _openCart() async {
@@ -1341,82 +1346,95 @@ class _MinimalNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeLabel = badgeCount > 99 ? '99+' : '$badgeCount';
+    final feedbackOnTap = AppPressable.withFeedback(
+      onTap,
+      haptic: AppHaptic.selection,
+    );
 
     return Expanded(
       child: Semantics(
         button: true,
         selected: selected,
         label: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: ValueKey('bottom-nav-${label.toLowerCase()}'),
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            splashColor: const Color(0x0D000000),
-            highlightColor: const Color(0x08000000),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      SizedBox(
-                        width: 36,
-                        height: 28,
-                        child: Center(
-                          child: Icon(
-                            selected ? selectedIcon : icon,
-                            color: selected
-                                ? const Color(0xFF111111)
-                                : const Color(0xFF777277),
-                            size: 24,
+        child: AppPressable(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: ValueKey('bottom-nav-${label.toLowerCase()}'),
+              onTap: feedbackOnTap,
+              borderRadius: BorderRadius.circular(12),
+              splashColor: AppColors.red.withValues(alpha: .10),
+              highlightColor: AppColors.red.withValues(alpha: .04),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        SizedBox(
+                          width: 36,
+                          height: 28,
+                          child: Center(
+                            child: Icon(
+                              selected ? selectedIcon : icon,
+                              color: selected
+                                  ? const Color(0xFF111111)
+                                  : const Color(0xFF777277),
+                              size: 24,
+                            ),
                           ),
                         ),
-                      ),
-                      if (badgeCount > 0)
-                        Positioned(
-                          top: -5,
-                          right: -7,
-                          child: Container(
-                            constraints: const BoxConstraints(minWidth: 18),
-                            height: 18,
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            decoration: BoxDecoration(
-                              color: AppColors.red,
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              badgeLabel,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                height: 1,
-                                fontWeight: FontWeight.w700,
+                        if (badgeCount > 0)
+                          Positioned(
+                            top: -5,
+                            right: -7,
+                            child: Container(
+                              constraints: const BoxConstraints(minWidth: 18),
+                              height: 18,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.red,
+                                borderRadius: BorderRadius.circular(9),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                badgeLabel,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  height: 1,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.fade,
-                    style: AppTypography.navLabel.copyWith(
-                      color: selected
-                          ? const Color(0xFF111111)
-                          : const Color(0xFF777277),
-                      fontSize: 9.5,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      style: AppTypography.navLabel.copyWith(
+                        color: selected
+                            ? const Color(0xFF111111)
+                            : const Color(0xFF777277),
+                        fontSize: 9.5,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
