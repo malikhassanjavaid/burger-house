@@ -13,19 +13,22 @@ $functionsSecret = Join-Path $projectRoot "functions\.secret.local"
 $firebaseNodeHelper = Join-Path $PSScriptRoot "firebase_node_runtime.ps1"
 $firebaseProcessHelper = Join-Path $PSScriptRoot "firebase_process_launcher.ps1"
 $androidPluginCacheHelper = Join-Path $PSScriptRoot "android_plugin_cache.ps1"
+$androidApkIdentityHelper = Join-Path $PSScriptRoot "android_apk_identity.ps1"
+$adbForwardingHelper = Join-Path $PSScriptRoot "adb_forwarding.ps1"
+$androidSdkRoot = Join-Path $env:LOCALAPPDATA "Android\Sdk"
 $pluginMetadata = Join-Path $projectRoot ".flutter-plugins-dependencies"
 $pluginFingerprint = Join-Path $projectRoot ".dart_tool\android-plugin-fingerprint.txt"
 $projectFirebaseNode = Join-Path $projectRoot ".dart_tool\firebase-node-v22\node.exe"
 $emulatorOutLog = Join-Path $projectRoot ".dart_tool\stripe-functions-emulator.out.log"
 $emulatorErrorLog = Join-Path $projectRoot ".dart_tool\stripe-functions-emulator.error.log"
-$packageName = "com.example.flutter_application_1"
-$activityName = "$packageName/.MainActivity"
 $functionsPort = 5001
 $stripeFunctionUrl = "http://127.0.0.1:$functionsPort/burger-house-80541/us-central1/createPaymentIntent"
 
 . $firebaseNodeHelper
 . $firebaseProcessHelper
 . $androidPluginCacheHelper
+. $androidApkIdentityHelper
+. $adbForwardingHelper
 
 function Test-LocalPort {
     param([int]$Port)
@@ -69,6 +72,21 @@ function Test-StripeFunctions {
 
         $statusCode = [int]$_.Exception.Response.StatusCode
         return $statusCode -in @(400, 401, 403)
+    }
+}
+
+function Test-DartVmService {
+    param([int]$Port)
+
+    try {
+        $response = Invoke-WebRequest `
+            -Uri "http://127.0.0.1:$Port/" `
+            -TimeoutSec 1 `
+            -UseBasicParsing
+        return $response.StatusCode -eq 200
+    }
+    catch {
+        return $false
     }
 }
 
@@ -279,6 +297,13 @@ Save-AndroidPluginFingerprint `
     -Fingerprint $currentAndroidPluginFingerprint `
     -FingerprintPath $pluginFingerprint
 
+$apkIdentity = Get-AndroidApkIdentity `
+    -ApkPath $apk `
+    -AndroidSdkRoot $androidSdkRoot
+$packageName = $apkIdentity.PackageName
+$activityComponent = $apkIdentity.ComponentName
+Write-Host "Resolved Android launch target $activityComponent." -ForegroundColor Green
+
 $phoneReady = $false
 for ($attempt = 0; $attempt -lt 20; $attempt++) {
     $postBuildDevices = @(& $adb devices)
@@ -315,24 +340,54 @@ Write-Host "Restoring the Stripe tunnel after installation..." -ForegroundColor 
 Set-StripeReverseTunnel -Id $DeviceId
 
 Write-Host "Starting the Dart VM service on port $VmServicePort..." -ForegroundColor Cyan
-& $adb -s $DeviceId forward --remove-all | Out-Null
+$forwardRules = @(& $adb -s $DeviceId forward --list)
+if ($LASTEXITCODE -ne 0) {
+    throw "ADB could not inspect existing port forwarding rules."
+}
+if (Test-AdbForwardExists -Rules $forwardRules -DeviceId $DeviceId -Port $VmServicePort) {
+    & $adb -s $DeviceId forward --remove "tcp:$VmServicePort" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "ADB could not replace the existing Dart VM listener on port $VmServicePort."
+    }
+}
+& $adb -s $DeviceId forward "tcp:$VmServicePort" "tcp:$VmServicePort" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "ADB port forwarding failed for Dart VM service port $VmServicePort."
+}
+
 & $adb -s $DeviceId shell am force-stop $packageName
-& $adb -s $DeviceId shell am start `
-    -n $activityName `
+$launchOutput = @(& $adb -s $DeviceId shell am start `
+    -n $activityComponent `
     --ez enable-dart-profiling true `
     --ez enable-checked-mode true `
     --ez verify-entry-points true `
     --ez disable-service-auth-codes true `
-    --ei vm-service-port $VmServicePort
-
-Start-Sleep -Seconds 3
+    --ei vm-service-port $VmServicePort 2>&1)
+$launchExitCode = $LASTEXITCODE
+$launchDetails = ($launchOutput | Out-String).Trim()
+if ($launchExitCode -ne 0 -or $launchDetails -match "(?m)^Error(?:\s+type\s+\d+)?:") {
+    throw "Android could not start $activityComponent.`n$launchDetails"
+}
+Write-Host $launchDetails
 
 Write-Host "Verifying the Stripe tunnel after app launch..." -ForegroundColor Cyan
 Set-StripeReverseTunnel -Id $DeviceId
 
-& $adb -s $DeviceId forward "tcp:$VmServicePort" "tcp:$VmServicePort"
-if ($LASTEXITCODE -ne 0) {
-    throw "ADB port forwarding failed."
+$vmServiceReady = $false
+for ($attempt = 0; $attempt -lt 60; $attempt++) {
+    if (Test-DartVmService -Port $VmServicePort) {
+        $vmServiceReady = $true
+        break
+    }
+    Start-Sleep -Milliseconds 500
+}
+
+if (-not $vmServiceReady) {
+    $appProcess = (& $adb -s $DeviceId shell pidof $packageName 2>&1 | Out-String).Trim()
+    if ([string]::IsNullOrWhiteSpace($appProcess)) {
+        throw "Hungry Spot stopped before its Dart VM service became available. Re-run the command after checking the first app crash in adb logcat."
+    }
+    throw "Hungry Spot is running, but its Dart VM service did not become ready on port $VmServicePort within 30 seconds."
 }
 
 Write-Host ""
