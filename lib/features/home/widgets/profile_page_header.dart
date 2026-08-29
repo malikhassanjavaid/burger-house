@@ -30,11 +30,15 @@ class ProfilePageHeader extends StatelessWidget {
             children: [
               AppBackButton(onPressed: onBack, tooltip: 'Back'),
               const SizedBox(width: 15),
-              Text(
-                title,
-                style: AppTypography.pageHeader.copyWith(
-                  color: profilePageInk,
-                  letterSpacing: -.2,
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.pageHeader.copyWith(
+                    color: profilePageInk,
+                    letterSpacing: -.2,
+                  ),
                 ),
               ),
             ],

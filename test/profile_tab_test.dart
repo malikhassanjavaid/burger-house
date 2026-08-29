@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/features/home/widgets/profile_tab.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,6 +15,16 @@ void main() {
     var detailsOpened = false;
     var privacyOpened = false;
     var signedOut = false;
+    final platformCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          platformCalls.add(call);
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -50,9 +61,23 @@ void main() {
 
     await tester.tap(find.text('MY DETAILS'));
     expect(detailsOpened, isTrue);
+    final detailHaptics = platformCalls
+        .where((call) => call.method == 'HapticFeedback.vibrate')
+        .toList();
+    expect(detailHaptics, hasLength(1));
+    expect(detailHaptics.single.arguments, 'HapticFeedbackType.selectionClick');
 
+    platformCalls.clear();
     await tester.tap(find.text('PRIVACY & ACCOUNT'));
     expect(privacyOpened, isTrue);
+    final privacyHaptics = platformCalls
+        .where((call) => call.method == 'HapticFeedback.vibrate')
+        .toList();
+    expect(privacyHaptics, hasLength(1));
+    expect(
+      privacyHaptics.single.arguments,
+      'HapticFeedbackType.selectionClick',
+    );
 
     await tester.tap(find.text('LOGOUT'));
     await tester.pumpAndSettle();

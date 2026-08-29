@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_pressable.dart';
 import '../../../core/widgets/app_primary_button.dart';
 
 const _profileBackground = Colors.white;
@@ -178,47 +179,55 @@ class _ProfileMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(17),
-      elevation: 3,
-      shadowColor: const Color(0x1A47657A),
-      child: InkWell(
-        onTap: onTap,
+    final feedbackOnTap = AppPressable.withFeedback(
+      onTap,
+      haptic: AppHaptic.selection,
+    );
+    return AppPressable(
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(17),
-        child: SizedBox(
-          height: 78,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 33,
-                  decoration: BoxDecoration(
-                    color: AppColors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: _profileInk,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -.15,
+        elevation: 3,
+        shadowColor: const Color(0x1A47657A),
+        child: InkWell(
+          onTap: feedbackOnTap,
+          borderRadius: BorderRadius.circular(17),
+          splashColor: AppColors.red.withValues(alpha: .10),
+          highlightColor: AppColors.red.withValues(alpha: .04),
+          child: SizedBox(
+            height: 78,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 33,
+                    decoration: BoxDecoration(
+                      color: AppColors.red,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Color(0xFF9BA6AE),
-                  size: 17,
-                ),
-              ],
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: _profileInk,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.15,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Color(0xFF9BA6AE),
+                    size: 17,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
