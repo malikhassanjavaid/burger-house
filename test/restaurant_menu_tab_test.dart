@@ -1,9 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/features/home/data/sample_menu.dart';
 import 'package:flutter_application_1/features/home/widgets/restaurant_menu_tab.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('food card compresses and gives selection feedback when opened', (
+    tester,
+  ) async {
+    var opens = 0;
+    final platformCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          platformCalls.add(call);
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    final item = sampleMenu.firstWhere((item) => item.id == 'classic-smash');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 190,
+              height: 280,
+              child: RestaurantMenuCard(
+                item: item,
+                favourite: false,
+                onTap: () => opens++,
+                onFavourite: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final card = find.byType(RestaurantMenuCard);
+    final gesture = await tester.startGesture(tester.getCenter(card));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final scale = find.descendant(
+      of: card,
+      matching: find.byType(AnimatedScale),
+    );
+    expect(scale, findsOneWidget);
+    expect(tester.widget<AnimatedScale>(scale).scale, .97);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(opens, 1);
+    expect(tester.widget<AnimatedScale>(scale).scale, 1);
+    final hapticCalls = platformCalls
+        .where((call) => call.method == 'HapticFeedback.vibrate')
+        .toList();
+    expect(hapticCalls, hasLength(1));
+    expect(hapticCalls.single.arguments, 'HapticFeedbackType.selectionClick');
+  });
+
   testWidgets('menu groups all categories in homepage-sized rows', (
     tester,
   ) async {

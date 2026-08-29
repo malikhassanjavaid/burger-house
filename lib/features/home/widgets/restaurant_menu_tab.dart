@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
+import '../../../core/widgets/app_pressable.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 import 'menu_cart_summary_bar.dart';
@@ -501,56 +502,64 @@ class _MenuCategory extends StatelessWidget {
       'Desserts' => 'Dessert',
       _ => label,
     };
+    final feedbackOnTap = AppPressable.withFeedback(
+      onTap,
+      haptic: AppHaptic.selection,
+    );
 
     return SizedBox(
       width: 66,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(34),
-        child: Column(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              width: 62,
-              height: 62,
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected ? AppColors.red : const Color(0xFFE9E9E9),
-                  width: selected ? 1.7 : 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: selected
-                        ? AppColors.red.withValues(alpha: .15)
-                        : const Color(0x0F000000),
-                    blurRadius: selected ? 12 : 8,
-                    offset: const Offset(0, 3),
+      child: AppPressable(
+        child: InkWell(
+          onTap: feedbackOnTap,
+          borderRadius: BorderRadius.circular(34),
+          splashColor: AppColors.red.withValues(alpha: .10),
+          highlightColor: AppColors.red.withValues(alpha: .04),
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                width: 62,
+                height: 62,
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected ? AppColors.red : const Color(0xFFE9E9E9),
+                    width: selected ? 1.7 : 1,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: selected
+                          ? AppColors.red.withValues(alpha: .15)
+                          : const Color(0x0F000000),
+                      blurRadius: selected ? 12 : 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  assetPath,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                ),
               ),
-              child: Image.asset(
-                assetPath,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
+              const SizedBox(height: 7),
+              Text(
+                displayLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: selected ? AppColors.red : AppColors.dark,
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              displayLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: selected ? AppColors.red : AppColors.dark,
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -587,180 +596,199 @@ class RestaurantMenuCard extends StatelessWidget {
       errorBuilder: (_, _, _) =>
           Center(child: Text(item.emoji, style: const TextStyle(fontSize: 66))),
     );
+    final openWithFeedback = AppPressable.withFeedback(
+      onTap,
+      haptic: AppHaptic.selection,
+    );
+    final favouriteWithFeedback = AppPressable.withFeedback(
+      onFavourite,
+      haptic: AppHaptic.light,
+    );
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(23),
-      child: InkWell(
-        onTap: onTap,
+    return AppPressable(
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(23),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(23),
-            border: Border.all(color: _menuBorder),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF25344A).withValues(alpha: .07),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: compact ? 10 : 12,
-                child: Container(
-                  margin: EdgeInsets.all(compact ? 6 : 7),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(compact ? 15 : 18),
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(compact ? 7 : 9),
-                        child: compact
-                            ? artwork
-                            : Hero(tag: 'menu-art-${item.id}', child: artwork),
-                      ),
-                      Positioned(
-                        top: compact ? 5 : 7,
-                        right: compact ? 5 : 7,
-                        child: Material(
-                          color: Colors.white,
-                          shape: const CircleBorder(),
-                          elevation: 2,
-                          child: InkWell(
-                            onTap: onFavourite,
-                            customBorder: const CircleBorder(),
-                            child: SizedBox(
-                              width: compact ? 28 : 32,
-                              height: compact ? 28 : 32,
-                              child: Icon(
-                                favourite
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                size: compact ? 16 : 18,
-                                color: favourite
-                                    ? AppColors.red
-                                    : AppColors.dark,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+        child: InkWell(
+          onTap: openWithFeedback,
+          borderRadius: BorderRadius.circular(23),
+          splashColor: AppColors.red.withValues(alpha: .10),
+          highlightColor: AppColors.red.withValues(alpha: .04),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(23),
+              border: Border.all(color: _menuBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF25344A).withValues(alpha: .07),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
                 ),
-              ),
-              Expanded(
-                flex: compact ? 11 : 9,
-                child: Padding(
-                  padding: compact
-                      ? const EdgeInsets.fromLTRB(10, 5, 10, 7)
-                      : const EdgeInsets.fromLTRB(13, 7, 13, 13),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.dark,
-                          fontSize: compact ? 12.5 : 15.5,
-                          height: compact ? 1.08 : 1.12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -.25,
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: compact ? 10 : 12,
+                  child: Container(
+                    margin: EdgeInsets.all(compact ? 6 : 7),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(compact ? 15 : 18),
+                    ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(compact ? 7 : 9),
+                          child: compact
+                              ? artwork
+                              : Hero(
+                                  tag: 'menu-art-${item.id}',
+                                  child: artwork,
+                                ),
                         ),
-                      ),
-                      SizedBox(height: compact ? 2 : 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star_rounded,
-                            color: Color(0xFFFFB313),
-                            size: compact ? 13 : 15,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${item.rating}',
-                            style: TextStyle(
-                              color: _menuMuted,
-                              fontSize: compact ? 9 : 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              formatUsd(item.price),
-                              maxLines: 1,
-                              style: TextStyle(
-                                color: AppColors.dark,
-                                fontSize: compact ? 14.5 : 18,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -.4,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: compact ? 3 : 5),
-                          OutlinedButton(
-                            onPressed: onTap,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.dark,
-                              side: const BorderSide(
-                                color: AppColors.red,
-                                width: 1.5,
-                              ),
-                              minimumSize: Size(
-                                compact ? 54 : 64,
-                                compact ? 28 : 34,
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: compact ? 6 : 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  compact ? 9 : 11,
+                        Positioned(
+                          top: compact ? 5 : 7,
+                          right: compact ? 5 : 7,
+                          child: Material(
+                            color: Colors.white,
+                            shape: const CircleBorder(),
+                            elevation: 2,
+                            child: InkWell(
+                              onTap: favouriteWithFeedback,
+                              customBorder: const CircleBorder(),
+                              splashColor: AppColors.red.withValues(alpha: .14),
+                              child: SizedBox(
+                                width: compact ? 28 : 32,
+                                height: compact ? 28 : 32,
+                                child: Icon(
+                                  favourite
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  size: compact ? 16 : 18,
+                                  color: favourite
+                                      ? AppColors.red
+                                      : AppColors.dark,
                                 ),
                               ),
-                              visualDensity: VisualDensity.compact,
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'VIEW',
-                                  style: TextStyle(
-                                    fontSize: compact ? 8 : 9,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: .25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: compact ? 11 : 9,
+                  child: Padding(
+                    padding: compact
+                        ? const EdgeInsets.fromLTRB(10, 5, 10, 7)
+                        : const EdgeInsets.fromLTRB(13, 7, 13, 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.dark,
+                            fontSize: compact ? 12.5 : 15.5,
+                            height: compact ? 1.08 : 1.12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -.25,
+                          ),
+                        ),
+                        SizedBox(height: compact ? 2 : 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              color: Color(0xFFFFB313),
+                              size: compact ? 13 : 15,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${item.rating}',
+                              style: TextStyle(
+                                color: _menuMuted,
+                                fontSize: compact ? 9 : 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                formatUsd(item.price),
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: AppColors.dark,
+                                  fontSize: compact ? 14.5 : 18,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -.4,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: compact ? 3 : 5),
+                            OutlinedButton(
+                              onPressed: openWithFeedback,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.dark,
+                                overlayColor: AppColors.red.withValues(
+                                  alpha: .10,
+                                ),
+                                side: const BorderSide(
+                                  color: AppColors.red,
+                                  width: 1.5,
+                                ),
+                                minimumSize: Size(
+                                  compact ? 54 : 64,
+                                  compact ? 28 : 34,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: compact ? 6 : 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    compact ? 9 : 11,
                                   ),
                                 ),
-                                SizedBox(width: compact ? 1 : 2),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: compact ? 12 : 14,
-                                ),
-                              ],
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'VIEW',
+                                    style: TextStyle(
+                                      fontSize: compact ? 8 : 9,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: .25,
+                                    ),
+                                  ),
+                                  SizedBox(width: compact ? 1 : 2),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: compact ? 12 : 14,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
