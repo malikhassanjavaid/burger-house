@@ -3,8 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../location/models/delivery_location.dart';
+import 'auth_repository.dart';
 
-class AuthService {
+class AuthService implements AuthRepository {
   AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
     : _auth = auth ?? FirebaseAuth.instance,
       _firestore = firestore ?? FirebaseFirestore.instance;
@@ -15,40 +16,21 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
+  @override
+  bool get hasAuthenticatedUser => currentUser != null;
+
+  @override
   Future<void> signIn({required String email, required String password}) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: normalizeAuthEmail(email),
       password: password,
     );
-    final user = credential.user;
-    if (user == null) {
+    if (credential.user == null) {
       throw FirebaseAuthException(
         code: 'user-not-found',
         message: 'No account was returned for these credentials.',
       );
     }
-
-    await user.reload();
-    final refreshedUser = _auth.currentUser;
-    if (refreshedUser == null) {
-      throw FirebaseAuthException(
-        code: 'user-not-found',
-        message: 'The account could not be loaded.',
-      );
-    }
-
-    if (_requiresEmailVerification(refreshedUser) &&
-        !refreshedUser.emailVerified) {
-      await _auth.signOut();
-      throw FirebaseAuthException(
-        code: 'email-not-verified',
-        message: 'Verify your Gmail address before signing in.',
-      );
-    }
-
-    // Authentication has already succeeded at this point. A profile/audit sync
-    // must never turn a valid Firebase Auth login into a failed login.
-    await _syncVerifiedCustomerProfile(refreshedUser);
   }
 
   Future<UserCredential?> signInWithGoogle() async {
@@ -73,28 +55,10 @@ class AuthService {
     }
 
     final credential = GoogleAuthProvider.credential(idToken: idToken);
-    final result = await _auth.signInWithCredential(credential);
-    final user = result.user;
-    if (user != null) {
-      final profile = <String, dynamic>{
-        'uid': user.uid,
-        'name': user.displayName ?? googleUser.displayName ?? 'Customer',
-        'email': (user.email ?? googleUser.email).toLowerCase(),
-        'role': 'customer',
-        'profileUpdatedAt': FieldValue.serverTimestamp(),
-      };
-      if (result.additionalUserInfo?.isNewUser ?? false) {
-        profile['phone'] = user.phoneNumber ?? '';
-        profile['createdAt'] = FieldValue.serverTimestamp();
-      }
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .set(profile, SetOptions(merge: true));
-    }
-    return result;
+    return _auth.signInWithCredential(credential);
   }
 
+  @override
   Future<void> register({
     required String name,
     required String email,
@@ -113,7 +77,6 @@ class AuthService {
       email: cleanEmail,
       password: password,
     );
-
     final user = credential.user;
     if (user == null) {
       throw FirebaseAuthException(
@@ -124,71 +87,157 @@ class AuthService {
 
     final cleanName = name.trim();
     try {
-      await user.sendEmailVerification();
-      try {
-        await user.updateDisplayName(cleanName);
-      } on FirebaseAuthException {
-        // The display name is also stored in Firestore. A temporary failure
-        // here must not invalidate the newly created login credentials.
-      }
-      await _saveNewCustomerProfile(
-        user: user,
-        name: cleanName,
-        email: cleanEmail,
-        phone: phone.trim(),
-      );
-    } finally {
-      // Verification is completed from email, so keep no unverified session
-      // active inside the customer app.
-      await _auth.signOut();
+      await user.updateDisplayName(cleanName);
+    } on FirebaseAuthException {
+      // Profile synchronization retries after the phone credential is linked.
     }
   }
 
-  Future<void> resendEmailVerification({
-    required String email,
-    required String password,
+  @override
+  Future<void> sendPhoneVerificationCode({
+    required String phoneNumber,
+    int? forceResendingToken,
+    required Future<void> Function() onAutomaticVerificationCompleted,
+    required void Function(String verificationId, int? resendToken) onCodeSent,
+    required void Function(Object error) onVerificationFailed,
+    required void Function(String verificationId) onAutoRetrievalTimeout,
   }) async {
-    final credential = await _auth.signInWithEmailAndPassword(
-      email: normalizeAuthEmail(email),
-      password: password,
+    if (currentUser == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'Sign in again before verifying your phone.',
+      );
+    }
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      forceResendingToken: forceResendingToken,
+      verificationCompleted: (credential) async {
+        try {
+          await _linkPhoneCredential(credential);
+          await onAutomaticVerificationCompleted();
+        } catch (error) {
+          onVerificationFailed(error);
+        }
+      },
+      verificationFailed: onVerificationFailed,
+      codeSent: onCodeSent,
+      codeAutoRetrievalTimeout: onAutoRetrievalTimeout,
     );
-    final user = credential.user;
+  }
+
+  @override
+  Future<void> confirmPhoneVerificationCode({
+    required String verificationId,
+    required String smsCode,
+  }) {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    return _linkPhoneCredential(credential);
+  }
+
+  Future<void> _linkPhoneCredential(PhoneAuthCredential credential) async {
+    final user = currentUser;
     if (user == null) {
       throw FirebaseAuthException(
         code: 'user-not-found',
-        message: 'No account exists for this email.',
+        message: 'Sign in again before verifying your phone.',
       );
     }
 
     try {
-      await user.reload();
-      final refreshedUser = _auth.currentUser;
-      if (refreshedUser == null) {
-        throw FirebaseAuthException(
-          code: 'user-not-found',
-          message: 'The account could not be loaded.',
-        );
-      }
-      if (refreshedUser.emailVerified) {
-        throw FirebaseAuthException(
-          code: 'email-already-verified',
-          message: 'This Gmail address is already verified. You can log in.',
-        );
-      }
-      await refreshedUser.sendEmailVerification();
-    } finally {
-      await _auth.signOut();
+      await user.linkWithCredential(credential);
+    } on FirebaseAuthException catch (error) {
+      if (error.code != 'provider-already-linked') rethrow;
     }
+
+    await user.reload();
+    final refreshed = currentUser;
+    if (refreshed == null || !_userHasVerifiedPhone(refreshed)) {
+      throw FirebaseAuthException(
+        code: 'phone-not-verified',
+        message: 'The phone number could not be verified.',
+      );
+    }
+    await refreshed.getIdToken(true);
   }
 
-  Future<bool> hasVerifiedSession() async {
+  @override
+  Future<bool> hasVerifiedPhoneSession() async {
     final user = currentUser;
     if (user == null) return false;
     await user.reload();
-    final refreshedUser = currentUser;
-    if (refreshedUser == null) return false;
-    return !_requiresEmailVerification(refreshedUser) ||
-        refreshedUser.emailVerified;
+    final refreshed = currentUser;
+    return refreshed != null && _userHasVerifiedPhone(refreshed);
+  }
+
+  // Temporary compatibility for the old splash screen. Task 5 removes it.
+  Future<bool> hasVerifiedSession() => hasVerifiedPhoneSession();
+
+  @override
+  Future<void> syncVerifiedCustomerProfile() async {
+    final user = currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'Sign in again before continuing.',
+      );
+    }
+    await user.reload();
+    final refreshed = currentUser;
+    if (refreshed == null || !_userHasVerifiedPhone(refreshed)) {
+      throw FirebaseAuthException(
+        code: 'phone-not-verified',
+        message: 'Verify your phone number before continuing.',
+      );
+    }
+    await refreshed.getIdToken(true);
+
+    final reference = _firestore.collection('users').doc(refreshed.uid);
+    final snapshot = await reference.get();
+    final existing = snapshot.data();
+    final verifiedPhone = refreshed.phoneNumber!.trim();
+    final profile = <String, dynamic>{
+      'uid': refreshed.uid,
+      'name': refreshed.displayName?.trim().isNotEmpty == true
+          ? refreshed.displayName!.trim()
+          : (existing?['name'] as String?)?.trim().isNotEmpty == true
+          ? (existing!['name'] as String).trim()
+          : 'Customer',
+      'email': normalizeAuthEmail(refreshed.email ?? ''),
+      'phone': verifiedPhone,
+      'role': 'customer',
+      'profileUpdatedAt': FieldValue.serverTimestamp(),
+      'lastLoginAt': FieldValue.serverTimestamp(),
+    };
+    if (!snapshot.exists || existing?['createdAt'] == null) {
+      profile['createdAt'] = FieldValue.serverTimestamp();
+    }
+    if (existing?['phoneVerifiedAt'] == null ||
+        existing?['phone'] != verifiedPhone) {
+      profile['phoneVerifiedAt'] = FieldValue.serverTimestamp();
+    }
+    await reference.set(profile, SetOptions(merge: true));
+  }
+
+  bool _userHasVerifiedPhone(User user) {
+    return hasVerifiedPhoneIdentity(
+      providerIds: user.providerData.map((provider) => provider.providerId),
+      phoneNumber: user.phoneNumber,
+    );
+  }
+
+  // Temporary compatibility for the old login screen. Task 5 removes it.
+  Future<void> resendEmailVerification({
+    required String email,
+    required String password,
+  }) {
+    throw FirebaseAuthException(
+      code: 'operation-not-allowed',
+      message: 'Phone verification replaces email verification.',
+    );
   }
 
   Future<void> sendPasswordResetEmail(String email) {
@@ -209,6 +258,7 @@ class AuthService {
     });
   }
 
+  @override
   Future<DeliveryLocation?> getDeliveryLocation() async {
     final user = currentUser;
     if (user == null) return null;
@@ -219,6 +269,7 @@ class AuthService {
     return DeliveryLocation.fromMap(Map<String, dynamic>.from(address));
   }
 
+  @override
   Future<void> signOut() async {
     final usedGoogle =
         currentUser?.providerData.any(
@@ -231,52 +282,10 @@ class AuthService {
         await _googleInitialization;
         await GoogleSignIn.instance.signOut();
       } catch (_) {
-        // Firebase sign-out must still complete if the provider is unavailable.
+        // Firebase sign-out still completes if Google is unavailable.
       }
     }
     await _auth.signOut();
-  }
-
-  Future<void> _saveNewCustomerProfile({
-    required User user,
-    required String name,
-    required String email,
-    required String phone,
-  }) async {
-    try {
-      await _firestore.collection('users').doc(user.uid).set({
-        'uid': user.uid,
-        'name': name,
-        'email': email,
-        'emailVerified': false,
-        'phone': phone,
-        'role': 'customer',
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } on FirebaseException {
-      // The Firebase Auth account and verification email are already valid.
-      // Keep them. The missing profile is repaired after the first verified
-      // login instead of deleting the customer's account.
-    }
-  }
-
-  Future<void> _syncVerifiedCustomerProfile(User user) async {
-    try {
-      await _firestore.collection('users').doc(user.uid).set({
-        'uid': user.uid,
-        'name': user.displayName?.trim().isNotEmpty == true
-            ? user.displayName!.trim()
-            : 'Customer',
-        'email': normalizeAuthEmail(user.email ?? ''),
-        'emailVerified': true,
-        'role': 'customer',
-        'profileUpdatedAt': FieldValue.serverTimestamp(),
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } on FirebaseException {
-      // Login remains successful. Profile-dependent screens can report their
-      // own Firestore problem without mislabeling it as a password failure.
-    }
   }
 }
 
@@ -304,12 +313,6 @@ bool hasVerifiedPhoneIdentity({
       phoneNumber?.trim().isNotEmpty == true;
 }
 
-bool _requiresEmailVerification(User user) {
-  return user.providerData.any(
-    (provider) => provider.providerId == EmailAuthProvider.PROVIDER_ID,
-  );
-}
-
 String friendlyAuthError(Object error) {
   if (error is GoogleSignInException) {
     switch (error.code) {
@@ -335,20 +338,33 @@ String friendlyAuthError(Object error) {
         return 'An account already exists for this email.';
       case 'invalid-email':
         return 'Please enter a valid email address.';
-      case 'gmail-required':
-        return 'Please use a valid @gmail.com address.';
-      case 'email-not-verified':
-        return 'Verify your Gmail address before logging in.';
-      case 'email-already-verified':
-        return 'Your Gmail address is already verified. You can log in.';
       case 'weak-password':
         return 'Choose a stronger password with at least 6 characters.';
       case 'user-disabled':
         return 'This account has been disabled.';
+      case 'invalid-phone-number':
+      case 'missing-phone-number':
+        return 'Enter a valid phone number and try again.';
+      case 'invalid-verification-code':
+        return 'That verification code is incorrect. Try again.';
+      case 'session-expired':
+      case 'code-expired':
+        return 'This code has expired. Request a new code.';
+      case 'credential-already-in-use':
+        return 'This phone number is already linked to another account.';
+      case 'phone-not-verified':
+        return 'Verify your phone number before continuing.';
+      case 'quota-exceeded':
+        return 'SMS service is temporarily unavailable. Please try again later.';
+      case 'app-not-authorized':
+      case 'captcha-check-failed':
+        return 'Phone verification is not configured for this app build.';
       case 'too-many-requests':
         return 'Too many attempts. Please wait and try again.';
       case 'network-request-failed':
         return 'Check your internet connection and try again.';
+      case 'operation-not-allowed':
+        return error.message ?? 'This sign-in method is not enabled.';
       default:
         return error.message ?? 'Authentication failed. Please try again.';
     }
@@ -377,6 +393,5 @@ bool isDefinitelyMissingAccount(Object error) {
   return error is FirebaseAuthException && error.code == 'user-not-found';
 }
 
-bool isUnverifiedEmailError(Object error) {
-  return error is FirebaseAuthException && error.code == 'email-not-verified';
-}
+// Temporary compatibility for the old login screen. Task 5 removes it.
+bool isUnverifiedEmailError(Object _) => false;

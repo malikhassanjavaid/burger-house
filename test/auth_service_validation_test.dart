@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -49,6 +50,42 @@ void main() {
           phoneNumber: '',
         ),
         isFalse,
+      );
+    });
+  });
+
+  group('Phone verification errors', () {
+    test('maps invalid phone and code failures to recovery copy', () {
+      expect(
+        friendlyAuthError(FirebaseAuthException(code: 'invalid-phone-number')),
+        'Enter a valid phone number and try again.',
+      );
+      expect(
+        friendlyAuthError(
+          FirebaseAuthException(code: 'invalid-verification-code'),
+        ),
+        'That verification code is incorrect. Try again.',
+      );
+      expect(
+        friendlyAuthError(FirebaseAuthException(code: 'session-expired')),
+        'This code has expired. Request a new code.',
+      );
+    });
+
+    test('does not hide duplicate phone and quota recovery actions', () {
+      expect(
+        friendlyAuthError(
+          FirebaseAuthException(code: 'credential-already-in-use'),
+        ),
+        'This phone number is already linked to another account.',
+      );
+      expect(
+        friendlyAuthError(FirebaseAuthException(code: 'quota-exceeded')),
+        'SMS service is temporarily unavailable. Please try again later.',
+      );
+      expect(
+        friendlyAuthError(FirebaseAuthException(code: 'phone-not-verified')),
+        'Verify your phone number before continuing.',
       );
     });
   });
