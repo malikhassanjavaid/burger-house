@@ -8,7 +8,8 @@ Stripe card payments, Cash on Delivery, and customer order history.
 
 ## Highlights
 
-- Firebase email/password and Google authentication with verification flows
+- Firebase email/password and Google authentication with mandatory six-digit
+  Firebase SMS phone verification
 - Searchable restaurant menu, favorites, deals, and product customization
 - Cart persistence, coupon validation, delivery fees, and checkout validation
 - Stripe PaymentIntents created and verified by authenticated Cloud Functions
@@ -55,14 +56,31 @@ Stripe Functions emulator, establishes ADB forwarding, and runs hot reload:
 powershell -ExecutionPolicy Bypass -File ".\tools\run_hot_reload.ps1"
 ```
 
+## Firebase phone verification setup
+
+Real SMS verification is a release prerequisite, not a client-side test mode:
+
+1. Enable the **Phone** provider in Firebase Authentication and use a Blaze
+   project for production SMS billing.
+2. Register debug and release SHA-1 and SHA-256 certificate fingerprints for
+   `com.malikhassanjavaid.hungryspot`.
+3. Keep Android app verification enabled. Configure Firebase fictional phone
+   numbers and six-digit codes only in Firebase Console for development.
+4. Never commit fictional numbers/codes, disable app verification in a release,
+   or log OTP values and full phone numbers.
+
 ## Quality checks
 
 ```powershell
 flutter analyze --no-pub
 flutter test --no-pub
-Set-Location functions
-npm run lint
+npm.cmd test --prefix functions
+npm.cmd run lint --prefix functions
+firebase emulators:exec --only firestore --project hungry-spot-phone-rules-test "npm.cmd run test:rules --prefix functions"
 ```
+
+The Firestore emulator requires Java. Android Studio's bundled JBR can be used
+locally when `java` is not already on `PATH`.
 
 ## Android release
 
@@ -96,7 +114,9 @@ firebase deploy --only functions
 ```
 
 Use separate Stripe test/live keys and verify the active Firebase project before
-every deployment.
+every deployment. Deploy the phone-claim Firestore rules and payment Functions
+together, then confirm an authenticated account without a verified phone is
+rejected by both boundaries.
 
 ## Portfolio demo
 

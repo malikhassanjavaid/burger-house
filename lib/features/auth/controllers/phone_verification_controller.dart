@@ -55,7 +55,10 @@ class PhoneVerificationController extends ChangeNotifier {
     String initialPhone = '',
     Duration resendDelay = const Duration(seconds: 60),
     String Function(Object error)? errorMapper,
-  }) : _client = client,
+  }) : // Keep public dependency-injection parameter names for callers.
+       // ignore: prefer_initializing_formals
+       _client = client,
+       // ignore: prefer_initializing_formals
        _resendDelay = resendDelay,
        _errorMapper = errorMapper ?? _defaultErrorMapper,
        _state = PhoneVerificationState(

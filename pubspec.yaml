@@ -50,6 +50,7 @@ dependencies:
   cloud_functions: ^6.3.6
   http: ^1.6.0
   url_launcher: ^6.3.2
+  country_picker: ^2.0.28
 
 dependency_overrides:
   stripe_android: 12.1.0

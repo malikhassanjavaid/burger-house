@@ -10,6 +10,9 @@ operator, artifact hash, and Play release track in the release notes.
 - [ ] Confirm Android target SDK is 36 or newer and minimum SDK is 24.
 - [ ] Confirm Firebase project `burger-house-80541` selects the Hungry Spot
       Android app, not the retained legacy `com.example...` registration.
+- [ ] Register debug, upload, and Play App Signing SHA-1/SHA-256 fingerprints
+      for `com.malikhassanjavaid.hungryspot`, and confirm release signing matches
+      the Firebase Android app registration.
 
 ## 2. Secrets and signing
 
@@ -25,11 +28,20 @@ operator, artifact hash, and Play release track in the release notes.
 
 ## 3. Backend and data protection
 
+- [ ] Enable Firebase Authentication's Phone provider on a Blaze project and
+      configure budget alerts plus the intended SMS region allow policy.
+- [ ] Keep Android app verification enabled; never ship a bypass, fictional
+      phone number, or fictional six-digit code in application source/config.
 - [ ] Review and deploy Firestore rules and indexes to the intended project.
 - [ ] Review and deploy Firebase Functions from `functions/`.
-- [ ] Verify card PaymentIntent creation and verification are authenticated.
+- [ ] Deploy verified-phone Firestore Rules and payment Functions together
+      before rolling out the client that depends on them.
+- [ ] Verify private profile/order Rules and card PaymentIntent creation and
+      verification reject an authenticated token without `phone_number`.
 - [ ] Verify one test account can delete its data in-app and that another
       account cannot read or delete it.
+- [ ] Confirm the privacy policy discloses that Firebase/Google processes and
+      stores the phone number for SMS delivery and abuse prevention.
 - [ ] Complete the Play Data safety form for Auth, profile, location, order,
       and payment-verification data.
 - [ ] Enable GitHub Pages from `/docs` and verify the privacy and deletion pages
@@ -43,8 +55,10 @@ flutter analyze --no-pub
 flutter test --no-pub
 Set-Location functions
 npm ci
+npm test
 npm run lint
 Set-Location ..
+firebase emulators:exec --only firestore --project hungry-spot-phone-rules-test "npm.cmd run test:rules --prefix functions"
 flutter build appbundle --release --dart-define-from-file=production.config.json
 flutter build apk --release --dart-define-from-file=production.config.json
 ```
@@ -53,11 +67,20 @@ flutter build apk --release --dart-define-from-file=production.config.json
 - [ ] Confirm the AAB is signed by the private upload key, not Android debug.
 - [ ] Confirm no `pk_test_`, `sk_test_`, private key, or local emulator flag is
       present in production configuration or logs.
+- [ ] Confirm no OTP, fictional SMS code, full phone number, or disabled app
+      verification flag is present in source, production configuration, or logs.
 
 ## 5. Device smoke test
 
 - [ ] Install the release APK on Android API 36 and one physical device.
 - [ ] Test onboarding, Skip, registration, verification, login, and password reset.
+- [ ] Test six-digit SMS autofill/manual entry, wrong code, resend countdown,
+      change number, interruption/restart, existing login, and restored session.
+- [ ] Smoke-test SMS quota/throttling recovery and the duplicate-phone message
+      using Firebase Console fictional numbers; keep those values out of source.
+- [ ] Verify both debug and release-signed APK app verification on real Android.
+- [ ] Confirm email/password and Google sessions cannot enter private app content
+      until Firebase reports a linked verified phone provider.
 - [ ] Test menu search, favorites, each customization family, cart, coupon,
       delivery/pickup, Cash on Delivery, and Stripe live-mode low-value payment.
 - [ ] Test card details after first entering the cardholder name.

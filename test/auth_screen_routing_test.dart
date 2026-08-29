@@ -40,7 +40,6 @@ void main() {
       find.byKey(const ValueKey('phone-verification-number-input')),
       findsOneWidget,
     );
-    expect(find.text('Verify your Gmail'), findsNothing);
     await _cancelVerification(tester);
   });
 
@@ -67,7 +66,6 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('home-destination')), findsNothing);
-    expect(find.text('Gmail not verified'), findsNothing);
     await _cancelVerification(tester);
   });
 }

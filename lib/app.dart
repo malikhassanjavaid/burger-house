@@ -1,3 +1,4 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'core/routes/app_routes.dart';
@@ -19,6 +20,7 @@ class HungrySpotApp extends StatelessWidget {
       title: 'Hungry Spot',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      localizationsDelegates: const [CountryLocalizations.delegate],
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (_) => const SplashScreen(),
