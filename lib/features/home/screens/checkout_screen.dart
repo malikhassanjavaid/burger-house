@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/app_bottom_action_bar.dart';
-import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_loader.dart';
+import '../../../core/widgets/app_notification.dart';
+import '../../../core/widgets/app_pressable.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/international_phone_input.dart';
 import '../../location/models/delivery_location.dart';
 import '../../location/screens/location_setup_screen.dart';
 import '../models/cart_item.dart';
@@ -32,6 +33,8 @@ const _phoneBlue = Color(0xFF2C86E5);
 const _phoneTint = Color(0xFFEBF4FF);
 const _paymentPurple = Color(0xFF9552E8);
 const _paymentTint = Color(0xFFF5EEFF);
+
+typedef CheckoutProfileLoader = Future<Map<String, dynamic>?> Function();
 
 extension on PaymentMethod {
   String valueFor(FulfillmentMethod fulfillmentMethod) {
@@ -56,6 +59,8 @@ class CheckoutScreen extends StatefulWidget {
     this.serviceFee = 0,
     this.discount = 0,
     this.couponCode,
+    this.initialPhoneNumber = '',
+    this.profileLoader,
   });
 
   final List<CartItem> items;
@@ -68,6 +73,8 @@ class CheckoutScreen extends StatefulWidget {
   final double serviceFee;
   final double discount;
   final String? couponCode;
+  final String initialPhoneNumber;
+  final CheckoutProfileLoader? profileLoader;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -100,6 +107,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
     final user = FirebaseAuth.instance.currentUser;
     _nameController.text = user?.displayName ?? '';
+    _phoneController.text = widget.initialPhoneNumber;
     _addressController.text = widget.initialAddress;
     _deliveryLocation = widget.initialLocation;
     _loadProfileDetails();
@@ -115,20 +123,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _loadProfileDetails() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
+    if (user == null && widget.profileLoader == null) {
       if (mounted) setState(() => _isLoadingProfile = false);
       return;
     }
 
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final data = snapshot.data();
+      final data = widget.profileLoader != null
+          ? await widget.profileLoader!()
+          : (await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user!.uid)
+                    .get())
+                .data();
       if (data != null) {
         final savedName = (data['name'] as String?)?.trim() ?? '';
+        final savedPhone = (data['phone'] as String?)?.trim() ?? '';
         if (savedName.isNotEmpty) _nameController.text = savedName;
+        if (savedPhone.isNotEmpty) _phoneController.text = savedPhone;
       }
     } catch (_) {
       // Authentication values remain available when the cached profile cannot
@@ -818,6 +830,7 @@ class _ContactDetailsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _PhoneNumberSelector(
+      key: ValueKey(phoneController.text),
       controller: phoneController,
       loading: loading,
       saveToAccount: saveToAccount,
@@ -835,6 +848,7 @@ class _PhoneEntryResult {
 
 class _PhoneNumberSelector extends StatelessWidget {
   const _PhoneNumberSelector({
+    super.key,
     required this.controller,
     required this.loading,
     required this.saveToAccount,
@@ -846,26 +860,8 @@ class _PhoneNumberSelector extends StatelessWidget {
   final bool saveToAccount;
   final ValueChanged<bool> onSavePreferenceChanged;
 
-  static String _nationalDigits(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length == 11 && digits.startsWith('1')) {
-      return digits.substring(1);
-    }
-    return digits;
-  }
-
-  static bool _isValid(String value) => _nationalDigits(value).length == 10;
-
-  static String _format(String value) {
-    final digits = _nationalDigits(value);
-    if (digits.length != 10) return value;
-    return '+1 (${digits.substring(0, 3)}) '
-        '${digits.substring(3, 6)}-${digits.substring(6)}';
-  }
-
   Future<_PhoneEntryResult?> _showPhoneSheet(BuildContext context) async {
-    final initialDigits = _nationalDigits(controller.text);
-    var phoneDigits = initialDigits.length == 10 ? initialDigits : '';
+    var phoneNumber = controller.text.trim();
     String? errorText;
     var shouldSave = saveToAccount;
 
@@ -878,17 +874,12 @@ class _PhoneNumberSelector extends StatelessWidget {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           void save() {
-            if (!_isValid(phoneDigits)) {
-              setSheetState(
-                () => errorText = 'Enter a valid 10-digit US number',
-              );
+            if (validateInternationalPhoneNumber(phoneNumber) != null) {
+              setSheetState(() => errorText = 'Enter a valid phone number');
               return;
             }
             Navigator.of(sheetContext).pop(
-              _PhoneEntryResult(
-                number: _format(phoneDigits),
-                saveToAccount: shouldSave,
-              ),
+              _PhoneEntryResult(number: phoneNumber, saveToAccount: shouldSave),
             );
           }
 
@@ -951,94 +942,81 @@ class _PhoneNumberSelector extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(width: 86, child: _DialCodeField()),
-                          const SizedBox(width: 9),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '* ',
-                                        style: TextStyle(color: _phoneBlue),
-                                      ),
-                                      TextSpan(text: 'Phone number'),
-                                    ],
-                                  ),
-                                  style: TextStyle(
-                                    color: AppColors.muted,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                TextFormField(
-                                  initialValue: phoneDigits,
-                                  autofocus: true,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.done,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(10),
-                                  ],
-                                  style: const TextStyle(
-                                    color: AppColors.dark,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: .25,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: '5551234567',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFFADB1B8),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    errorText: errorText,
-                                    errorStyle: const TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                    filled: true,
-                                    fillColor: _phoneTint,
-                                    counterText: '',
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 13,
-                                    ),
-                                    border: _phoneFieldBorder(_softBorder),
-                                    enabledBorder: _phoneFieldBorder(
-                                      _softBorder,
-                                    ),
-                                    focusedBorder: _phoneFieldBorder(
-                                      _phoneBlue,
-                                      width: 1.4,
-                                    ),
-                                    errorBorder: _phoneFieldBorder(
-                                      AppColors.red,
-                                    ),
-                                    focusedErrorBorder: _phoneFieldBorder(
-                                      AppColors.red,
-                                      width: 1.4,
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    phoneDigits = value;
-                                    if (errorText != null) {
-                                      setSheetState(() => errorText = null);
-                                    }
-                                  },
-                                  onFieldSubmitted: (_) => save(),
-                                ),
-                              ],
+                      const Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '* ',
+                              style: TextStyle(color: _phoneBlue),
                             ),
+                            TextSpan(text: 'Country and phone number'),
+                          ],
+                        ),
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      InternationalPhoneInput(
+                        value: phoneNumber,
+                        onChanged: (value) {
+                          phoneNumber = value;
+                          if (errorText != null) {
+                            setSheetState(() => errorText = null);
+                          }
+                        },
+                        countrySelectorKey: const ValueKey(
+                          'checkout-phone-country-selector',
+                        ),
+                        phoneFieldKey: const ValueKey(
+                          'checkout-phone-number-input',
+                        ),
+                        autofocus: true,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => save(),
+                        errorText: errorText,
+                        countryWidth: 108,
+                        countryHeight: 46,
+                        countryBackgroundColor: _phoneTint,
+                        countryBorderColor: const Color(0xFFCFE4FA),
+                        countryAccentColor: _phoneBlue,
+                        textStyle: const TextStyle(
+                          color: AppColors.dark,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .25,
+                        ),
+                        fieldDecoration: InputDecoration(
+                          hintText: 'Phone number',
+                          hintStyle: const TextStyle(
+                            color: Color(0xFFADB1B8),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
+                          errorStyle: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          filled: true,
+                          fillColor: _phoneTint,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 13,
+                          ),
+                          border: _phoneFieldBorder(_softBorder),
+                          enabledBorder: _phoneFieldBorder(_softBorder),
+                          focusedBorder: _phoneFieldBorder(
+                            _phoneBlue,
+                            width: 1.4,
+                          ),
+                          errorBorder: _phoneFieldBorder(AppColors.red),
+                          focusedErrorBorder: _phoneFieldBorder(
+                            AppColors.red,
+                            width: 1.4,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Material(
@@ -1114,8 +1092,7 @@ class _PhoneNumberSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return FormField<String>(
       initialValue: controller.text,
-      validator: (value) =>
-          !_isValid(value ?? '') ? 'Please add a valid US phone number' : null,
+      validator: validateInternationalPhoneNumber,
       builder: (field) {
         final hasNumber = field.value?.isNotEmpty == true;
         final showError = field.hasError;
@@ -1238,56 +1215,6 @@ class _PhoneNumberSelector extends StatelessWidget {
   }
 }
 
-class _DialCodeField extends StatelessWidget {
-  const _DialCodeField();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Dial code',
-          style: TextStyle(
-            color: AppColors.muted,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          height: 46,
-          padding: const EdgeInsets.symmetric(horizontal: 11),
-          decoration: BoxDecoration(
-            color: _phoneTint,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFCFE4FA)),
-          ),
-          child: const Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '+1',
-                  style: TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: _phoneBlue,
-                size: 19,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _CheckoutSheetHandle extends StatelessWidget {
   const _CheckoutSheetHandle();
 
@@ -1317,15 +1244,17 @@ class _CheckoutSheetCloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(11),
-      child: InkWell(
-        onTap: onPressed,
+    return AppPressable(
+      child: Material(
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(11),
-        child: SizedBox.square(
-          dimension: 34,
-          child: Icon(Icons.close_rounded, color: accentColor, size: 19),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(11),
+          child: SizedBox.square(
+            dimension: 34,
+            child: Icon(Icons.close_rounded, color: accentColor, size: 19),
+          ),
         ),
       ),
     );
@@ -1585,75 +1514,83 @@ class _PaymentMethodSheetOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? _paymentTint : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    final feedbackOnTap = AppPressable.withFeedback(
+      onTap,
+      haptic: AppHaptic.selection,
+    );
+    return AppPressable(
+      child: Material(
+        color: selected ? _paymentTint : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? _paymentPurple : _softBorder,
-              width: selected ? 1.35 : 1,
+        child: InkWell(
+          onTap: feedbackOnTap,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: _paymentPurple.withValues(alpha: .12),
+          highlightColor: _paymentPurple.withValues(alpha: .05),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected ? _paymentPurple : _softBorder,
+                width: selected ? 1.35 : 1,
+              ),
+              boxShadow: selected
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x269552E8),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ]
+                  : null,
             ),
-            boxShadow: selected
-                ? const [
-                    BoxShadow(
-                      color: Color(0x269552E8),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              _PaymentMethodIcon(method: method),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: AppColors.dark,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+            child: Row(
+              children: [
+                _PaymentMethodIcon(method: method),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: AppColors.dark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 9,
-                        height: 1.2,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 9,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 7),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: Icon(
-                  selected
-                      ? Icons.check_circle_rounded
-                      : Icons.radio_button_off_rounded,
-                  key: ValueKey(selected),
-                  color: selected ? _paymentPurple : const Color(0xFFB9BEC6),
-                  size: 20,
+                const SizedBox(width: 7),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 160),
+                  child: Icon(
+                    selected
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_off_rounded,
+                    key: ValueKey(selected),
+                    color: selected ? _paymentPurple : const Color(0xFFB9BEC6),
+                    size: 20,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
