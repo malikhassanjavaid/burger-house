@@ -55,6 +55,19 @@ void main() {
   });
 
   group('Phone verification errors', () {
+    test('hides Firebase provider configuration details from customers', () {
+      expect(
+        friendlyAuthError(
+          FirebaseAuthException(
+            code: 'operation-not-allowed',
+            message:
+                'This operation is not allowed. Enable it in the Firebase console.',
+          ),
+        ),
+        'Phone verification is not available right now. Please try again later.',
+      );
+    });
+
     test('maps invalid phone and code failures to recovery copy', () {
       expect(
         friendlyAuthError(FirebaseAuthException(code: 'invalid-phone-number')),

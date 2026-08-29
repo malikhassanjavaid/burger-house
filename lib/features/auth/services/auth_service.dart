@@ -350,7 +350,7 @@ String friendlyAuthError(Object error) {
       case 'network-request-failed':
         return 'Check your internet connection and try again.';
       case 'operation-not-allowed':
-        return error.message ?? 'This sign-in method is not enabled.';
+        return 'Phone verification is not available right now. Please try again later.';
       default:
         return error.message ?? 'Authentication failed. Please try again.';
     }
