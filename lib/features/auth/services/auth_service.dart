@@ -102,10 +102,10 @@ class AuthService {
     required String password,
   }) async {
     final cleanEmail = normalizeAuthEmail(email);
-    if (!isValidGmailAddress(cleanEmail)) {
+    if (!isValidEmailAddress(cleanEmail)) {
       throw FirebaseAuthException(
-        code: 'gmail-required',
-        message: 'Use a valid @gmail.com address to create an account.',
+        code: 'invalid-email',
+        message: 'Enter a valid email address.',
       );
     }
 
@@ -282,13 +282,26 @@ class AuthService {
 
 String normalizeAuthEmail(String value) => value.trim().toLowerCase();
 
-bool isValidGmailAddress(String value) {
+bool isValidEmailAddress(String value) {
   final email = normalizeAuthEmail(value);
   if (email.contains(RegExp(r'\s'))) return false;
   final parts = email.split('@');
-  if (parts.length != 2 || parts.first.isEmpty) return false;
-  if (parts.last != 'gmail.com') return false;
-  return RegExp(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$").hasMatch(parts.first);
+  if (parts.length != 2 || parts.first.isEmpty || parts.last.isEmpty) {
+    return false;
+  }
+  final local = RegExp(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$");
+  final domain = RegExp(
+    r'^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$',
+  );
+  return local.hasMatch(parts.first) && domain.hasMatch(parts.last);
+}
+
+bool hasVerifiedPhoneIdentity({
+  required Iterable<String> providerIds,
+  required String? phoneNumber,
+}) {
+  return providerIds.contains(PhoneAuthProvider.PROVIDER_ID) &&
+      phoneNumber?.trim().isNotEmpty == true;
 }
 
 bool _requiresEmailVerification(User user) {
