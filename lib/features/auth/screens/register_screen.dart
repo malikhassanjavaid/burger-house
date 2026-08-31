@@ -27,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _password = TextEditingController();
   late final AuthRepository _repository;
   String _phoneNumber = '';
+  String _phoneCountryCode = 'US';
   bool _isLoading = false;
 
   @override
@@ -63,6 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           builder: (_) => AuthenticatedEntryScreen(
             repository: _repository,
             initialPhone: _phoneNumber,
+            initialPhoneCountryCode: _phoneCountryCode,
             showWelcome: true,
             welcomeName: name,
           ),
@@ -134,6 +136,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     'signup-phone-country-selector',
                   ),
                   phoneFieldKey: const ValueKey('signup-phone-number-input'),
+                  defaultCountryCode: 'US',
+                  onCountryChanged: (country) {
+                    _phoneCountryCode = country.countryCode;
+                  },
                   validator: validateInternationalPhoneNumber,
                   fieldDecoration: authInputDecoration('Enter Phone Number'),
                   countryBorderColor: authBorder,

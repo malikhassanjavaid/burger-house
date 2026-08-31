@@ -22,12 +22,14 @@ class AuthenticatedEntryScreen extends StatefulWidget {
     super.key,
     this.repository,
     this.initialPhone = '',
+    this.initialPhoneCountryCode,
     this.showWelcome = false,
     this.welcomeName,
   });
 
   final AuthRepository? repository;
   final String initialPhone;
+  final String? initialPhoneCountryCode;
   final bool showWelcome;
   final String? welcomeName;
 
@@ -68,6 +70,7 @@ class _AuthenticatedEntryScreenState extends State<AuthenticatedEntryScreen> {
           context,
           client: _repository,
           initialPhone: widget.initialPhone,
+          initialCountryCode: widget.initialPhoneCountryCode,
         );
         if (!mounted || _navigationClaimed) return;
 

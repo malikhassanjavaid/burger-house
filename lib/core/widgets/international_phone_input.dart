@@ -22,6 +22,7 @@ class InternationalPhoneInput extends StatefulWidget {
     required this.countrySelectorKey,
     required this.phoneFieldKey,
     this.defaultCountryCode,
+    this.onCountryChanged,
     this.validator,
     this.errorText,
     this.autofocus = false,
@@ -33,6 +34,15 @@ class InternationalPhoneInput extends StatefulWidget {
     this.countryAccentColor = const Color(0xFFF23845),
     this.countryWidth = 108,
     this.countryHeight = 48,
+    this.phoneFieldHeight,
+    this.fieldGap = 9,
+    this.countryBorderRadius = 11,
+    this.flagTextStyle = const TextStyle(fontSize: 20),
+    this.countryCodeTextStyle = const TextStyle(
+      color: Color(0xFF1A1A20),
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
+    ),
     this.textStyle,
   });
 
@@ -41,6 +51,7 @@ class InternationalPhoneInput extends StatefulWidget {
   final Key countrySelectorKey;
   final Key phoneFieldKey;
   final String? defaultCountryCode;
+  final ValueChanged<Country>? onCountryChanged;
   final FormFieldValidator<String>? validator;
   final String? errorText;
   final bool autofocus;
@@ -52,6 +63,11 @@ class InternationalPhoneInput extends StatefulWidget {
   final Color countryAccentColor;
   final double countryWidth;
   final double countryHeight;
+  final double? phoneFieldHeight;
+  final double fieldGap;
+  final double countryBorderRadius;
+  final TextStyle flagTextStyle;
+  final TextStyle countryCodeTextStyle;
   final TextStyle? textStyle;
 
   @override
@@ -243,6 +259,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
       ),
       onSelect: (country) {
         setState(() => _country = country);
+        widget.onCountryChanged?.call(country);
         _emitValue();
       },
     );
@@ -259,22 +276,24 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
           height: widget.countryHeight,
           child: Material(
             color: widget.countryBackgroundColor,
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(widget.countryBorderRadius),
             child: InkWell(
               key: widget.countrySelectorKey,
               onTap: _selectCountry,
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(widget.countryBorderRadius),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(
+                    widget.countryBorderRadius,
+                  ),
                   border: Border.all(color: widget.countryBorderColor),
                 ),
                 child: Row(
                   children: [
                     Text(
                       _country.flagEmoji,
-                      style: const TextStyle(fontSize: 20),
+                      style: widget.flagTextStyle,
                       textScaler: TextScaler.noScaling,
                     ),
                     const SizedBox(width: 6),
@@ -283,11 +302,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                         '+${_country.phoneCode}',
                         overflow: TextOverflow.fade,
                         softWrap: false,
-                        style: const TextStyle(
-                          color: Color(0xFF1A1A20),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: widget.countryCodeTextStyle,
                       ),
                     ),
                     Icon(
@@ -301,29 +316,31 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
             ),
           ),
         ),
-        const SizedBox(width: 9),
+        SizedBox(width: widget.fieldGap),
         Expanded(
-          child: TextFormField(
-            key: widget.phoneFieldKey,
-            controller: _nationalController,
-            autofocus: widget.autofocus,
-            keyboardType: TextInputType.phone,
-            textInputAction: widget.textInputAction,
-            autofillHints: const [AutofillHints.telephoneNumberNational],
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(maxNationalLength),
-            ],
-            style: widget.textStyle,
-            decoration: widget.fieldDecoration.copyWith(
-              errorText: widget.errorText,
-              counterText: '',
+          child: SizedBox(
+            height: widget.phoneFieldHeight,
+            child: TextFormField(
+              key: widget.phoneFieldKey,
+              controller: _nationalController,
+              autofocus: widget.autofocus,
+              keyboardType: TextInputType.phone,
+              textInputAction: widget.textInputAction,
+              autofillHints: const [AutofillHints.telephoneNumberNational],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(maxNationalLength),
+              ],
+              style: widget.textStyle,
+              decoration: widget.fieldDecoration.copyWith(
+                errorText: widget.errorText,
+              ),
+              validator: widget.validator == null
+                  ? null
+                  : (_) => widget.validator!(_completeNumber),
+              onChanged: (_) => _emitValue(),
+              onFieldSubmitted: widget.onFieldSubmitted,
             ),
-            validator: widget.validator == null
-                ? null
-                : (_) => widget.validator!(_completeNumber),
-            onChanged: (_) => _emitValue(),
-            onFieldSubmitted: widget.onFieldSubmitted,
           ),
         ),
       ],

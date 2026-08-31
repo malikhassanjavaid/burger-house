@@ -20,7 +20,7 @@ void main() {
     expect(validateInternationalPhoneNumber('03001234567'), isNull);
   });
 
-  testWidgets('signup phone field exposes a flag and country dial code', (
+  testWidgets('signup phone field defaults to the United States', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -45,7 +45,8 @@ void main() {
       find.byKey(const ValueKey('signup-phone-country-selector')),
       findsOneWidget,
     );
-    expect(find.text('+92'), findsOneWidget);
+    expect(find.text('🇺🇸'), findsOneWidget);
+    expect(find.text('+1'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('signup-phone-number-input')),
       findsOneWidget,

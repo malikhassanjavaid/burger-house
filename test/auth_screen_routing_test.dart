@@ -10,19 +10,28 @@ import 'package:flutter_application_1/features/location/models/delivery_location
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('registration forwards the normalized phone into the gate', (
+  testWidgets('registration keeps the selected US flag in verification', (
     tester,
   ) async {
     final repository = RouteFakeAuthRepository();
     await _pumpAuthScreen(
       tester,
       repository: repository,
+      locale: const Locale('en', 'CA'),
       child: RegisterScreen(repository: repository),
     );
 
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), 'Aisha Khan');
     await tester.enterText(fields.at(1), 'aisha@example.com');
+    await tester.tap(
+      find.byKey(const ValueKey('signup-phone-country-selector')),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -220));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('United States').first);
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('signup-phone-number-input')),
       '3001234567',
@@ -34,10 +43,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(repository.registerCount, 1);
-    expect(repository.registeredPhone, '+923001234567');
-    expect(repository.sentPhones, const ['+923001234567']);
+    expect(repository.registeredPhone, '+13001234567');
+    expect(repository.sentPhones, const ['+13001234567']);
     expect(
       find.byKey(const ValueKey('phone-verification-number-input')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('phone-verification-country-selector')),
+        matching: find.text('🇺🇸'),
+      ),
       findsOneWidget,
     );
     await _cancelVerification(tester);
@@ -74,18 +90,19 @@ Future<void> _pumpAuthScreen(
   WidgetTester tester, {
   required RouteFakeAuthRepository repository,
   required Widget child,
+  Locale locale = const Locale('en', 'PK'),
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(390, 844);
-  tester.platformDispatcher.localeTestValue = const Locale('en', 'PK');
+  tester.platformDispatcher.localeTestValue = locale;
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.platformDispatcher.clearLocaleTestValue);
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
-      locale: const Locale('en', 'PK'),
-      supportedLocales: const [Locale('en', 'PK')],
+      locale: locale,
+      supportedLocales: [locale],
       localizationsDelegates: const [CountryLocalizations.delegate],
       routes: {
         AppRoutes.login: (_) => const Scaffold(body: Text('Login route')),
