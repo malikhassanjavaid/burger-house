@@ -691,13 +691,19 @@ class _FulfillmentOption extends StatelessWidget {
                     color: selected ? Colors.white : AppColors.dark,
                   ),
                   const SizedBox(width: 7),
-                  Text(
-                    method.label,
-                    style: TextStyle(
-                      color: selected ? Colors.white : AppColors.dark,
-                      fontSize: 12,
-                      height: 1,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      method.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? Colors.white : AppColors.dark,
+                        fontSize: 12,
+                        height: 1,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
