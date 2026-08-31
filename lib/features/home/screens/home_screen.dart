@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -8,6 +9,7 @@ import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/app_pressable.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/brand_logo.dart';
 import '../../auth/services/auth_service.dart';
 import '../../account/screens/privacy_account_screen.dart';
 import '../../location/models/delivery_location.dart';
@@ -30,11 +32,13 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     this.showNewAccountWelcome = false,
     this.welcomeName,
+    this.hasOrderHistoryLoader,
     super.key,
   });
 
   final bool showNewAccountWelcome;
   final String? welcomeName;
+  final Future<bool> Function()? hasOrderHistoryLoader;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -58,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _address = 'Set your delivery address';
   int _selectedTab = 0;
   bool _restoringCustomerState = true;
-  static bool _offerShownThisSession = false;
+  bool _firstOrderOfferFlowActive = false;
 
   @override
   void initState() {
@@ -96,9 +100,25 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (!mounted || _offerShownThisSession) return;
-    _offerShownThisSession = true;
-    await _showFirstOrderOffer();
+    await _showFirstOrderOfferIfEligible();
+  }
+
+  Future<void> _showFirstOrderOfferIfEligible() async {
+    if (!mounted || _firstOrderOfferFlowActive) return;
+    _firstOrderOfferFlowActive = true;
+    try {
+      final hasOrderHistory =
+          await (widget.hasOrderHistoryLoader ??
+              _customerDataService.hasOrderHistory)();
+      if (!mounted || hasOrderHistory) return;
+      await _showFirstOrderOffer();
+    } catch (_) {
+      // The offer is only valid for accounts with confirmed zero-order
+      // history. If that cannot be checked, keep the home screen usable and
+      // avoid showing a potentially invalid promotion.
+    } finally {
+      _firstOrderOfferFlowActive = false;
+    }
   }
 
   Future<void> _showFirstOrderOffer() {
@@ -442,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onFavourite: _toggleFavourite,
         customerName: _customerFirstName,
         deliveryLabel: _homeLocationLabel,
-        onNotificationTap: _showFirstOrderOffer,
+        onNotificationTap: () => unawaited(_showFirstOrderOfferIfEligible()),
         onLocationTap: _fulfillmentMethod.isPickup
             ? null
             : () => unawaited(_openProfileAddress()),
@@ -528,110 +548,316 @@ class _NewCustomerWelcomeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: 340,
-            margin: const EdgeInsets.symmetric(horizontal: 22),
-            padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x4D000000),
-                  blurRadius: 42,
-                  offset: Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 104,
-                      height: 104,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFFE8D5),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Container(
-                      width: 78,
-                      height: 78,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFFF9A43), AppColors.orange],
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x4DFF6B00),
-                            blurRadius: 20,
-                            offset: Offset(0, 9),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.celebration_rounded,
-                        color: Colors.white,
-                        size: 39,
-                      ),
-                    ),
-                    const Positioned(
-                      right: -7,
-                      top: -5,
-                      child: Icon(
-                        Icons.auto_awesome_rounded,
-                        color: Color(0xFFFFB000),
-                        size: 26,
-                      ),
+      minimum: const EdgeInsets.symmetric(vertical: 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cardWidth = (constraints.maxWidth - 28)
+              .clamp(0.0, 360.0)
+              .toDouble();
+          final cardHeight = constraints.maxHeight.clamp(0.0, 500.0).toDouble();
+          final railWidth = cardWidth * .23;
+          final logoSealSize = cardWidth < 330 ? 94.0 : 104.0;
+          final contentLeft = railWidth + 49;
+
+          return Center(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                key: const ValueKey('new-account-welcome-card'),
+                width: cardWidth,
+                height: cardHeight,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x3D000000),
+                      blurRadius: 34,
+                      offset: Offset(0, 15),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  firstName.isEmpty
-                      ? 'Welcome to Hungry Spot!'
-                      : 'Welcome, $firstName!',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 25,
-                    height: 1.08,
-                    fontWeight: FontWeight.w700,
+                child: ClipPath(
+                  clipper: _WelcomeTicketClipper(notchCenterX: railWidth),
+                  child: ColoredBox(
+                    color: const Color(0xFFFFFDF8),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: railWidth,
+                          child: Container(
+                            key: const ValueKey(
+                              'new-account-welcome-ticket-rail',
+                            ),
+                            decoration: const BoxDecoration(
+                              color: AppColors.red,
+                              border: Border(
+                                right: BorderSide(
+                                  color: Color(0x66FFFFFF),
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            child: Stack(
+                              clipBehavior: Clip.hardEdge,
+                              children: [
+                                Positioned(
+                                  left: -47,
+                                  bottom: 70,
+                                  child: Opacity(
+                                    opacity: .12,
+                                    child: HungrySpotLogo(
+                                      size: 155,
+                                      contentScale: 1.08,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 31,
+                                  right: 10,
+                                  bottom: 31,
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) => Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: List.generate(
+                                        (constraints.maxHeight / 13).floor(),
+                                        (_) => Container(
+                                          width: 1.4,
+                                          height: 6,
+                                          color: Colors.white.withValues(
+                                            alpha: .48,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          key: const ValueKey(
+                            'new-account-welcome-celebration',
+                          ),
+                          top: 44,
+                          right: 28,
+                          child: const Icon(
+                            Icons.celebration_rounded,
+                            color: Color(0xFFFFB800),
+                            size: 44,
+                          ),
+                        ),
+                        Positioned(
+                          right: -14,
+                          bottom: 32,
+                          child: Icon(
+                            Icons.blur_on_rounded,
+                            color: const Color(
+                              0xFFFFC436,
+                            ).withValues(alpha: .28),
+                            size: 96,
+                          ),
+                        ),
+                        Positioned(
+                          left: railWidth - (logoSealSize * .52),
+                          top: 56,
+                          child: Container(
+                            key: const ValueKey(
+                              'new-account-welcome-logo-seal',
+                            ),
+                            width: logoSealSize,
+                            height: logoSealSize,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFEFA),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFFFB800),
+                                width: 2,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x26000000),
+                                  blurRadius: 14,
+                                  offset: Offset(0, 7),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: SizedBox(
+                                key: const ValueKey('new-account-welcome-logo'),
+                                width: logoSealSize - 12,
+                                height: logoSealSize - 12,
+                                child: HungrySpotLogo(
+                                  size: logoSealSize - 12,
+                                  contentScale: 1.1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.fromLTRB(
+                              contentLeft,
+                              154,
+                              22,
+                              108,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      const TextSpan(text: 'Welcome, '),
+                                      TextSpan(
+                                        text: firstName.isEmpty
+                                            ? 'Friend!'
+                                            : '$firstName!',
+                                        style: const TextStyle(
+                                          color: AppColors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  textAlign: TextAlign.left,
+                                  style: const TextStyle(
+                                    color: AppColors.dark,
+                                    fontSize: 32,
+                                    height: 1.05,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -.7,
+                                  ),
+                                ),
+                                const SizedBox(height: 13),
+                                Container(
+                                  width: 34,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red,
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                ),
+                                const SizedBox(height: 26),
+                                const Text(
+                                  'Your account is ready. Fresh burgers, '
+                                  'exclusive deals and easy ordering are '
+                                  'waiting for you.',
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 14,
+                                    height: 1.55,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: railWidth + 18,
+                          right: 22,
+                          bottom: 24,
+                          child: Material(
+                            color: AppColors.red,
+                            borderRadius: BorderRadius.circular(28),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              key: const ValueKey('new-account-start-ordering'),
+                              onTap: () => Navigator.pop(context),
+                              overlayColor: WidgetStatePropertyAll(
+                                Colors.white.withValues(alpha: .14),
+                              ),
+                              child: const SizedBox(
+                                height: 56,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 18),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Start Ordering',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Your account is ready. Fresh burgers, exclusive deals and easy ordering are waiting for you.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 14,
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                AppPrimaryButton(
-                  label: 'START ORDERING',
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icons.arrow_forward_rounded,
-                  borderRadius: 17,
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
+  }
+}
+
+class _WelcomeTicketClipper extends CustomClipper<Path> {
+  const _WelcomeTicketClipper({required this.notchCenterX});
+
+  final double notchCenterX;
+
+  @override
+  Path getClip(Size size) {
+    const cornerRadius = 30.0;
+    const notchRadius = 13.0;
+    final topNotch = Rect.fromCircle(
+      center: Offset(notchCenterX, 0),
+      radius: notchRadius,
+    );
+    final bottomNotch = Rect.fromCircle(
+      center: Offset(notchCenterX, size.height),
+      radius: notchRadius,
+    );
+
+    return Path()
+      ..moveTo(cornerRadius, 0)
+      ..lineTo(notchCenterX - notchRadius, 0)
+      ..arcTo(topNotch, math.pi, -math.pi, false)
+      ..lineTo(size.width - cornerRadius, 0)
+      ..quadraticBezierTo(size.width, 0, size.width, cornerRadius)
+      ..lineTo(size.width, size.height - cornerRadius)
+      ..quadraticBezierTo(
+        size.width,
+        size.height,
+        size.width - cornerRadius,
+        size.height,
+      )
+      ..lineTo(notchCenterX + notchRadius, size.height)
+      ..arcTo(bottomNotch, 0, -math.pi, false)
+      ..lineTo(cornerRadius, size.height)
+      ..quadraticBezierTo(0, size.height, 0, size.height - cornerRadius)
+      ..lineTo(0, cornerRadius)
+      ..quadraticBezierTo(0, 0, cornerRadius, 0)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _WelcomeTicketClipper oldClipper) {
+    return oldClipper.notchCenterX != notchCenterX;
   }
 }
 
