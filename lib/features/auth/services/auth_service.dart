@@ -238,10 +238,10 @@ class AuthService implements AuthRepository {
         message: 'Please sign in before saving a delivery location.',
       );
     }
-    await _firestore.collection('users').doc(user.uid).update({
+    await _firestore.collection('users').doc(user.uid).set({
       'deliveryAddress': location.toMap(),
       'addressUpdatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:country_picker/country_picker.dart';
 import 'package:firebase_core/firebase_core.dart';
 // ignore: depend_on_referenced_packages
@@ -5,6 +7,8 @@ import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/routes/app_routes.dart';
 import 'package:flutter_application_1/core/theme/app_theme.dart';
+import 'package:flutter_application_1/core/widgets/app_loader.dart';
+import 'package:flutter_application_1/core/widgets/brand_logo.dart';
 import 'package:flutter_application_1/features/auth/screens/authenticated_entry_screen.dart';
 import 'package:flutter_application_1/features/auth/services/auth_repository.dart';
 import 'package:flutter_application_1/features/location/models/delivery_location.dart';
@@ -16,6 +20,25 @@ void main() {
   setupFirebaseCoreMocks();
   setUpAll(Firebase.initializeApp);
 
+  testWidgets('session resolution shows only the plain loading indicator', (
+    tester,
+  ) async {
+    final pendingVerification = Completer<bool>();
+    final repository = GateFakeAuthRepository(
+      verificationStatus: pendingVerification.future,
+    );
+
+    await _pumpGate(tester, repository: repository);
+
+    expect(find.byType(AppLoader), findsOneWidget);
+    expect(find.byType(HungrySpotLogo), findsNothing);
+    expect(find.textContaining('Securing your account'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    pendingVerification.complete(false);
+    await tester.pump();
+  });
+
   testWidgets('signed-out sessions return to login', (tester) async {
     final repository = GateFakeAuthRepository(hasUser: false);
 
@@ -26,7 +49,7 @@ void main() {
     expect(repository.syncCount, 0);
   });
 
-  testWidgets('verified sessions synchronize before entering home', (
+  testWidgets('verified sessions start synchronization and enter home', (
     tester,
   ) async {
     final repository = GateFakeAuthRepository(
@@ -44,6 +67,27 @@ void main() {
       find.byKey(const ValueKey('phone-verification-number-input')),
       findsNothing,
     );
+  });
+
+  testWidgets('pending profile sync does not hold the entry loader open', (
+    tester,
+  ) async {
+    final pendingProfileSync = Completer<void>();
+    final repository = GateFakeAuthRepository(
+      verified: true,
+      location: _savedLocation,
+      profileSync: pendingProfileSync.future,
+    );
+
+    await _pumpGate(tester, repository: repository);
+    await tester.pumpAndSettle();
+
+    expect(repository.syncCount, 1);
+    expect(find.byKey(const ValueKey('home-destination')), findsOneWidget);
+    expect(find.byType(AppLoader), findsNothing);
+
+    pendingProfileSync.complete();
+    await tester.pump();
   });
 
   testWidgets('unverified sessions must complete OTP before entering home', (
@@ -172,12 +216,16 @@ final class GateFakeAuthRepository implements AuthRepository {
     this.verified = false,
     this.location,
     this.failSync = false,
+    this.verificationStatus,
+    this.profileSync,
   });
 
   final bool hasUser;
   bool verified;
   final DeliveryLocation? location;
   final bool failSync;
+  final Future<bool>? verificationStatus;
+  final Future<void>? profileSync;
   final List<String> sentPhones = <String>[];
   void Function(String verificationId, int? resendToken)? _codeSent;
   int confirmCount = 0;
@@ -189,7 +237,8 @@ final class GateFakeAuthRepository implements AuthRepository {
   bool get hasAuthenticatedUser => hasUser && signOutCount == 0;
 
   @override
-  Future<bool> hasVerifiedPhoneSession() async => verified;
+  Future<bool> hasVerifiedPhoneSession() async =>
+      verificationStatus == null ? verified : await verificationStatus!;
 
   @override
   Future<void> sendPhoneVerificationCode({
@@ -220,6 +269,7 @@ final class GateFakeAuthRepository implements AuthRepository {
   @override
   Future<void> syncVerifiedCustomerProfile() async {
     syncCount += 1;
+    if (profileSync != null) await profileSync;
     if (failSync) {
       throw FirebaseException(
         plugin: 'cloud_firestore',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -6,7 +8,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/app_notification.dart';
 import '../../../core/widgets/app_primary_button.dart';
-import '../../../core/widgets/brand_logo.dart';
 import '../../home/screens/home_screen.dart';
 import '../../location/models/delivery_location.dart';
 import '../../location/screens/location_setup_screen.dart';
@@ -95,18 +96,7 @@ class _AuthenticatedEntryScreenState extends State<AuthenticatedEntryScreen> {
         return;
       }
 
-      try {
-        await _repository.syncVerifiedCustomerProfile();
-      } on FirebaseException {
-        if (!mounted || _navigationClaimed) return;
-        AppNotification.show(
-          context,
-          message:
-              'Your phone is verified. Profile details will finish syncing when the connection is restored.',
-          tone: AppNotificationTone.info,
-        );
-      }
-      if (!mounted || _navigationClaimed) return;
+      unawaited(_syncVerifiedCustomerProfile());
 
       final location = await _repository.getDeliveryLocation();
       if (!mounted || _navigationClaimed) return;
@@ -117,6 +107,23 @@ class _AuthenticatedEntryScreenState extends State<AuthenticatedEntryScreen> {
         _errorMessage = friendlyAuthError(error);
         _resolutionStarted = false;
       });
+    }
+  }
+
+  Future<void> _syncVerifiedCustomerProfile() async {
+    try {
+      await _repository.syncVerifiedCustomerProfile();
+    } on FirebaseException {
+      if (!mounted || _navigationClaimed) return;
+      AppNotification.show(
+        context,
+        message:
+            'Your phone is verified. Profile details will finish syncing when the connection is restored.',
+        tone: AppNotificationTone.info,
+      );
+    } catch (_) {
+      // Profile maintenance must never block verified customers from entering
+      // the app. A later authenticated entry retries the synchronization.
     }
   }
 
@@ -186,20 +193,7 @@ class _ResolvingAccountView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        HungrySpotLogo(size: 160, contentScale: 1.04),
-        SizedBox(height: 24),
-        AppLoader(semanticsLabel: 'Securing your account'),
-        SizedBox(height: 16),
-        Text(
-          'Securing your account…',
-          style: AppTypography.bodyMedium,
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
+    return const AppLoader();
   }
 }
 
