@@ -31,6 +31,16 @@ class CustomerDataService {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
 
+  Future<bool> hasOrderHistory() async {
+    final user = _requireUser();
+    final snapshot = await _firestore
+        .collection('orders')
+        .where('customerId', isEqualTo: user.uid)
+        .limit(1)
+        .get(const GetOptions(source: Source.server));
+    return snapshot.docs.isNotEmpty;
+  }
+
   Future<CustomerState> loadState() async {
     final user = _requireUser();
     final snapshot = await _firestore.collection('users').doc(user.uid).get();
